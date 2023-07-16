@@ -1,1 +1,17 @@
+# Notion integrations secret
 /secrets
+
+# Service account key used for local Cloud Function development
+cloud-functions/notion-to-bigquery/secrets
+
+# Updating Google IAM permissions
+/iam
+
+# Python
+__pycache__
+
+# Environment variables
+.env
+
+# Local Cloud Function testing
+data/
