@@ -103,7 +103,7 @@ To setup this solution as a budget tracker, follow steps below:
 
 6. Create a Notion integration to read data from database
 
-7. Create an internal integration on [Notion Developers](https://www.notion.so/my-integrations), associated with workspace from previous step with `notion-budget-tracker` as name
+    - Create an internal integration on [Notion Developers](https://www.notion.so/my-integrations), associated with workspace from previous step with `notion-budget-tracker` as name
 
     - Under the _Capabilities_ section, uncheck `Update content` and `Insert content` then click **Save changes**
 
@@ -117,19 +117,19 @@ To setup this solution as a budget tracker, follow steps below:
 
     - Open database page and _Add connection_ to the integration you created.
 
-8. Create BigQuery dataset where table with Notion data will be stored
+7. Create BigQuery dataset where table with Notion data will be stored
 
     ```shell
     bq --location=$BQ_LOCATION mk --dataset $PROJECT_ID:$BQ_DATASET_ID
     ```
 
-9. Create Cloud Storage bucket to store cloud function status file
+8. Create Cloud Storage bucket to store cloud function status file
 
     ```shell
     gcloud storage buckets create gs://$BUCKET_NAME
     ```
 
-10. Create a service account and grant necessary permissions
+9. Create a service account and grant necessary permissions
 
     - Create service account
 
@@ -187,9 +187,9 @@ To setup this solution as a budget tracker, follow steps below:
         bq update --source iam/$BQ_DATASET_ID.json $PROJECT_ID:$BQ_DATASET_ID
         ```
 
-11. _(Optional)_ [Run HTTP Cloud Function locally](##locally-invoke-cloud-function-using-functions-framework) once to initialise table
+10. _(Optional)_ [Run HTTP Cloud Function locally](##locally-invoke-cloud-function-using-functions-framework) once to initialise table
 
-12. Deploy the HTTP Cloud Function ([details about flags used](https://cloud.google.com/functions/docs/create-deploy-gcloud#deploying_the_function)), and invoke it to test deployment
+11. Deploy the HTTP Cloud Function ([details about flags used](https://cloud.google.com/functions/docs/create-deploy-gcloud#deploying_the_function)), and invoke it to test deployment
 
     ```shell
     gcloud functions deploy $CF_FUNCTION_NAME \
@@ -212,28 +212,39 @@ To setup this solution as a budget tracker, follow steps below:
         -H "Authorization: bearer $(gcloud auth print-identity-token)" \
         -H "Content-Type: application/json" \
         -d '{}'
-
-    # Delete function
-    gcloud functions delete $CF_FUNCTION_NAME --gen2 --region $CF_REGION
-
-    # Delete BigQuery table and state file
-    bq rm -f -t $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
-    gcloud storage rm gs://$BUCKET_NAME/$DESTINATION_BLOB_NAME_STATE_FILE
     ```
 
-13. **[TODO]** Deploy a Cloud Scheduler to call deployed HTTP Cloud Function
+12. **[TODO]** Deploy a Cloud Scheduler to call deployed HTTP Cloud Function
 
     - Create and test a schedule locally ([instructions](https://cloud.google.com/community/tutorials/using-scheduler-invoke-private-functions-oidc))
 
     - Create and test a schedule remotely
 
-14. **[TODO]** Define BigQuery views used by Looker Studio report
+13. **[TODO]** Define BigQuery views used by Looker Studio report
 
-15. **[TODO]** Create a Looker Studio report
+14. **[TODO]** Create a Looker Studio report
 
     - Duplicate template report
 
     - Change data source to your own BigQuery
+
+15. Clean up project
+
+    ```shell
+    # Option 1: Delete whole project
+    gcloud projects delete $PROJECT_ID
+
+    # Option 2: Keep project, but delete every resources
+    gcloud secrets delete $GSM_NOTION_SECRET_NAME
+    gcloud iam service-accounts delete $SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
+    gcloud functions delete $CF_FUNCTION_NAME --gen2 --region $CF_REGION
+    gcloud storage rm --recursive gs://$BUCKET_NAME/
+    bq rm -r -f -d $PROJECT_ID:$BQ_DATASET_ID
+
+    # Option 3: Keep projet and top-level resources, deletes BigQuery table and Cloud Storage state file
+    bq rm -f -t $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
+    gcloud storage rm gs://$BUCKET_NAME/$DESTINATION_BLOB_NAME_STATE_FILE
+    ```
 
 ## Locally invoke Cloud function, using `functions-framework`
 
