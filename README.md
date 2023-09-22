@@ -248,16 +248,74 @@ To get a copy of the project up and running follow the following example steps.
         --set-env-vars GSM_NOTION_SECRET_NAME=$GSM_NOTION_SECRET_NAME \
         --set-env-vars BUCKET_NAME=$BUCKET_NAME \
         --set-env-vars DESTINATION_BLOB_NAME_STATE_FILE=$DESTINATION_BLOB_NAME_STATE_FILE
-    # Allow unauthenticated invocations of new function [notion-to-bigquery]? (y/N)?  N
+    # Allow unauthenticated invocations of new function [notion-to-bigquery]? (y/N)?
+    N
+    ```
 
-    # Invoke deployed function from authentified shell (may need few minutes before executing correctly)
+    > Wait for few minutes before function can be invoked without errors
+
+    <details><summary><strong>Invoking the deployed function</strong></summary>
+
+    ```shell
     curl -i -X POST https://$CF_REGION-$PROJECT_ID.cloudfunctions.net/$CF_FUNCTION_NAME \
         -H "Authorization: bearer $(gcloud auth print-identity-token)" \
         -H "Content-Type: application/json" \
         -d '{}'
     ```
 
-5. **[TODO]** Deploy a Cloud Scheduler to call deployed HTTP Cloud Function
+    </details>
+
+5. Deploy a Cloud Scheduler to call deployed HTTP Cloud Function, and associated service account
+
+    ```shell
+    gcloud iam service-accounts create $CS_SA_NAME
+
+    gcloud functions add-invoker-policy-binding $CF_FUNCTION_NAME \
+        --region=$CF_REGION \
+        --member serviceAccount:$CS_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
+
+    gcloud scheduler jobs create http $CF_FUNCTION_NAME \
+        --location=$CS_REGION \
+        --schedule=$CS_SCHEDULE \
+        --uri=https://$CF_REGION-$PROJECT_ID.cloudfunctions.net/$CF_FUNCTION_NAME \
+        --oidc-service-account-email=$CS_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
+    ```
+
+6. _(Optional)_ Run Cloud Scheduler to test deployment
+
+    <details><summary><strong>Steps</strong></summary>
+
+    1. Run Cloud Scheduler
+
+        ```shell
+        gcloud scheduler jobs run $CF_FUNCTION_NAME \
+            --location=$CS_REGION
+        ```
+
+    2. Check Cloud Functions log for invokation
+
+        ```shell
+        gcloud functions logs read $CF_FUNCTION_NAME \
+            --region=$CF_REGION
+        ```
+
+    3. Check destination BigQuery table for eventual modification
+
+        ```shell
+        bq show $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
+        bq query --use_legacy_sql=false "
+            SELECT
+                id,
+                url,
+                created_time,
+                last_edited_time
+            FROM
+                \`${BQ_TABLE_ID}\`
+            ORDER BY last_edited_time DESC
+            LIMIT 5;"
+        ```
+
+    </details>
 
 #### Add models and visualisations
 
@@ -283,6 +341,7 @@ gcloud projects delete $PROJECT_ID
 gcloud secrets delete $GSM_NOTION_SECRET_NAME
 gcloud iam service-accounts delete $CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
 gcloud functions delete $CF_FUNCTION_NAME --gen2 --region $CF_REGION
+gcloud scheduler jobs delete $CF_FUNCTION_NAME --location=$CS_REGION
 gcloud storage rm --recursive gs://$BUCKET_NAME/
 bq rm -r -f -d $PROJECT_ID:$BQ_DATASET_ID
 ```
