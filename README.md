@@ -11,7 +11,7 @@
 <h1 align="center">Notion Budget Tracker</h1>
 
   <strong><p align="center">
-    Free expense tracker with customisable categories, aggregated calculations and hourly updated dashboard</strong>
+    Free expense tracker with customisable categories, aggregated calculations and regularly updated dashboard</strong>
     <br />
     <a href="https://www.notion.so/3b78e071709e4a28ab16798de93e12c6?v=e8126179c6b64a029d8e20675dc4e48e">View expense logger demo</a>
     ·
@@ -302,8 +302,8 @@ To get a copy of the project up and running follow the following example steps.
 
         ```shell
         bq show $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
-        bq query --use_legacy_sql=false "
-            SELECT
+        bq query --use_legacy_sql=false \
+            "SELECT
                 id,
                 url,
                 created_time,
@@ -318,7 +318,23 @@ To get a copy of the project up and running follow the following example steps.
 
 #### Add models and visualisations
 
-1. **[TODO]** Define BigQuery views used by Looker Studio report
+1. Define BigQuery view that removes duplicates
+
+    ```shell
+    bq query --use_legacy_sql=false \
+        "CREATE VIEW
+            \`${BQ_TABLE_ID_DIM}\` AS (
+        SELECT
+            * EXCEPT(row_number)
+        FROM (
+            SELECT
+                *,
+                ROW_NUMBER() OVER (PARTITION BY id ORDER BY last_edited_time DESC) row_number
+            FROM
+                \`${BQ_TABLE_ID}\` )
+        WHERE
+            row_number = 1);"
+    ```
 
 2. **[TODO]** Create a Looker Studio report
 
@@ -403,7 +419,17 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
+<<<<<<< HEAD
+
 - [ ] Deliver a first working version
+- [ ] Add option for Cloud Function to perform a full table refresh
+=======
+- [ ] Cloud Function
+  - [ ] Add option to perform full table refresh
+  - [ ] Move database id and destination table to execution variable
+
+>>>>>>> da45d65 (feat: added instructions to create a bigquery view without duplicated edited pages)
+
 - [ ] Switch to [OpenTofu](https://opentofu.org/) for easier setup
 - [ ] Add [SimpleFIN Bridge](https://beta-bridge.simplefin.org/) for automated transaction collection
 - [ ] Add budgeting feature (target versus actual)
