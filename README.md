@@ -117,7 +117,6 @@ To get a copy of the project up and running follow the following example steps.
     gcloud services enable artifactregistry.googleapis.com
     gcloud services enable run.googleapis.com
     gcloud services enable logging.googleapis.com
-    gcloud services enable pubsub.googleapis.com
 
     bq --location=$BQ_LOCATION mk --dataset $PROJECT_ID:$BQ_DATASET_ID
     gcloud storage buckets create gs://$BUCKET_NAME
