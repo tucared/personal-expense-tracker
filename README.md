@@ -193,20 +193,21 @@ To get a copy of the project up and running follow the following example steps.
     1. Download service account key file
 
         ```shell
-        gcloud iam service-accounts keys create $CF_FOLDER_PATH/$CF_GOOGLE_APPLICATION_CREDENTIALS_PATH \
+        gcloud iam service-accounts keys create $CF_GOOGLE_APPLICATION_CREDENTIALS_PATH \
             --iam-account=$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
         ```
 
-    2. [Create a virtual environment and] install `functions-framework` ([github repo](https://github.com/GoogleCloudPlatform/functions-framework-python))
+    2. [Create a virtual environment and] install dependencies
 
         ```shell
-        pip install functions-framework
+        pip install -r $CF_SOURCE/requirements.txt
+        pip install -r $CF_SOURCE/requirements.local.txt
         ```
 
     3. Start local server  
 
         ```shell
-        export GOOGLE_APPLICATION_CREDENTIALS=secrets/sa-private-key.json
+        export GOOGLE_APPLICATION_CREDENTIALS=$CF_GOOGLE_APPLICATION_CREDENTIALS_PATH
         export BQ_TABLE_ID=$PROJECT_ID.$BQ_DATASET_ID.raw_notion_pages__duplicated__TEST
         export DESTINATION_BLOB_NAME_STATE_FILE=last_update_time__TEST.txt
         functions-framework \
@@ -247,8 +248,9 @@ To get a copy of the project up and running follow the following example steps.
         --set-env-vars GSM_NOTION_SECRET_NAME=$GSM_NOTION_SECRET_NAME \
         --set-env-vars BUCKET_NAME=$BUCKET_NAME \
         --set-env-vars DESTINATION_BLOB_NAME_STATE_FILE=$DESTINATION_BLOB_NAME_STATE_FILE
+    # Allow unauthenticated invocations of new function [notion-to-bigquery]? (y/N)?  N
 
-    # Invoke deployed function from authentified shell
+    # Invoke deployed function from authentified shell (may need few minutes before executing correctly)
     curl -i -X POST https://$CF_REGION-$PROJECT_ID.cloudfunctions.net/$CF_FUNCTION_NAME \
         -H "Authorization: bearer $(gcloud auth print-identity-token)" \
         -H "Content-Type: application/json" \
