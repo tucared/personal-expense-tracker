@@ -1,17 +1,22 @@
-# Notion integrations secret
-/secrets
-
-# Service account key used for local Cloud Function development
-cloud-functions/notion-to-bigquery/secrets
-
-# Updating Google IAM permissions
-/iam
-
 # Python
 __pycache__
 
-# Environment variables
-.env
-
 # Local Cloud Function testing
 data/
+secrets/
+
+# Infracost files
+.infracost/
+
+# OpenTofu files
+.terraform/
+.terraform.lock.hcl
+
+# OpenTofu state and variables files
+terraform.tfstate*
+.terraform.tfstate.lock.info
+*.tfvars
+!example.tfvars
+
+# OpenTofu backend configuration
+backend.tf

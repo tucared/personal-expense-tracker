@@ -1,0 +1,33 @@
+# https://github.com/infracost/infracost/blob/master/infracost-usage-example.yml
+
+version: 0.1
+resource_usage:
+  google_bigquery_dataset.this:
+    monthly_queries_tb: 0.002 # ~3 MB each hour
+
+  google_secret_manager_secret.notion:
+    active_secret_versions: 0
+    monthly_access_operations: 0
+    monthly_rotation_notifications: 0
+
+  google_secret_manager_secret_version.notion:
+    monthly_access_operations: 720 # By default, 1 per hour
+
+  # TODO: Open issue to set monthly_egress_data_transfer_gb to 0
+  google_storage_bucket.tf_state:
+    storage_gb: 0.000015 # 15 KB
+    monthly_class_a_operations: 10 # 1 per tofu command
+    monthly_class_b_operations: 10 # 1 per tofu command
+    monthly_data_retrieval_gb: 0.00015 # storage_gb * monthly_class_a_operations
+
+  google_storage_bucket.cloud_function:
+    storage_gb: 0.000000026 # 26 B
+    monthly_class_a_operations: 720 # By default, 1 per hour
+    monthly_class_b_operations: 720 # By default, 1 per hour
+    monthly_data_retrieval_gb: 0.00001872 # storage_gb * monthly_class_a_operations
+
+  google_storage_bucket.cloud_function_source:
+    storage_gb: 0.0000035 # 3.5 KB
+    monthly_class_a_operations: 10 # 1 per tofu command
+    monthly_class_b_operations: 10 # 1 per tofu command
+    monthly_data_retrieval_gb: 0.000035 # storage_gb * monthly_class_a_operations

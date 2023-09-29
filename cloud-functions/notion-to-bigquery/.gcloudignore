@@ -1,5 +1,3 @@
-secrets/
-.env.yaml.example
 .gcloudignore
 .python-version
 requirements.local.txt

@@ -11,11 +11,11 @@
 <h1 align="center">Notion Budget Tracker</h1>
 
   <strong><p align="center">
-    Free expense tracker with customisable categories, aggregated calculations and regularly updated dashboard</strong>
+    Free expense tracker with customisable categories, and authentified reporting static website</strong>
     <br />
     <a href="https://www.notion.so/3b78e071709e4a28ab16798de93e12c6?v=e8126179c6b64a029d8e20675dc4e48e">View expense logger demo</a>
     ·
-    <a href="https://github.com/tucared/notion-budget-tracker">[TODO] View dashboard demo</a>
+    <a href="https://github.com/tucared/notion-budget-tracker">[TODO] View reporting website demo</a>
   </p>
 </div>
 
@@ -34,10 +34,24 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#clean-up">Clean-up</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li>
+        <a href="#usage">Usage</a>
+        <ul>
+            <li><a href="#invoking-function">Invoking function</a></li>
+            <li><a href="#sequence-diagram">Sequence diagram</a></li>
+        </ul>
+    </li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li>
+        <a href="#local-development">Local development</a>
+        <ul>
+            <li><a href="#run-function-locally">Run function locally</a></li>
+            <li><a href="#cost-insights-using-infracost">Cost insights using Infracost</a></li>
+        </ul>
+    </li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -59,6 +73,7 @@ This project aims at providing individuals and groups with a lightweight solutio
 
 ### Built With
 
+- **OpenTofu** (TODO: Add badge on [Badges4-README.md-Profile](https://github.com/alexandresanlim/Badges4-README.md-Profile))
 - [![Python][Python.org]][Python-url]
 - [![Notion][Notion.so]][Notion-url] _(free tier)_
 - [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url] _(free tier)_
@@ -72,310 +87,174 @@ To get a copy of the project up and running follow the following example steps.
 
 ### Prerequisites
 
-- [Create a Notion account](https://www.notion.so/signup)
-- [Create a Google Cloud Billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account)
-- [Install (with initialisation) the gcloud CLI](https://cloud.google.com/sdk/docs/install)
+- A [Notion account](https://www.notion.so/signup)
+- A [Google Cloud Billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account)
+- Have [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed
+- Have [OpenTofu](https://github.com/opentofu/opentofu/releases) installed
 
 ### Installation
 
-#### Setup local environment
+1. Duplicate this [Notion public template database](https://adjoining-heath-cac.notion.site/ae50475a83bd40edbced0544315364fa?v=d212f11f17c646cc862983622904c8bb) into a Workspace you own
 
-1. Duplicate `.env.example` file and rename it to `.env`
+2. [Setup an internal Notion integration](https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up) with only **Read content** capability, and [add it as a connection](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages) to your database
 
-2. In `.env` file, modify value for `BILLING_ACCOUNT_ID` with one returned by following command:
+3. Duplicate `example.tfvars` file into a `terraform.tfvars` one, and modify variables without defaults defined:
+   - **notion_database_id**: The globally unique identifier for the Notion database created step 1. [How to retrieve a database ID](https://developers.notion.com/reference/retrieve-a-database)
+   - **notion_secret_value**: The unique internal integration token for the Notion integration created step 2. [How to retrieve an integration token](https://developers.notion.com/reference/retrieve-a-database)
+   - **project_id**: A globally unique identifier for your project. [How to pick a project ID](https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
+
+4. Initialise OpenTofu
 
     ```shell
-    gcloud beta billing accounts list
-    # ACCOUNT_ID            NAME                OPEN  MASTER_ACCOUNT_ID
-    # 000000-000000-000000  My Billing Account  True
+    tofu init
     ```
 
-#### Create Notion database to record expenses
-
-1. Duplicate this [public template database](https://adjoining-heath-cac.notion.site/ae50475a83bd40edbced0544315364fa?v=d212f11f17c646cc862983622904c8bb) into a Workspace you own
-
-2. Modify `NOTION_DATABASE_ID` value in `.env` file with database ID from your recently created database ([how to retrieve a database ID](https://developers.notion.com/reference/retrieve-a-database))
-
-#### Create Google Cloud project and top-level resources
-
-1. Load environment variables to shell
+5. Create Google project and link a billing account to it
 
     ```shell
-    source .env
-    ```
+    # Load PROJECT_ID value from `terraform.tfvars` file
+    export PROJECT_ID=$(echo var.project_id | tofu console | sed 's/"//g')
 
-2. Create a Google Cloud project, link billing account, enable relevant services and create top-level resources
-
-    ```shell
+    # Create project
     gcloud projects create $PROJECT_ID
-    gcloud config set project $PROJECT_ID
+
+    # Set BILLING_ACCOUNT_ID
+    gcloud beta billing accounts list
+    export BILLING_ACCOUNT_ID=<ACCOUNT_ID from previous command>
+
+    # Link billing account to project
     gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
 
-    gcloud services enable secretmanager.googleapis.com
-    gcloud services enable cloudfunctions.googleapis.com
-    gcloud services enable cloudbuild.googleapis.com
-    gcloud services enable artifactregistry.googleapis.com
-    gcloud services enable run.googleapis.com
-    gcloud services enable logging.googleapis.com
-
-    bq --location=$BQ_LOCATION mk --dataset $PROJECT_ID:$BQ_DATASET_ID
-    gcloud storage buckets create gs://$BUCKET_NAME
+    # Enable relevant APIs
+    gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+    gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
+    gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
+    gcloud services enable run.googleapis.com --project=$PROJECT_ID
+    gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
+    gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
+    gcloud services enable logging.googleapis.com --project=$PROJECT_ID
     ```
 
-3. [Setup an internal Notion integration](https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up) with only **Read content** capability and upload secret to a Google Secret
+6. Deploy infrastructure on Google Cloud
 
     ```shell
-    mkdir secrets
-    cat > secrets/notion-integration.txt # Paste integration secret, then save and close using Ctrl+D
-    gcloud secrets create $GSM_NOTION_SECRET_NAME --data-file="secrets/notion-integration.txt"
+    tofu apply
+    # Enter a value: yes
     ```
 
-4. [Add the integration to the expense database page](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages)
-
-#### Deploy HTTP Cloud Function with a Cloud Scheduler
-
-1. Create a service account for the Cloud Function and grant minimal permissions to top-level resources
+7. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment (hashicorp/terraform issue [#15264](https://github.com/hashicorp/terraform-provider-google/issues/15264))
 
     ```shell
-    gcloud iam service-accounts create $CF_SA_NAME
-
-    gcloud beta secrets add-iam-policy-binding $GSM_NOTION_SECRET_NAME \
-        --member serviceAccount:$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/secretmanager.secretAccessor
-
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/bigquery.jobUser
-
-    gcloud storage buckets add-iam-policy-binding gs://$BUCKET_NAME \
-        --member serviceAccount:$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/storage.objectUser
+    gcloud functions add-invoker-policy-binding $(tofu output function_name | sed 's/"//g') \
+        --project=$PROJECT_ID \
+        --region=$(tofu output function_region | sed 's/"//g') \
+        --member serviceAccount:$(tofu output sa_email_cloud_scheduler | sed 's/"//g')
     ```
 
-2. Grant read and write access to destination dataset
+8. _(Optional, recommended)_ Save state file to a remote backend
+    <details><summary><strong>Steps</strong></summary>
 
-      - Get current permissions into file
+    1. Create a `backend.tf` file, and update contents as followed
 
-        ```shell
-        mkdir iam
-        bq show --format=prettyjson $PROJECT_ID:$BQ_DATASET_ID > iam/$BQ_DATASET_ID.json
-        ```
-
-      - Open file under `iam` folder and update `access` object to add read and write access
-
-        ```json
-        {
-            "access": [
-                    // ...,
-                    {
-                        "role": "WRITER",
-                        "userByEmail": "notion-to-bq-cloud-fnc@notion-budget-tracker.iam.gserviceaccount.com"
-                    },
-                    {
-                        "role": "READER",
-                        "userByEmail": "notion-to-bq-cloud-fnc@notion-budget-tracker.iam.gserviceaccount.com"
-                    }
-                ]
-                    // ...
+        ```terraform
+        terraform {
+            backend "gcs" {
+              bucket = "<output from shell command 'tofu output bucket_tfstate'>"
+              prefix = "terraform/state"
+            }
         }
         ```
 
-      - Save changes to file and update permission
+    2. Migrate state file to remote backend
 
         ```shell
-        bq update --source iam/$BQ_DATASET_ID.json $PROJECT_ID:$BQ_DATASET_ID
+        tofu init
+        # Enter a value: yes
         ```
 
-3. _(Optional)_ Run HTTP Cloud Function locally once to initialise table
-    <details><summary><strong>Steps</strong></summary>
-
-    1. Download service account key file
+    3. _(Optional)_ Remove leftover local state files
 
         ```shell
-        gcloud iam service-accounts keys create $CF_GOOGLE_APPLICATION_CREDENTIALS_PATH \
-            --iam-account=$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
-        ```
-
-    2. [Create a virtual environment and] install dependencies
-
-        ```shell
-        pip install -r $CF_SOURCE/requirements.txt
-        pip install -r $CF_SOURCE/requirements.local.txt
-        ```
-
-    3. Start local server  
-
-        ```shell
-        export GOOGLE_APPLICATION_CREDENTIALS=$CF_GOOGLE_APPLICATION_CREDENTIALS_PATH
-        export BQ_TABLE_ID=$PROJECT_ID.$BQ_DATASET_ID.raw_notion_pages__duplicated__TEST
-        export DESTINATION_BLOB_NAME_STATE_FILE=last_update_time__TEST.txt
-        functions-framework \
-            --target=$CF_ENTRYPOINT \
-            --source=$CF_SOURCE/main.py \
-            --debug
-        ```
-
-    4. Open another shell, and invoke function
-
-        ```shell
-        curl localhost:8080
-        ```
-
-    5. _(Optional)_ Delete BigQuery table and state file
-
-        ```shell
-        bq rm -f -t $PROJECT_ID:$BQ_DATASET_ID.raw_notion_pages__duplicated__TEST
-        gcloud storage rm gs://$BUCKET_NAME/last_update_time__TEST.txt
+        rm -rf terraform.tfstate
+        rm -rf terraform.tfstate.backup
         ```
 
     </details>
 
-4. Deploy the HTTP Cloud Function ([details about flags used](https://cloud.google.com/functions/docs/create-deploy-gcloud#deploying_the_function))
+### Clean-up
+
+You have 2 options for cleaning up deployment:
+
+- Remove all provisionned resources, except for the bucket containing eventual remote state file
 
     ```shell
-    gcloud functions deploy $CF_FUNCTION_NAME \
-        --gen2 \
-        --runtime=$CF_RUNTIME \
-        --service-account=$CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-        --region=$CF_REGION \
-        --source=$CF_SOURCE \
-        --entry-point=$CF_ENTRYPOINT \
-        --trigger-http \
-        --set-env-vars PROJECT_ID=$PROJECT_ID \
-        --set-env-vars BQ_TABLE_ID=$BQ_TABLE_ID \
-        --set-env-vars NOTION_DATABASE_ID=$NOTION_DATABASE_ID \
-        --set-env-vars GSM_NOTION_SECRET_NAME=$GSM_NOTION_SECRET_NAME \
-        --set-env-vars BUCKET_NAME=$BUCKET_NAME \
-        --set-env-vars DESTINATION_BLOB_NAME_STATE_FILE=$DESTINATION_BLOB_NAME_STATE_FILE
-    # Allow unauthenticated invocations of new function [notion-to-bigquery]? (y/N)?
-    N
+    tofu destroy
+    # Enter a value: yes
     ```
 
-    > Wait for few minutes before function can be invoked without errors
-
-    <details><summary><strong>Invoking the deployed function</strong></summary>
+- Delete project, terraform resources, and eventual `backend.tf` file if remote state was used
 
     ```shell
-    curl -i -X POST https://$CF_REGION-$PROJECT_ID.cloudfunctions.net/$CF_FUNCTION_NAME \
-        -H "Authorization: bearer $(gcloud auth print-identity-token)" \
-        -H "Content-Type: application/json" \
-        -d '{}'
+    gcloud projects delete $PROJECT_ID
+    # Do you want to continue (Y/n)?: Y
+
+    rm -rf backend.tf
     ```
-
-    </details>
-
-5. Deploy a Cloud Scheduler to call deployed HTTP Cloud Function, and associated service account
-
-    ```shell
-    gcloud iam service-accounts create $CS_SA_NAME
-
-    gcloud functions add-invoker-policy-binding $CF_FUNCTION_NAME \
-        --region=$CF_REGION \
-        --member serviceAccount:$CS_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
-
-    gcloud scheduler jobs create http $CF_FUNCTION_NAME \
-        --location=$CS_REGION \
-        --schedule=$CS_SCHEDULE \
-        --uri=https://$CF_REGION-$PROJECT_ID.cloudfunctions.net/$CF_FUNCTION_NAME \
-        --oidc-service-account-email=$CS_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
-    ```
-
-6. _(Optional)_ Run Cloud Scheduler to test deployment
-
-    <details><summary><strong>Steps</strong></summary>
-
-    1. Run Cloud Scheduler
-
-        ```shell
-        gcloud scheduler jobs run $CF_FUNCTION_NAME \
-            --location=$CS_REGION
-        ```
-
-    2. Check Cloud Functions log for invokation
-
-        ```shell
-        gcloud functions logs read $CF_FUNCTION_NAME \
-            --region=$CF_REGION
-        ```
-
-    3. Check destination BigQuery table for eventual modification
-
-        ```shell
-        bq show $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
-        bq query --use_legacy_sql=false \
-            "SELECT
-                id,
-                url,
-                created_time,
-                last_edited_time
-            FROM
-                \`${BQ_TABLE_ID}\`
-            ORDER BY last_edited_time DESC
-            LIMIT 5;"
-        ```
-
-    </details>
-
-#### Add models and visualisations
-
-1. Define BigQuery view that removes duplicates
-
-    ```shell
-    bq query --use_legacy_sql=false \
-        "CREATE VIEW
-            \`${BQ_TABLE_ID_DIM}\` AS (
-        SELECT
-            * EXCEPT(row_number)
-        FROM (
-            SELECT
-                *,
-                ROW_NUMBER() OVER (PARTITION BY id ORDER BY last_edited_time DESC) row_number
-            FROM
-                \`${BQ_TABLE_ID}\` )
-        WHERE
-            row_number = 1);"
-    ```
-
-2. **[TODO]** Create a Looker Studio report
-
-    - Duplicate template report
-
-    - Change data source to your own BigQuery
-
-#### Clean up project
-
-**Option 1**: Delete whole project
-
-```shell
-gcloud projects delete $PROJECT_ID
-```
-
-**Option 2**: Keep project, but delete every resources
-
-```shell
-gcloud secrets delete $GSM_NOTION_SECRET_NAME
-gcloud iam service-accounts delete $CF_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com
-gcloud functions delete $CF_FUNCTION_NAME --gen2 --region $CF_REGION
-gcloud scheduler jobs delete $CF_FUNCTION_NAME --location=$CS_REGION
-gcloud storage rm --recursive gs://$BUCKET_NAME/
-bq rm -r -f -d $PROJECT_ID:$BQ_DATASET_ID
-```
-
-**Option 3**: Keep projet and top-level resources, delete BigQuery table and Cloud Storage state file
-
-```shell
-bq rm -f -t $PROJECT_ID:$BQ_DATASET_ID.$BQ_TABLE_NAME
-gcloud storage rm gs://$BUCKET_NAME/$DESTINATION_BLOB_NAME_STATE_FILE
-```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-- The **User** manually logs each expense as a [Page](https://developers.notion.com/reference/page) in a [Notion database](https://developers.notion.com/reference/database), as it happens
-- Either the User, or the **Cloud Scheduler**, calls a private **HTTP Cloud Function** (`notion-to-bigquery`) to extract new and updated Pages from said Notion database, then loads them into a **BigQuery** native transactional table
-- A **Looker Studio** report provides visualisations based on BigQuery views
+- The **User** manually logs each expense as a [Page](https://developers.notion.com/reference/page) in a [Notion database](https://developers.notion.com/reference/database) with some metadata.
+- Either the User, or the **Cloud Scheduler**, calls a private **HTTP Cloud Function** to extract new and updated Pages from said Notion database, then loads them into a **BigQuery** native table.
+- **TODO**: An **[Evidence](https://evidence.dev/)** IAM-protected static website providing visualisations is built each time BigQuery table data is updated.
+
+### Invoking function
+
+Once deployed, to trigger the function, you can either invoke it directly or the scheduler that invokes it:
+
+```shell
+# Calling function directly
+curl -i -X POST $(tofu output function_uri | sed 's/"//g') \
+    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+
+# Calling scheduler
+gcloud scheduler jobs run $(tofu output scheduler_name | sed 's/"//g') \
+    --project=$PROJECT_ID \
+    --location=$(tofu output scheduler_region | sed 's/"//g')
+```
+
+<details><summary>Checking affected resources' logs</summary>
+
+You verify function execution by looking at its logs:
+
+```shell
+gcloud functions logs read $(tofu output function_name | sed 's/"//g') \
+    --project=$PROJECT_ID \
+    --region=$(tofu output function_region | sed 's/"//g')
+```
+
+You can also look at recent modifications from destination table:
+
+```shell
+bq show $(tofu output bq_table_id_colon | sed 's/"//g')
+# or
+bq query --use_legacy_sql=false \
+    "SELECT
+        id,
+        url,
+        created_time,
+        last_edited_time
+    FROM
+        \`$(tofu output bq_table_id | sed 's/"//g')\`
+    ORDER BY last_edited_time DESC
+    LIMIT 5;"
+```
+
+</details>
+
+### Sequence diagram
 
 ```mermaid
 sequenceDiagram
@@ -386,7 +265,8 @@ sequenceDiagram
     participant CF as HTTP Cloud Function
     participant GCS as Cloud Storage
     participant BQ as BigQuery
-    participant LS as Looker Studio
+    participant CR as Cloud Run
+    participant GCSw as Cloud Storage<br>(website)
     end
 
     U->>N: Logs expenses
@@ -405,13 +285,13 @@ sequenceDiagram
         CF->>GCS: Updates query time <br>with timestamp
         opt if expenses returned
             CF->>-BQ: Appends expenses to table
+            BQ-->+CR: Triggers Evidence<br>website build
+            CR--)-GCSw: Stores static website files
         end
     end
 
-    U->>+LS: Asks for visualisations
-    LS->>+BQ: Queries aggregated data
-    BQ--)-LS: Returns aggregated data
-    LS--)-U: Provides visualisations
+    U->>GCSw: Queries reporting website
+    GCSw-->>U: Displays reporting website
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -419,20 +299,122 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-<<<<<<< HEAD
-
-- [ ] Deliver a first working version
-- [ ] Add option for Cloud Function to perform a full table refresh
-=======
+- [ ] Add OpenTofu tests and validations
+- [ ] Fix systematic redeployment of cloud function
+- [ ] Add visualisation using [Evidence](https://evidence.dev/)
 - [ ] Cloud Function
   - [ ] Add option to perform full table refresh
   - [ ] Move database id and destination table to execution variable
-
->>>>>>> da45d65 (feat: added instructions to create a bigquery view without duplicated edited pages)
-
-- [ ] Switch to [OpenTofu](https://opentofu.org/) for easier setup
 - [ ] Add [SimpleFIN Bridge](https://beta-bridge.simplefin.org/) for automated transaction collection
 - [ ] Add budgeting feature (target versus actual)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- HOW TO DEVELOP LOCALLY -->
+## Local development
+
+### Run function locally
+
+Though you can deploy a new version of the Cloud Function and invoke it, it remains faster to test it locally using [`functions-framework`](https://github.com/GoogleCloudPlatform/functions-framework-python) with all other cloud services deployed in a **development** infrastructure.
+
+Follow steps below to create another infrastructure and running function locally:
+
+1. Duplicate your production `terraform.tfvars` to a `dev.tfvars`.
+
+   1. Set `cloud_scheduler_parameters.count` value to 0. This prevents Cloud Scheduler from triggering the _deployed_ function
+
+   2. Pick another project ID to deploy your **development** infrastructure
+
+2. If you use a remote backend in production, comment all contents from the `backend.tf` file.
+
+3. Initialise OpenTofu.
+
+    ```shell
+    tofu init
+    ```
+
+4. Create Google Cloud project the same way that step 5 from [Installation](#installation) while changing first command to:
+
+    ```shell
+    export PROJECT_ID=$(echo var.project_id | tofu console -var-file=dev.tfvars | sed 's/"//g')
+    ```
+
+5. Deploy infrastructure on Google Cloud
+
+    ```shell
+    tofu apply -var-file=dev.tfvars
+    # Enter a value: yes
+    ```
+
+6. Download service account key file
+
+    ```shell
+    export GOOGLE_APPLICATION_CREDENTIALS=secrets/sa-private-key.json
+    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS \
+        --iam-account=$(tofu output sa_email_cloud_function | sed 's/"//g')
+    ```
+
+7. [Create a virtual environment and] install dependencies
+
+    ```shell
+    export SOURCE=$(echo var.cloud_function_parameters.source | tofu console | sed 's/"//g')
+    pip install -r $SOURCE/requirements.txt
+    pip install -r $SOURCE/requirements.local.txt
+    ```
+
+8. Start local server  
+
+    ```shell
+    export BQ_TABLE_ID=$(tofu output bq_table_id | sed 's/"//g')
+    export DESTINATION_BLOB_NAME_STATE_FILE=$(echo var.destination_state_file | tofu console | sed 's/"//g')
+    export ENTRYPOINT=$(echo var.cloud_function_parameters.entrypoint | tofu console | sed 's/"//g')
+    export NOTION_DATABASE_ID=$(echo var.notion_database_id | tofu console | sed 's/"//g')
+    export GSM_NOTION_SECRET_NAME=$(echo var.gsm_notion_secret_name | tofu console | sed 's/"//g')
+    export BUCKET_NAME=$(echo var.bucket_name | tofu console | sed 's/"//g')
+    functions-framework \
+        --target=$ENTRYPOINT \
+        --source=$SOURCE/main.py \
+        --debug
+    ```
+
+9. Open another shell, and invoke function
+
+    ```shell
+    curl localhost:8080
+    ```
+
+10. Destroy deployment (or delete project) and revert back to **production** environment by:
+
+    - Destroying deployment and local state files
+
+        ```shell
+        tofu destroy # or: gcloud projects delete $PROJECT_ID
+        rm -rf terraform.tfstate
+        rm -rf terraform.tfstate.backup
+        ```
+
+    - Eventually uncomment contents from the `backend.tf` file
+  
+    - Initialise `tofu` with remote backend
+
+        ```shell
+        tofu init
+        ```
+
+### Cost insights using [Infracost](https://github.com/infracost/infracost/tree/master)
+
+As mentionned earlier, **deploying this solution costs nothing as it leverages Google Cloud Free Tier**.
+
+However, a Infracost usage file (`infracost-usage.yml`) was created based on default deployment variables and typical workload. You will see a non-zero estimated cost using Infracost as it [specifies](https://www.infracost.io/docs/supported_resources/google/):
+> Free trials and free tiers, which are usually **not** a significant part of cloud costs, are ignored.
+
+After [installing Infracost](https://www.infracost.io/docs/), run following command to diplay estimated cloud costs:
+
+```shell
+infracost breakdown --path=. \
+    --usage-file=infracost-usage.yml \
+    --terraform-var-file=terraform.tfvars
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
