@@ -318,12 +318,11 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add OpenTofu tests and validations
 - [ ] Fix systematic redeployment of cloud function
+- [ ] Full refresh
+  - [ ] Add option to perform full table refresh on function
+  - [ ] Add scheduler to perform full refresh trigger
 - [ ] Add visualisation using [Evidence.dev]
-- [ ] Cloud Function
-  - [ ] Add option to perform full table refresh
-  - [ ] Move database id and destination table to execution variable
 - [ ] Add [SimpleFIN Bridge] for automated transaction collection
 - [ ] Add budgeting feature (target versus actual)
 
