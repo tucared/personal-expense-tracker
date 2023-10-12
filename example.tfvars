@@ -10,7 +10,6 @@ project_id          = "test-project-opentofu"
 bq_dataset_id          = "budget"
 bq_location            = "EU"
 bq_notion_table_name   = "raw_transactions__duplicated"
-bucket_name            = "cloud-function-state"
 destination_state_file = "last_update_time.txt"
 cloud_function_parameters = {
   entrypoint = "insert_notion_pages_to_bigquery"

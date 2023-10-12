@@ -31,12 +31,6 @@ variable "bq_notion_table_name" {
   default     = "raw_transactions__duplicated"
 }
 
-variable "bucket_name" {
-  description = "Name of bucket containing cloud function state file"
-  type        = string
-  default     = "cloud-function-state"
-}
-
 variable "destination_state_file" {
   description = "Path to file containing timestamp of last Cloud Function run"
   type        = string

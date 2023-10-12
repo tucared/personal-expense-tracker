@@ -2,7 +2,17 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "5.1.0"
+      version = "5.0.0"
+    }
+
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
+    }
+
+    archive = {
+      source  = "hashicorp/archive"
+      version = "2.4.0"
     }
   }
 }
@@ -61,8 +71,12 @@ resource "google_service_account" "cloud_function" {
   display_name = "Cloud Function SA"
 }
 
+resource "random_id" "cloud_function_bucket_prefix" {
+  byte_length = 8
+}
+
 resource "google_storage_bucket" "cloud_function" {
-  name          = var.bucket_name
+  name          = "${random_id.cloud_function_bucket_prefix.hex}-cloud-function"
   force_destroy = true
   location      = var.region
 
@@ -157,7 +171,7 @@ resource "google_cloudfunctions2_function" "this" {
       BQ_TABLE_ID                      = local.bq_table_id
       NOTION_DATABASE_ID               = var.notion_database_id
       GSM_NOTION_SECRET_NAME           = var.gsm_notion_secret_name
-      BUCKET_NAME                      = var.bucket_name
+      BUCKET_NAME                      = google_storage_bucket.cloud_function.name
       DESTINATION_BLOB_NAME_STATE_FILE = var.destination_state_file
     }
   }

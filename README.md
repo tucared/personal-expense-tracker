@@ -141,7 +141,6 @@ To get a copy of the project up and running follow the steps below.
     gcloud services enable run.googleapis.com --project=$PROJECT_ID
     gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
     gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-    gcloud services enable logging.googleapis.com --project=$PROJECT_ID
     ```
 
 6. Deploy infrastructure on Google Cloud.
@@ -318,7 +317,6 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Fix systematic redeployment of cloud function
 - [ ] Full refresh
   - [ ] Add option to perform full table refresh on function
   - [ ] Add scheduler to perform full refresh trigger
@@ -393,7 +391,7 @@ Follow steps below to create another infrastructure and running function locally
     export ENTRYPOINT=$(echo var.cloud_function_parameters.entrypoint | tofu console | sed 's/"//g')
     export NOTION_DATABASE_ID=$(echo var.notion_database_id | tofu console | sed 's/"//g')
     export GSM_NOTION_SECRET_NAME=$(echo var.gsm_notion_secret_name | tofu console | sed 's/"//g')
-    export BUCKET_NAME=$(echo var.bucket_name | tofu console | sed 's/"//g')
+    export BUCKET_NAME=$(tofu output bucket_name | sed 's/"//g')
     functions-framework \
         --target=$ENTRYPOINT \
         --source=$SOURCE/main.py \

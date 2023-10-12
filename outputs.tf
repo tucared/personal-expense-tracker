@@ -3,6 +3,11 @@ output "bucket_tfstate" {
   value       = google_storage_bucket.tf_state.name
 }
 
+output "bucket_name" {
+  description = "Name of bucket containing cloud function state file"
+  value       = google_storage_bucket.cloud_function.name
+}
+
 output "bq_table_id" {
   description = "Name of destination table for Notion data"
   value       = local.bq_table_id
