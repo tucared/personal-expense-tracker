@@ -402,8 +402,8 @@ Follow steps below to create another infrastructure and running function locally
 6. Download service account key file.
 
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS=secrets/sa-private-key.json
-    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS \
+    export GOOGLE_APPLICATION_CREDENTIALS_PATH=secrets/sa-private-key.json
+    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
         --iam-account=$(tofu output sa_email_cloud_function | sed 's/"//g')
     ```
 
@@ -424,7 +424,8 @@ Follow steps below to create another infrastructure and running function locally
     export NOTION_DATABASE_ID=$(echo var.notion_database_id | tofu console | sed 's/"//g')
     export GSM_NOTION_SECRET_NAME=$(echo var.gsm_notion_secret_name | tofu console | sed 's/"//g')
     export BUCKET_NAME=$(tofu output bucket_name | sed 's/"//g')
-    functions-framework \
+
+    GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_APPLICATION_CREDENTIALS_PATH) GOOGLE_CLOUD_PROJECT=$(echo $PROJECT_ID) functions-framework \
         --target=$ENTRYPOINT \
         --source=$SOURCE/main.py \
         --debug
