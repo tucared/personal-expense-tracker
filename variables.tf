@@ -91,6 +91,12 @@ variable "sa_account_id_cloud_scheduler" {
   default     = "sa-cloud-scheduler"
 }
 
+variable "sa_tofu" {
+  description = "Used when running OpenTofu commands"
+  type        = string
+  default     = "tofu-sa"
+}
+
 variable "zone" {
   description = "Default zone for creating resources"
   type        = string
@@ -98,5 +104,6 @@ variable "zone" {
 }
 
 locals {
-  bq_table_id = join(".", [var.project_id, var.bq_dataset_id, var.bq_notion_table_name])
+  bq_table_id          = join(".", [var.project_id, var.bq_dataset_id, var.bq_notion_table_name])
+  tofu_service_account = "${var.sa_tofu}@${var.project_id}.iam.gserviceaccount.com"
 }

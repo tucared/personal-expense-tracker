@@ -76,7 +76,7 @@ The main requirements for the project are:
 
 ### Built With
 
-- **OpenTofu**
+- **[OpenTofu]**
   - simple-icons issue [#9712] blocks adding badge on [Badges 4 README.md Profile]
 - [![Python][Python.org]][Python-url]
 - [![Notion][Notion.so]][Notion-url] _(free tier)_
@@ -141,16 +141,48 @@ To get a copy of the project up and running follow the steps below.
     gcloud services enable run.googleapis.com --project=$PROJECT_ID
     gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
     gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
+    gcloud services enable iam.googleapis.com --project=$PROJECT_ID
+    gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
     ```
 
-6. Deploy infrastructure on Google Cloud.
+6. Unset any previous Google credentials set.
+
+    ```shell
+    unset GOOGLE_CREDENTIALS  
+    gcloud auth application-default login --no-launch-browser 
+    ```
+
+7. Create a service account to run OpenTofu with.
+
+    ```shell
+    export USER_ACCOUNT_ID=`gcloud config get core/account`
+    export TOFU_SERVICE_ACCOUNT=$(echo var.sa_tofu | tofu console | sed 's/"//g')
+
+    gcloud iam service-accounts create $TOFU_SERVICE_ACCOUNT \
+        --display-name "OpenTofu SA" \
+        --description "Used when running OpenTofu commands" \
+        --project $PROJECT_ID
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --role "roles/editor" \
+        --role "roles/secretmanager.admin"
+
+    gcloud iam service-accounts add-iam-policy-binding \
+        $TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
+        --project $PROJECT_ID \
+        --member "user:$USER_ACCOUNT_ID" \
+        --role "roles/iam.serviceAccountTokenCreator" 
+    ```
+
+8. Deploy infrastructure on Google Cloud.
 
     ```shell
     tofu apply
     # Enter a value: yes
     ```
 
-7. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment.
+9. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment.
 
     ```shell
     gcloud functions add-invoker-policy-binding $(tofu output function_name | sed 's/"//g') \
@@ -161,7 +193,7 @@ To get a copy of the project up and running follow the steps below.
 
     > See <https://github.com/hashicorp/terraform-provider-google/issues/15264>
 
-8. _(Optional, recommended)_ Save state file to a remote backend.
+10. _(Optional, recommended)_ Save state file to a remote backend.
     <details><summary><strong>Steps</strong></summary>
 
     1. Create a `backend.tf` file, and update contents with:
@@ -171,6 +203,7 @@ To get a copy of the project up and running follow the steps below.
             backend "gcs" {
               bucket = "<output from shell command 'tofu output bucket_tfstate'>"
               prefix = "terraform/state"
+              impersonate_service_account = "<output from shell command 'tofu output sa_email_tofu'>"
             }
         }
         ```
@@ -178,8 +211,7 @@ To get a copy of the project up and running follow the steps below.
     2. Migrate state file to remote backend.
 
         ```shell
-        tofu init
-        # Enter a value: yes
+        tofu init -migrate-state
         ```
 
     3. Remove leftover local state files.
@@ -496,7 +528,7 @@ Tucared - <1v8ufskf@duck.com>
 [Notion account]: https://www.notion.so/signup
 [Google Cloud billing account]: https://cloud.google.com/billing/docs/how-to/create-billing-account
 [gcloud CLI]: https://cloud.google.com/sdk/docs/install
-[OpenTofu]: https://github.com/opentofu/opentofu/releases
+[OpenTofu]: https://github.com/opentofu/opentofu/tree/main
 
 [Notion public template database]: https://adjoining-heath-cac.notion.site/ae50475a83bd40edbced0544315364fa?v=d212f11f17c646cc862983622904c8bb
 [Setup an internal Notion integration]: https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up

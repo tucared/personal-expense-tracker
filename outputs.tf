@@ -52,3 +52,8 @@ output "sa_email_cloud_scheduler" {
   description = "Email of service account used by Cloud Scheduler when invoking Cloud Function"
   value       = google_service_account.cloud_scheduler.email
 }
+
+output "sa_email_tofu" {
+  description = "Email of service account used whe running tofu commands"
+  value       = local.tofu_service_account
+}
