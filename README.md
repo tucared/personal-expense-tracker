@@ -76,8 +76,7 @@ The main requirements for the project are:
 
 ### Built With
 
-- **[OpenTofu]**
-  - simple-icons issue [#9712] blocks adding badge on [Badges 4 README.md Profile]
+- [![OpenTofu][OpenTofu.org]][OpenTofu-url]
 - [![Python][Python.org]][Python-url]
 - [![Notion][Notion.so]][Notion-url] _(free tier)_
 - [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url] _(free tier)_
@@ -518,6 +517,8 @@ Tucared - <1v8ufskf@duck.com>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[OpenTofu.org]: https://img.shields.io/badge/OpenTofu-FFDA18?style=for-the-badge&logo=opentofu&logoColor=black
+[OpenTofu-url]: https://opentofu.org/
 [Python.org]: https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue
 [Python-url]: https://www.python.org/
 [Notion.so]: https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white
@@ -525,7 +526,6 @@ Tucared - <1v8ufskf@duck.com>
 [Console.cloud.google.com]: https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white
 [Google-Cloud-url]: https://console.cloud.google.com
 
-[Badges 4 README.md Profile]: https://github.com/alexandresanlim/Badges4-README.md-Profile
 [Notion account]: https://www.notion.so/signup
 [Google Cloud billing account]: https://cloud.google.com/billing/docs/how-to/create-billing-account
 [gcloud CLI]: https://cloud.google.com/sdk/docs/install
@@ -545,5 +545,4 @@ Tucared - <1v8ufskf@duck.com>
 [Infracost]: https://github.com/infracost/infracost/tree/master
 [SimpleFin Bridge]: https://beta-bridge.simplefin.org/
 
-[#9712]: https://github.com/simple-icons/simple-icons/issues/9712
 [Infracost specifies]: https://www.infracost.io/docs/supported_resources/google/
