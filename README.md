@@ -93,7 +93,7 @@ To get a copy of the project up and running follow the steps below.
 - A [Notion account]
 - A [Google Cloud billing account]
 - Have [gcloud CLI] installed
-- Have [OpenTofu] installed, using version specified in [.opentofu-version](.opentofu-version)
+- Have [OpenTofu] installed
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
