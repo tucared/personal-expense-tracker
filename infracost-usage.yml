@@ -13,21 +13,41 @@ resource_usage:
   google_secret_manager_secret_version.notion:
     monthly_access_operations: 720 # By default, 1 per hour
 
-  # TODO: Open issue to set monthly_egress_data_transfer_gb to 0
   google_storage_bucket.tf_state:
     storage_gb: 0.000015 # 15 KB
     monthly_class_a_operations: 10 # 1 per tofu command
     monthly_class_b_operations: 10 # 1 per tofu command
     monthly_data_retrieval_gb: 0.00015 # storage_gb * monthly_class_a_operations
+    # See https://github.com/infracost/infracost/issues/2773
+    monthly_egress_data_transfer_gb:
+      same_continent: 0
+      worldwide: 0
+      asia: 0
+      china: 0
+      australia: 0
 
   google_storage_bucket.cloud_function:
     storage_gb: 0.000000026 # 26 B
     monthly_class_a_operations: 720 # By default, 1 per hour
     monthly_class_b_operations: 720 # By default, 1 per hour
     monthly_data_retrieval_gb: 0.00001872 # storage_gb * monthly_class_a_operations
+    # See https://github.com/infracost/infracost/issues/2773
+    monthly_egress_data_transfer_gb:
+      same_continent: 0
+      worldwide: 0
+      asia: 0
+      china: 0
+      australia: 0
 
   google_storage_bucket.cloud_function_source:
     storage_gb: 0.0000035 # 3.5 KB
     monthly_class_a_operations: 10 # 1 per tofu command
     monthly_class_b_operations: 10 # 1 per tofu command
     monthly_data_retrieval_gb: 0.000035 # storage_gb * monthly_class_a_operations
+    # See https://github.com/infracost/infracost/issues/2773
+    monthly_egress_data_transfer_gb:
+      same_continent: 0
+      worldwide: 0
+      asia: 0
+      china: 0
+      australia: 0
