@@ -250,23 +250,42 @@ You have 2 options for cleaning up deployment:
 ## Usage
 
 - The **User** manually logs each expense as a [Page] in a [Notion database] with some metadata.
-- Either the User, or the **Cloud Scheduler**, calls a private **HTTP Cloud Function** to extract new and updated Pages from aforementioned Notion database, then loads them into a **BigQuery** native table.
+- Either the User, or the **Cloud Scheduler**, invokes a private **HTTP Cloud Function** to extract either all or new and updated Pages from aforementioned Notion database, then loads them into a **BigQuery** native table.
 - **TODO**: An **[Evidence.dev]** IAM-protected static website provides visualisations, built each time BigQuery table data is updated.
 
 ### Invoking function
 
 Function can be triggered either by invoking it directly or by force running the scheduler that invokes it:
 
-```shell
-# Calling function directly
-curl -i -X POST $(tofu output function_uri | sed 's/"//g') \
-    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+- Calling function directly (append strategy)
 
-# Force running scheduler
-gcloud scheduler jobs run $(tofu output scheduler_name | sed 's/"//g') \
-    --project=$PROJECT_ID \
-    --location=$(tofu output scheduler_region | sed 's/"//g')
-```
+    ```shell
+    curl -i -X POST $(tofu output function_uri | sed 's/"//g') \
+        -H "Authorization: bearer $(gcloud auth print-identity-token)"
+    ```
+
+- Calling function directly (full refresh strategy)
+
+    ```shell
+    curl -i -X POST $(tofu output function_uri | sed 's/"//g')\?full_refresh=true \
+        -H "Authorization: bearer $(gcloud auth print-identity-token)"
+    ```
+
+- Force running scheduler (append strategy)
+
+    ```shell
+    gcloud scheduler jobs run $(tofu output scheduler_append_name | sed 's/"//g') \
+        --project=$PROJECT_ID \
+        --location=$(tofu output scheduler_append_region | sed 's/"//g')
+    ```
+
+- Force running scheduler (full refresh strategy)
+  
+    ```shell
+    gcloud scheduler jobs run $(tofu output scheduler_full_refresh_name | sed 's/"//g') \
+        --project=$PROJECT_ID \
+        --location=$(tofu output scheduler_full_refresh_region | sed 's/"//g')
+    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -318,25 +337,41 @@ sequenceDiagram
     participant GCSw as Cloud Storage<br>(website)
     end
 
-    U->>N: Logs expenses
+    U->>N: Logs in
 
-    rect rgb(0, 255, 255)
-        note right of U: Extract and load pipeline
-        alt manual
-            U-)+CF: Triggers
-        else according to schedule
-            CS-)+CF: Triggers
-        end
-        CF->>+GCS: Fetches last query time
-        GCS--)-CF: Returns last query time
-        CF->>+N: Queries new and edited expenses since last query
-        N--)-CF: Returns new and edited expenses
-        CF->>GCS: Updates query time <br>with timestamp
-        opt if expenses returned
-            CF->>-BQ: Appends expenses to table
-            BQ-->+CR: Triggers Evidence<br>website build
-            CR--)-GCSw: Stores static website files
-        end
+    U->>N: Adds or modifies an expense
+    opt
+        U-)CF: Forces run on append strategy
+    end
+    loop Hourly
+        CS-)+CF: Triggers function<br>on append strategy
+    end
+    CF->>+GCS: Fetches last<br>query timestamp
+    GCS--)-CF: Returns last<br>query timestamp
+    CF->>+N: Queries new and edited expenses since last query
+    N--)-CF: Returns new and edited expenses
+    CF->>GCS: Updates last<br>query timestamp
+    opt if new or edited expenses returned
+        CF->>-BQ: Appends expenses to table
+    end
+
+    U->>N: Deletes an expense
+    opt
+        U-)+CF: Forces run on full refresh strategy
+    end
+    loop Daily
+        CS-)+CF: Triggers function<br>on full refresh strategy
+    end
+    CF->>+N: Queries all expenses
+    N--)-CF: Returns all expenses
+    CF->>GCS: Updates last<br>query timestamp
+    opt if any expense returned
+        CF->>-BQ: Overwrite all expenses to table
+    end
+
+    loop On BigQuery table update
+        BQ-->+CR: Triggers Evidence<br>website build
+        CR--)-GCSw: Stores static<br><website files
     end
 
     U->>GCSw: Queries reporting website
@@ -348,9 +383,6 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Full refresh
-  - [ ] Add option to perform full table refresh on function
-  - [ ] Add scheduler to perform full refresh trigger
 - [ ] Add visualisation using [Evidence.dev]
 - [ ] Add [SimpleFIN Bridge] for automated transaction collection
 - [ ] Add budgeting feature (target versus actual)
@@ -373,7 +405,7 @@ Follow steps below to create another infrastructure and running function locally
 
 1. Duplicate your production `terraform.tfvars` to a `dev.tfvars`.
 
-   1. Set **cloud_scheduler_parameters.count** value to 0. This prevents Cloud Scheduler from triggering the _deployed_ function.
+   1. Set **cloud_schedulers_parameters.paused** value to `true`. This prevents Cloud Schedulers from triggering the _deployed_ function.
 
    2. Set **project_id** to another value for your _development_ infrastructure.
 

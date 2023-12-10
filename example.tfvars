@@ -17,11 +17,17 @@ cloud_function_parameters = {
   runtime    = "python311"
   source     = "cloud-functions/notion-to-bigquery"
 }
-cloud_scheduler_parameters = {
-  count    = 1
-  name     = "cloud-function-invoker"
-  schedule = "0 * * * *"
-  region   = "europe-west6"
+cloud_schedulers_parameters = {
+  paused = false
+  region = "europe-west6"
+  append_scheduler = {
+    name     = "cloud-function-invoker-append"
+    schedule = "0 * * * *" # every hour
+  }
+  full_refresh_scheduler = {
+    name     = "cloud-function-invoker-full-refresh"
+    schedule = "30 0 * * *" # every day at 00:30 UTC
+  }
 }
 gsm_notion_secret_name        = "NOTION_INTEGRATION_SECRET"
 region                        = "europe-west9"

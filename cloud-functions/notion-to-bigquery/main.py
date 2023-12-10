@@ -38,8 +38,14 @@ DESTINATION_BLOB_NAME = os.environ["DESTINATION_BLOB_NAME_STATE_FILE"]
 
 @functions_framework.http
 def insert_notion_pages_to_bigquery(request):
+    # Refresh type is used to determine whether to refresh all pages or new and updated
+    full_refresh = request.args.get("full_refresh")
+
     # Get last update time from Cloud Storage
-    last_update_time = read_text_file_from_gcs(BUCKET_NAME, DESTINATION_BLOB_NAME)
+    if full_refresh == "true":
+        last_update_time = None
+    else:
+        last_update_time = read_text_file_from_gcs(BUCKET_NAME, DESTINATION_BLOB_NAME)
 
     # Query Notion pages edited since that time
     os.makedirs(os.path.dirname(DATA_FILE_PATH), exist_ok=True)
@@ -62,6 +68,14 @@ def insert_notion_pages_to_bigquery(request):
         # BigQuery load job config
         job_config = bigquery.LoadJobConfig()
         job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
+
+        # Overwrite all table data if full refresh, otherwise append
+        if full_refresh == "true":
+            job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+        else:
+            job_config.write_disposition = bigquery.WriteDisposition.WRITE_APPEND
+
+        # If table exists, use its schema, otherwise autodetect
         try:
             table = bigquery_client.get_table(TABLE_ID)
             job_config.schema = table.schema

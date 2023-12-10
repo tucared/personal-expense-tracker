@@ -160,13 +160,13 @@ resource "google_service_account" "cloud_scheduler" {
 # Missing roles/run.invoker resource
 # https://github.com/hashicorp/terraform-provider-google/issues/15264
 
-resource "google_cloud_scheduler_job" "this" {
-  count = var.cloud_scheduler_parameters.count
+resource "google_cloud_scheduler_job" "append" {
+  paused = var.cloud_schedulers_parameters.paused
 
-  name        = var.cloud_scheduler_parameters.name
-  description = "Cloud Function invoker"
-  schedule    = var.cloud_scheduler_parameters.schedule
-  region      = var.cloud_scheduler_parameters.region
+  name        = var.cloud_schedulers_parameters.append_scheduler.name
+  description = "Cloud Function invoker, appending new items to BigQuery"
+  schedule    = var.cloud_schedulers_parameters.append_scheduler.schedule
+  region      = var.cloud_schedulers_parameters.region
 
   http_target {
     http_method = "POST"
@@ -174,6 +174,26 @@ resource "google_cloud_scheduler_job" "this" {
 
     oidc_token {
       service_account_email = google_service_account.cloud_scheduler.email
+    }
+  }
+}
+
+resource "google_cloud_scheduler_job" "full_refresh" {
+  paused = var.cloud_schedulers_parameters.paused
+
+  name        = var.cloud_schedulers_parameters.full_refresh_scheduler.name
+  description = "Cloud Function invoker, refreshing all items in BigQuery"
+  schedule    = var.cloud_schedulers_parameters.full_refresh_scheduler.schedule
+  region      = var.cloud_schedulers_parameters.region
+
+  http_target {
+    http_method = "POST"
+    # Query param to trigger full refresh
+    uri = "${google_cloudfunctions2_function.this.service_config[0].uri}/?full_refresh=true"
+
+    oidc_token {
+      service_account_email = google_service_account.cloud_scheduler.email
+      audience              = google_cloudfunctions2_function.this.service_config[0].uri
     }
   }
 }

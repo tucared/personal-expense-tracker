@@ -33,14 +33,24 @@ output "function_uri" {
   value       = google_cloudfunctions2_function.this.service_config[0].uri
 }
 
-output "scheduler_name" {
-  description = "Name of Cloud Scheduler"
-  value       = length(google_cloud_scheduler_job.this) > 0 ? google_cloud_scheduler_job.this[0].name : "N/A"
+output "scheduler_append_name" {
+  description = "Name of Cloud Scheduler to trigger Cloud Function with append strategy"
+  value       = google_cloud_scheduler_job.append.name
 }
 
-output "scheduler_region" {
-  description = "Region of Cloud Scheduler"
-  value       = length(google_cloud_scheduler_job.this) > 0 ? google_cloud_scheduler_job.this[0].region : "N/A"
+output "scheduler_append_region" {
+  description = "Region of Cloud Scheduler to trigger Cloud Function with append strategy"
+  value       = google_cloud_scheduler_job.append.region
+}
+
+output "scheduler_full_refresh_name" {
+  description = "Name of Cloud Scheduler to trigger Cloud Function with full strategy"
+  value       = google_cloud_scheduler_job.full_refresh.name
+}
+
+output "scheduler_full_refresh_region" {
+  description = "Region of Cloud Scheduler to trigger Cloud Function with full strategy"
+  value       = google_cloud_scheduler_job.full_refresh.region
 }
 
 output "sa_email_cloud_function" {

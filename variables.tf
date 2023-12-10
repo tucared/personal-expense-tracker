@@ -52,18 +52,30 @@ variable "cloud_function_parameters" {
   }
 }
 
-variable "cloud_scheduler_parameters" {
+variable "cloud_schedulers_parameters" {
   type = object({
-    count    = number
-    name     = string
-    schedule = string
-    region   = string
+    paused = bool
+    region = string
+    append_scheduler = object({
+      name     = string
+      schedule = string
+    })
+    full_refresh_scheduler = object({
+      name     = string
+      schedule = string
+    })
   })
   default = {
-    count    = 1
-    name     = "cloud-function-invoker"
-    schedule = "0 * * * *"
-    region   = "europe-west6"
+    paused = false
+    region = "europe-west6"
+    append_scheduler = {
+      name     = "cloud-function-invoker-append"
+      schedule = "0 * * * *" # every hour
+    }
+    full_refresh_scheduler = {
+      name     = "cloud-function-invoker-full-refresh"
+      schedule = "30 0 * * *" # every day at 00:30 UTC
+    }
   }
 }
 
