@@ -4,7 +4,7 @@
 # Variables to set (no default defined)
 notion_database_id  = "xxxxxxxxxxxxxx"
 notion_secret_value = "secret_XXXXXX"
-project_id          = "test-project-opentofu"
+project_id          = "notion-budget-tracker"
 
 # Variables that contain defaults
 bq_dataset_id          = "budget"

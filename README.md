@@ -117,32 +117,34 @@ To get a copy of the project up and running follow the steps below.
     tofu init
     ```
 
-5. Create a billing-enabled Google project.
+5. Create a billing-enabled Google Cloud project.
+   1. Create project based on **PROJECT_ID** variable from `terraform.tfvars` file
 
-    ```shell
-    # Load PROJECT_ID variable from `terraform.tfvars` file
-    export PROJECT_ID=$(echo var.project_id | tofu console | sed 's/"//g')
+        ```shell
+        export PROJECT_ID=$(echo var.project_id | tofu console | sed 's/"//g')
+        gcloud projects create $PROJECT_ID
+        ```
 
-    # Create project
-    gcloud projects create $PROJECT_ID
+   2. Link billing account to project
+        > **BILLING_ACCOUNT_ID** can be found using `gcloud beta billing accounts list`
 
-    # Set BILLING_ACCOUNT_ID variable
-    gcloud beta billing accounts list
-    export BILLING_ACCOUNT_ID=<ACCOUNT_ID from previous command>
+        ```shell
+        export BILLING_ACCOUNT_ID=...
+        gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
+        ```
 
-    # Link billing account to project
-    gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
+   3. Enable relevant APIs
 
-    # Enable relevant APIs
-    gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
-    gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
-    gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
-    gcloud services enable run.googleapis.com --project=$PROJECT_ID
-    gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
-    gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-    gcloud services enable iam.googleapis.com --project=$PROJECT_ID
-    gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
-    ```
+        ```shell
+        gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+        gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
+        gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
+        gcloud services enable run.googleapis.com --project=$PROJECT_ID
+        gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
+        gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
+        gcloud services enable iam.googleapis.com --project=$PROJECT_ID
+        gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
+        ```
 
 6. Unset any previous Google credentials set.
 
@@ -195,7 +197,7 @@ To get a copy of the project up and running follow the steps below.
 10. _(Optional, recommended)_ Save state file to a remote backend.
     <details><summary><strong>Steps</strong></summary>
 
-    1. Create a `backend.tf` file, and update contents with:
+    1. Create a `backend.tf` file containing the following:
 
         ```terraform
         terraform {
@@ -407,9 +409,9 @@ Follow steps below to create another infrastructure and running function locally
 
    1. Set **cloud_schedulers_parameters.paused** value to `true`. This prevents Cloud Schedulers from triggering the _deployed_ function.
 
-   2. Set **project_id** to another value for your _development_ infrastructure.
+   2. Set **project_id** to another value for your _development_ Google Cloud project.
 
-2. If you use a remote backend in production, comment all contents from the `backend.tf` file.
+2. If you have a `backend.tf` file, comment all its contents while working on the _development_ infrastructure.
 
 3. Initialise OpenTofu.
 
@@ -417,10 +419,11 @@ Follow steps below to create another infrastructure and running function locally
     tofu init
     ```
 
-4. Create Google Cloud project the same way that step 5 from [Installation](#installation) while changing first command to:
+4. Create Google Cloud project the same way that step 5 from [Installation](#installation) while changing first step to:
 
     ```shell
     export PROJECT_ID=$(echo var.project_id | tofu console -var-file=dev.tfvars | sed 's/"//g')
+    gcloud projects create $PROJECT_ID
     ```
 
 5. Deploy new infrastructure on Google Cloud.
@@ -430,10 +433,10 @@ Follow steps below to create another infrastructure and running function locally
     # Enter a value: yes
     ```
 
-6. Download service account key file.
+6. Download service account key file that will be used by Cloud Function locally
 
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=secrets/sa-private-key.json
+    export GOOGLE_APPLICATION_CREDENTIALS_PATH=secrets/sa-cloud-function-private-key.json
     gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
         --iam-account=$(tofu output sa_email_cloud_function | sed 's/"//g')
     ```
@@ -462,7 +465,7 @@ Follow steps below to create another infrastructure and running function locally
         --debug
     ```
 
-    > Local source changes are automatically loaded to server, meaning next invokation will be based on latest source.
+    > Source changes are automatically loaded to local server, meaning you can code the function and invoking its latest version without restarting the local server.
 
 9. Open another shell, and invoke function locally.
 
@@ -482,7 +485,7 @@ Follow steps below to create another infrastructure and running function locally
 
     - Eventually uncomment contents from the `backend.tf` file.
   
-    - Initialise `tofu` with remote backend.
+    - Initialising `tofu` back to _production_ project.
 
         ```shell
         tofu init
