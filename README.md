@@ -479,8 +479,8 @@ Follow steps below to create another infrastructure and running function locally
 
         ```shell
         tofu destroy # or: gcloud projects delete $PROJECT_ID
-        rm -rf terraform.tfstate
-        rm -rf terraform.tfstate.backup
+        rm -rf dev.tfstate
+        rm -rf dev.tfstate.backup
         ```
 
     - Eventually uncomment contents from the `backend.tf` file.
