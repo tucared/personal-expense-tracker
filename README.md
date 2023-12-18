@@ -156,7 +156,7 @@ To get a copy of the project up and running follow the steps below.
 7. Create a service account to run OpenTofu with.
 
     ```shell
-    export USER_ACCOUNT_ID=`gcloud config get core/account`
+    export USER_ACCOUNT_ID=$(echo gcloud config get core/account)
     export TOFU_SERVICE_ACCOUNT=$(echo var.sa_tofu | tofu console | sed 's/"//g')
 
     gcloud iam service-accounts create $TOFU_SERVICE_ACCOUNT \
@@ -166,6 +166,7 @@ To get a copy of the project up and running follow the steps below.
 
     gcloud projects add-iam-policy-binding $PROJECT_ID \
         --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
         --role "roles/editor" \
         --role "roles/secretmanager.admin"
 
