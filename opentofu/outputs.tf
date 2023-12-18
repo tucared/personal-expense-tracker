@@ -1,8 +1,3 @@
-output "bucket_tfstate" {
-  description = "Name of bucket where tfstate is stored"
-  value       = google_storage_bucket.tf_state.name
-}
-
 output "bucket_name" {
   description = "Name of bucket containing cloud function state file"
   value       = google_storage_bucket.cloud_function.name
@@ -31,6 +26,11 @@ output "function_region" {
 output "function_uri" {
   description = "URI of deployed Cloud Function"
   value       = google_cloudfunctions2_function.this.service_config[0].uri
+}
+
+output "function_env_vars" {
+  description = "Environment variables of deployed Cloud Function"
+  value       = google_cloudfunctions2_function.this.service_config[0].environment_variables
 }
 
 output "scheduler_append_name" {

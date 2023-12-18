@@ -2,21 +2,14 @@
 __pycache__
 
 # Local Cloud Function testing
-data/
-secrets/
+cloud-function/data/
+cloud-function/secret/
 
 # Infracost files
 .infracost/
 
-# OpenTofu files
-.terraform/
+# Terragrun/OpenTofu files
+.terragrunt-cache/
 .terraform.lock.hcl
-
-# OpenTofu state and variables files
-terraform.tfstate*
-.terraform.tfstate.lock.info
-*.tfvars
-!example.tfvars
-
-# OpenTofu backend configuration
-backend.tf
+terragrunt/*/
+!terragrunt/example

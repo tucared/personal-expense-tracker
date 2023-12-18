@@ -1,0 +1,18 @@
+destination_state_file: last_update_time.txt
+
+cloud_function_parameters:
+  entrypoint: notion_to_bigquery
+  name: notion-to-bigquery
+  runtime: python311
+  source: ../cloud-function/source
+
+cloud_schedulers_parameters:
+  append_scheduler:
+    name: cloud-function-invoker-append
+
+  full_refresh_scheduler:
+    name: cloud-function-invoker-full-refresh
+
+gsm_notion_secret_name: NOTION_INTEGRATION_SECRET
+sa_account_id_cloud_function: sa-cloud-function
+sa_account_id_cloud_scheduler: sa-cloud-scheduler

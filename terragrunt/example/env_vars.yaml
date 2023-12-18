@@ -1,0 +1,27 @@
+# Description: This file contains the environment variables used by the terragrunt configuration files.
+
+# Mandatory variables
+# -------------------
+project_id: GLOBALLY_UNIQUE_PROJECT_ID
+notion_database_id: xxxxxxxxxxxxxx
+notion_secret_value: secret_XXXXXX
+
+# Optional variables
+# ------------------
+region: europe-west9
+zone: europe-west9-a
+sa_tofu: tofu-sa
+
+cloud_schedulers_parameters:
+  paused: false
+  region: europe-west6
+
+  append_scheduler:
+    schedule: "0 * * * *" # every hour
+
+  full_refresh_scheduler:
+    schedule: "30 0 * * *" # every day at 00:30 UTC
+
+bq_dataset_id: budget
+bq_location: EU
+bq_notion_table_name: raw_transactions__duplicated

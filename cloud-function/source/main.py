@@ -29,7 +29,7 @@ NOTION_INTEGRATION_SECRET = access_secret_version(
 )
 
 # Path to file containing Notion pages to append to BigQuery table
-DATA_FILE_PATH = "data/notion_pages.jsonl"
+DATA_FILE_PATH = os.environ.get("DATA_FILE_PATH", "data/notion_pages.jsonl")
 
 # Information about state file containing last update time
 BUCKET_NAME = os.environ["BUCKET_NAME"]
@@ -37,7 +37,7 @@ DESTINATION_BLOB_NAME = os.environ["DESTINATION_BLOB_NAME_STATE_FILE"]
 
 
 @functions_framework.http
-def insert_notion_pages_to_bigquery(request):
+def notion_to_bigquery(request):
     # Refresh type is used to determine whether to refresh all pages or new and updated
     full_refresh = request.args.get("full_refresh")
 

@@ -34,6 +34,13 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+            <ul>
+                <li><a href="#setup-your-notion-database">Setup your Notion database</a></li>
+                <li><a href="#setup-your-local-repository">Setup your local repository</a></li>
+                <li><a href="#create-a-billing-enabled-google-cloud-project">Create a billing-enabled Google Cloud project</a></li>
+                <li><a href="#setup-account-impersonation-when-running-terragruntopentofu">Setup account impersonation when running Terragrunt/OpenTofu</a></li>
+                <li><a href="#deploy-your-infrastructure">Deploy your infrastructure</a></li>
+            </ul>
         <li><a href="#clean-up">Clean-up</a></li>
       </ul>
     </li>
@@ -49,8 +56,14 @@
     <li>
         <a href="#local-development">Local development</a>
         <ul>
-            <li><a href="#run-function-locally">Run function locally</a></li>
-            <li><a href="#watch-costs-using-infracost">Watch costs using Infracost</a></li>
+            <li><a href="#cloud-function">Cloud Function</a></li>
+            <ul>
+                <li><a href="#running-cloud-function-locally-with-functions-framework">Running Cloud Function locally with `functions-framework`</a></li>
+            </ul>
+            <li><a href="#cloud-infrastructure">Cloud infrastructure</a></li>
+            <ul>
+                <li><a href="#watch-costs-using-infracost">Watch costs using Infracost</a></li>
+            </ul>
         </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
@@ -77,6 +90,7 @@ The main requirements for the project are:
 ### Built With
 
 - [![OpenTofu][OpenTofu.org]][OpenTofu-url]
+- [![Terragrunt][Terragrunt.io]][Terragrunt-url]
 - [![Python][Python.org]][Python-url]
 - [![Notion][Notion.so]][Notion-url] _(free tier)_
 - [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url] _(free tier)_
@@ -94,70 +108,83 @@ To get a copy of the project up and running follow the steps below.
 - A [Google Cloud billing account]
 - Have [gcloud CLI] installed
 - Have [OpenTofu] installed
+- Have [Terragrunt] installed
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Installation
 
+#### Setup your Notion database
+
 1. Duplicate this [Notion public template database] into a Workspace you own.
 
 2. [Setup an internal Notion integration] with **Read content** capability, and [add it as a connection to your database].
 
-3. Duplicate `example.tfvars` file into a `terraform.tfvars` one, and modify following variables:
-   - **notion_database_id**: The globally unique identifier for the Notion database created step 1.
-     > See [how to retrieve a database ID].
-   - **notion_secret_value**: The unique internal integration token for the Notion integration created step 2.
-     > See [how to retrieve an integration token][Setup an internal Notion integration].
+#### Setup your local repository
+
+1. Duplicate the `terragrunt/example` folder and rename it to `terragrunt/prod`.
+
+     ```shell
+     cp -a terragrunt/example terragrunt/prod
+     ```
+
+2. Edit values from `terragrunt/prod/env_vars.yaml` as followed:
    - **project_id**: A globally unique identifier for your project.
      > See [how to pick a project ID].
+   - **notion_database_id**: The globally unique identifier for the Notion database created in step 1.
+     > See [how to retrieve a database ID].
+   - **notion_secret_value**: The unique internal integration token for the Notion integration created in step 2.
+     > See [how to retrieve an integration token][Setup an internal Notion integration].
 
-4. Initialise OpenTofu.
+#### Create a billing-enabled Google Cloud project
+
+1. Set billing account ID variable in shell
+   > **BILLING_ACCOUNT_ID** can be found using `gcloud beta billing accounts list`
+
+   ```shell
+   export BILLING_ACCOUNT_ID=...
+   ```
+
+2. Create project, link billing account and enable relevant APIs
+
+   ```shell
+   cd terragrunt/prod
+
+   export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
+   gcloud projects create $PROJECT_ID
+   gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
+
+   gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+   gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
+   gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
+   gcloud services enable run.googleapis.com --project=$PROJECT_ID
+   gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
+   gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
+   gcloud services enable iam.googleapis.com --project=$PROJECT_ID
+   gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
+   ```
+
+#### Setup account impersonation when running Terragrunt/OpenTofu
+
+1. Unset any previous Google credentials set.
 
     ```shell
-    tofu init
+    unset GOOGLE_CREDENTIALS
+    gcloud auth application-default login --no-launch-browser
     ```
 
-5. Create a billing-enabled Google Cloud project.
-   1. Create project based on **PROJECT_ID** variable from `terraform.tfvars` file
-
-        ```shell
-        export PROJECT_ID=$(echo var.project_id | tofu console | sed 's/"//g')
-        gcloud projects create $PROJECT_ID
-        ```
-
-   2. Link billing account to project
-        > **BILLING_ACCOUNT_ID** can be found using `gcloud beta billing accounts list`
-
-        ```shell
-        export BILLING_ACCOUNT_ID=...
-        gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
-        ```
-
-   3. Enable relevant APIs
-
-        ```shell
-        gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
-        gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
-        gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
-        gcloud services enable run.googleapis.com --project=$PROJECT_ID
-        gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
-        gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-        gcloud services enable iam.googleapis.com --project=$PROJECT_ID
-        gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
-        ```
-
-6. Unset any previous Google credentials set.
+2. Create a service account used for impersonation.
 
     ```shell
-    unset GOOGLE_CREDENTIALS  
-    gcloud auth application-default login --no-launch-browser 
+    cd terragrunt/prod
     ```
 
-7. Create a service account to run OpenTofu with.
+    <details><summary><b>Long shell command to execute</b></summary>
 
     ```shell
-    export USER_ACCOUNT_ID=$(echo gcloud config get core/account)
-    export TOFU_SERVICE_ACCOUNT=$(echo var.sa_tofu | tofu console | sed 's/"//g')
+    export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
+    export TOFU_SERVICE_ACCOUNT=$(grep "sa_tofu" env_vars.yaml | awk '{print $2}' | tr -d '"')
+    export USER_ACCOUNT_ID=$(echo `gcloud config get core/account`)
 
     gcloud iam service-accounts create $TOFU_SERVICE_ACCOUNT \
         --display-name "OpenTofu SA" \
@@ -167,24 +194,59 @@ To get a copy of the project up and running follow the steps below.
     gcloud projects add-iam-policy-binding $PROJECT_ID \
         --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
         --project $PROJECT_ID \
-        --role "roles/editor" \
+        --role "roles/editor"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
         --role "roles/secretmanager.admin"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/bigquery.dataEditor"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/iam.serviceAccountCreator"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/resourcemanager.projectIamAdmin"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/cloudfunctions.developer"
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/cloudscheduler.admin"
 
     gcloud iam service-accounts add-iam-policy-binding \
         $TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
         --project $PROJECT_ID \
         --member "user:$USER_ACCOUNT_ID" \
-        --role "roles/iam.serviceAccountTokenCreator" 
+        --role "roles/iam.serviceAccountTokenCreator"
     ```
 
-8. Deploy infrastructure on Google Cloud.
+    </details>
 
-    ```shell
-    tofu apply
-    # Enter a value: yes
-    ```
+#### Deploy your infrastructure
 
-9. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment.
+```shell
+terragrunt apply
+
+# Remote state GCS bucket ...-tfstate does not exist [...]. Would you like Terragrunt to create it? (y/n) y
+
+# Do you want to perform these actions?
+# Enter a value: yes
+```
+
+1. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment.
 
     ```shell
     gcloud functions add-invoker-policy-binding $(tofu output function_name | sed 's/"//g') \
@@ -195,36 +257,6 @@ To get a copy of the project up and running follow the steps below.
 
     > See <https://github.com/hashicorp/terraform-provider-google/issues/15264>
 
-10. _(Optional, recommended)_ Save state file to a remote backend.
-    <details><summary><strong>Steps</strong></summary>
-
-    1. Create a `backend.tf` file containing the following:
-
-        ```terraform
-        terraform {
-            backend "gcs" {
-              bucket = "<output from shell command 'tofu output bucket_tfstate'>"
-              prefix = "terraform/state"
-              impersonate_service_account = "<output from shell command 'tofu output sa_email_tofu'>"
-            }
-        }
-        ```
-
-    2. Migrate state file to remote backend.
-
-        ```shell
-        tofu init -migrate-state
-        ```
-
-    3. Remove leftover local state files.
-
-        ```shell
-        rm -rf terraform.tfstate
-        rm -rf terraform.tfstate.backup
-        ```
-
-    </details>
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Clean-up
@@ -234,7 +266,7 @@ You have 2 options for cleaning up deployment:
 - Either remove all provisionned resources, except for the bucket containing eventual remote state file.
 
     ```shell
-    tofu destroy
+    terragrunt destroy
     # Enter a value: yes
     ```
 
@@ -244,7 +276,8 @@ You have 2 options for cleaning up deployment:
     gcloud projects delete $PROJECT_ID
     # Do you want to continue (Y/n)?: Y
 
-    rm -rf backend.tf
+    rm -rf .terraform.lock.hcl
+    rm -rf .terragrunt-cache 
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -263,31 +296,31 @@ Function can be triggered either by invoking it directly or by force running the
 - Calling function directly (append strategy)
 
     ```shell
-    curl -i -X POST $(tofu output function_uri | sed 's/"//g') \
+    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g') \
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
 - Calling function directly (full refresh strategy)
 
     ```shell
-    curl -i -X POST $(tofu output function_uri | sed 's/"//g')\?full_refresh=true \
+    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g')\?full_refresh=true \
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
 - Force running scheduler (append strategy)
 
     ```shell
-    gcloud scheduler jobs run $(tofu output scheduler_append_name | sed 's/"//g') \
-        --project=$PROJECT_ID \
-        --location=$(tofu output scheduler_append_region | sed 's/"//g')
+    gcloud scheduler jobs run $(terragrunt output scheduler_append_name | sed 's/"//g') \
+        --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
+        --location=$(terragrunt output scheduler_append_region | sed 's/"//g')
     ```
 
 - Force running scheduler (full refresh strategy)
   
     ```shell
-    gcloud scheduler jobs run $(tofu output scheduler_full_refresh_name | sed 's/"//g') \
-        --project=$PROJECT_ID \
-        --location=$(tofu output scheduler_full_refresh_region | sed 's/"//g')
+    gcloud scheduler jobs run $(terragrunt output scheduler_full_refresh_name | sed 's/"//g') \
+        --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
+        --location=$(terragrunt output scheduler_full_refresh_region | sed 's/"//g')
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -297,15 +330,15 @@ Function can be triggered either by invoking it directly or by force running the
 Cloud Function logs:
 
 ```shell
-gcloud functions logs read $(tofu output function_name | sed 's/"//g') \
+gcloud functions logs read $(terragrunt output function_name | sed 's/"//g') \
     --project=$PROJECT_ID \
-    --region=$(tofu output function_region | sed 's/"//g')
+    --region=$(terragrunt output function_region | sed 's/"//g')
 ```
 
 Destination table metadata, including last updated time:
 
 ```shell
-bq show $(tofu output bq_table_id_colon | sed 's/"//g')
+bq show $(terragrunt output bq_table_id_colon | sed 's/"//g')
 ```
 
 Recent additions to destination table:
@@ -318,7 +351,7 @@ bq query --use_legacy_sql=false \
         created_time,
         last_edited_time
     FROM
-        \`$(tofu output bq_table_id | sed 's/"//g')\`
+        \`$(terragrunt output bq_table_id | sed 's/"//g')\`
     ORDER BY last_edited_time DESC
     LIMIT 10;"
 ```
@@ -386,7 +419,6 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add OpenTofu configuration management with [Terragrunt](https://terragrunt.gruntwork.io/)
 - [ ] Add data modelling (local [dbt-core](https://github.com/dbt-labs/dbt-core)?)
 - [ ] Add visualisation with [Evidence.dev]
 - [ ] Add Automated transaction collection with [SimpleFIN Bridge]
@@ -397,72 +429,71 @@ sequenceDiagram
 <!-- HOW TO DEVELOP LOCALLY -->
 ## Local development
 
-### Run function locally
+### Cloud Function
 
-There are 2 ways of testing for function source changes on overall infrastructure:
+Follow steps below to be able to test changes you made to Cloud Function source.
 
-1. Redeploy function based on new source to an existing infrastructure, then [invoke it](#invoking-function).
-2. Deploy a _development_ infrastructure on another project, then run function locally using [`functions-framework`].
+1. (_Optional_) [Setup and deploy](#installation) a development project (e.g., `terragrunt/dev`)
 
-Though the latter option is recommended for most cases, some may prefer the first option if they do not have a deployed production infrastructure and do not wish to setup a local development environment.
+2. Pause Cloud Schedulers to prevent the deployed Cloud Function to be triggered automatically.
 
-Follow steps below to create another infrastructure and running function locally:
-
-1. Duplicate your production `terraform.tfvars` to a `dev.tfvars`.
-
-   1. Set **cloud_schedulers_parameters.paused** value to `true`. This prevents Cloud Schedulers from triggering the _deployed_ function.
-
-   2. Set **project_id** to another value for your _development_ Google Cloud project.
-
-2. If you have a `backend.tf` file, comment all its contents while working on the _development_ infrastructure.
-
-3. Initialise OpenTofu.
-
-    ```shell
-    tofu init
+    ```yaml
+    # terragrunt/dev/env_vars.yaml
+    cloud_schedulers:
+        paused: true
     ```
 
-4. Create Google Cloud project the same way that step 5 from [Installation](#installation) while changing first step to:
-
     ```shell
-    export PROJECT_ID=$(echo var.project_id | tofu console -var-file=dev.tfvars | sed 's/"//g')
-    gcloud projects create $PROJECT_ID
+    cd terragrunt/dev
+    terragrunt apply
     ```
 
-5. Deploy new infrastructure on Google Cloud.
+3. Either:
+   - Edit [Cloud Function source files](/cloud-functions/notion-to-bigquery/), [deploy changes](#deploy-your-infrastructure) and [invoke function](#invoking-function).
+
+   - Run function locally using [`functions-framework`].
+
+4. If you performed step 1., eventually [clean-up your deployment](#clean-up).
+
+#### Running Cloud Function locally with `functions-framework`
+
+1. Navigate to `terragrunt/` subfolder corresponding to test infrastructure.
 
     ```shell
-    tofu apply -var-file=dev.tfvars
-    # Enter a value: yes
+    cd terragrunt/dev
     ```
 
-6. Download service account key file that will be used by Cloud Function locally
+2. Download service account key file used for Cloud Function.
 
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=secrets/sa-cloud-function-private-key.json
+    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../cloud-function/secret/$(echo "${PWD##*/}")_sa-key.json
     gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
-        --iam-account=$(tofu output sa_email_cloud_function | sed 's/"//g')
+        --iam-account=$(terragrunt output sa_email_cloud_function | sed 's/"//g')
     ```
 
-7. [Create a virtual environment and] install dependencies.
+3. [Create a virtual environment and] install dependencies.
 
     ```shell
-    export SOURCE=$(echo var.cloud_function_parameters.source | tofu console | sed 's/"//g')
+    export SOURCE=../../cloud-function/source
     pip install -r $SOURCE/requirements.txt
     pip install -r $SOURCE/requirements.local.txt
     ```
 
-8. Start local server.
+4. Start local server.
 
     ```shell
-    export BQ_TABLE_ID=$(tofu output bq_table_id | sed 's/"//g')
-    export DESTINATION_BLOB_NAME_STATE_FILE=$(echo var.destination_state_file | tofu console | sed 's/"//g')
-    export ENTRYPOINT=$(echo var.cloud_function_parameters.entrypoint | tofu console | sed 's/"//g')
-    export NOTION_DATABASE_ID=$(echo var.notion_database_id | tofu console | sed 's/"//g')
-    export GSM_NOTION_SECRET_NAME=$(echo var.gsm_notion_secret_name | tofu console | sed 's/"//g')
-    export BUCKET_NAME=$(tofu output bucket_name | sed 's/"//g')
+    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../cloud-function/secret/$(echo "${PWD##*/}")_sa-key.json
+    export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
+    export ENTRYPOINT=$(grep "entrypoint" ../common_vars.yaml | awk '{print $2}' | tr -d '"')
+    export SOURCE=../../cloud-function/source
 
-    GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_APPLICATION_CREDENTIALS_PATH) GOOGLE_CLOUD_PROJECT=$(echo $PROJECT_ID) functions-framework \
+    export TG_OUTPUT=$(tg output -json function_env_vars)
+    eval "$(echo "$TG_OUTPUT" | jq -r 'to_entries | .[] | "export \(.key)=\"\(.value)\""')"
+
+    GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_APPLICATION_CREDENTIALS_PATH) \
+    GOOGLE_CLOUD_PROJECT=$(echo $PROJECT_ID) \
+    DATA_FILE_PATH=../../cloud-function/data/$(echo "${PWD##*/}")_notion.json \
+    functions-framework \
         --target=$ENTRYPOINT \
         --source=$SOURCE/main.py \
         --debug
@@ -470,33 +501,21 @@ Follow steps below to create another infrastructure and running function locally
 
     > Source changes are automatically loaded to local server, meaning you can code the function and invoking its latest version without restarting the local server.
 
-9. Open another shell, and invoke function locally.
+5. Open another shell, and invoke function locally.
 
     ```shell
+    # Append strategy
     curl localhost:8080
+
+    # Full refresh strategy
+    curl "localhost:8080?full_refresh=true"
     ```
-
-10. Once done, destroy deployment (or delete project) and revert back to _production_ environment by:
-
-    - Destroying deployment and local state files.
-
-        ```shell
-        tofu destroy # or: gcloud projects delete $PROJECT_ID
-        rm -rf dev.tfstate
-        rm -rf dev.tfstate.backup
-        ```
-
-    - Eventually uncomment contents from the `backend.tf` file.
-  
-    - Initialising `tofu` back to _production_ project.
-
-        ```shell
-        tofu init
-        ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Watch costs using [Infracost]
+### Cloud infrastructure
+
+#### Watch costs using [Infracost]
 
 > [!NOTE]
 > As mentionned earlier, **deploying this infrastructure costs nothing as it leverages Google Cloud Free Tier**.
@@ -506,9 +525,9 @@ Follow steps below to create another infrastructure and running function locally
 When modifying resources, before deploying resources or commiting to repo, it can be insightful to use Infracost to highlight costs spikes:
 
 ```shell
-infracost breakdown --path=. \
-    --usage-file=infracost-usage.yml \
-    --terraform-var-file=terraform.tfvars
+export TG_DIR=terragrunt/dev/
+infracost breakdown --path=$TG_DIR \
+    --usage-file=infracost-usage.yml
 ```
 
 > [!IMPORTANT]
@@ -557,6 +576,9 @@ Tucared - <1v8ufskf@duck.com>
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [OpenTofu.org]: https://img.shields.io/badge/OpenTofu-FFDA18?style=for-the-badge&logo=opentofu&logoColor=black
 [OpenTofu-url]: https://opentofu.org/
+<!-- https://github.com/simple-icons/simple-icons/issues/7650 -->
+[Terragrunt.io]: https://img.shields.io/badge/terragrunt-565AE1?style=for-the-badge&logo=terragrunt
+[Terragrunt-url]: https://terragrunt.gruntwork.io/
 [Python.org]: https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue
 [Python-url]: https://www.python.org/
 [Notion.so]: https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white
@@ -567,7 +589,8 @@ Tucared - <1v8ufskf@duck.com>
 [Notion account]: https://www.notion.so/signup
 [Google Cloud billing account]: https://cloud.google.com/billing/docs/how-to/create-billing-account
 [gcloud CLI]: https://cloud.google.com/sdk/docs/install
-[OpenTofu]: https://github.com/opentofu/opentofu/tree/main
+[OpenTofu]: https://opentofu.org/docs/intro/install/
+[Terragrunt]: https://terragrunt.gruntwork.io/docs/getting-started/install/
 
 [Notion public template database]: https://adjoining-heath-cac.notion.site/ae50475a83bd40edbced0544315364fa?v=d212f11f17c646cc862983622904c8bb
 [Setup an internal Notion integration]: https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up

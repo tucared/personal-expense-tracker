@@ -1,17 +1,3 @@
-resource "random_id" "tf_state_bucket_prefix" {
-  byte_length = 8
-}
-
-resource "google_storage_bucket" "tf_state" {
-  name     = "${random_id.tf_state_bucket_prefix.hex}-bucket-tfstate"
-  location = var.region
-
-  uniform_bucket_level_access = true
-  versioning {
-    enabled = true
-  }
-}
-
 resource "google_secret_manager_secret" "notion" {
   secret_id = var.gsm_notion_secret_name
 
@@ -147,7 +133,7 @@ resource "google_cloudfunctions2_function" "this" {
       NOTION_DATABASE_ID               = var.notion_database_id
       GSM_NOTION_SECRET_NAME           = var.gsm_notion_secret_name
       BUCKET_NAME                      = google_storage_bucket.cloud_function.name
-      DESTINATION_BLOB_NAME_STATE_FILE = var.destination_state_file
+      DESTINATION_BLOB_NAME_STATE_FILE = var.destination_blob_name_state_file
     }
   }
 }

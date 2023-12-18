@@ -1,3 +1,8 @@
+variable "project_id" {
+  description = "Google Cloud project ID"
+  type        = string
+}
+
 variable "notion_database_id" {
   description = "Notion database ID data is fetched from"
   type        = string
@@ -5,11 +10,6 @@ variable "notion_database_id" {
 
 variable "notion_secret_value" {
   description = "Notion integration token with read access to database"
-  type        = string
-}
-
-variable "project_id" {
-  description = "Google Cloud project ID"
   type        = string
 }
 
@@ -31,7 +31,7 @@ variable "bq_notion_table_name" {
   default     = "raw_transactions__duplicated"
 }
 
-variable "destination_state_file" {
+variable "destination_blob_name_state_file" {
   description = "Path to file containing timestamp of last Cloud Function run"
   type        = string
   default     = "last_update_time.txt"
