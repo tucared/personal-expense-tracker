@@ -386,9 +386,11 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add visualisation using [Evidence.dev]
-- [ ] Add [SimpleFIN Bridge] for automated transaction collection
-- [ ] Add budgeting feature (target versus actual)
+- [ ] Add OpenTofu configuration management with [Terragrunt](https://terragrunt.gruntwork.io/)
+- [ ] Add data modelling (local [dbt-core](https://github.com/dbt-labs/dbt-core)?)
+- [ ] Add visualisation with [Evidence.dev]
+- [ ] Add Automated transaction collection with [SimpleFIN Bridge]
+- [ ] Add budgeting feature (i.e., target versus actual)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
