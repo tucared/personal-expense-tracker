@@ -226,6 +226,11 @@ To get a copy of the project up and running follow the steps below.
         --project $PROJECT_ID \
         --role "roles/cloudscheduler.admin"
 
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+        --project $PROJECT_ID \
+        --role "roles/run.admin"
+
     gcloud iam service-accounts add-iam-policy-binding \
         $TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
         --project $PROJECT_ID \
@@ -245,17 +250,6 @@ terragrunt apply
 # Do you want to perform these actions?
 # Enter a value: yes
 ```
-
-1. Add role `run.invoker` to service account linked to Cloud Scheduler to complete deployment.
-
-    ```shell
-    gcloud functions add-invoker-policy-binding $(tofu output function_name | sed 's/"//g') \
-        --project=$PROJECT_ID \
-        --region=$(tofu output function_region | sed 's/"//g') \
-        --member serviceAccount:$(tofu output sa_email_cloud_scheduler | sed 's/"//g')
-    ```
-
-    > See <https://github.com/hashicorp/terraform-provider-google/issues/15264>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
