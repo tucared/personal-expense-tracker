@@ -94,7 +94,7 @@ data "archive_file" "cloud_function_source" {
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
-  name         = "${var.cloud_function_parameters.name}-source"
+  name         = var.cloud_function_parameters.name
   content_type = "application/zip"
   bucket       = google_storage_bucket.cloud_function_source.name
   source       = data.archive_file.cloud_function_source.output_path
