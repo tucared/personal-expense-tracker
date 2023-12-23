@@ -47,7 +47,7 @@ variable "cloud_function_parameters" {
   default = {
     entrypoint = "insert_notion_pages_to_bigquery"
     name       = "notion-to-bigquery"
-    runtime    = "python311"
+    runtime    = "python312"
     source     = "cloud-functions/notion-to-bigquery"
   }
 }

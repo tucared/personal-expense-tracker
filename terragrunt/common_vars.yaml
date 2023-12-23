@@ -3,7 +3,7 @@ destination_state_file: last_update_time.txt
 cloud_function_parameters:
   entrypoint: notion_to_bigquery
   name: notion-to-bigquery
-  runtime: python311
+  runtime: python312
   source: ../cloud-function/source
 
 cloud_schedulers_parameters:
