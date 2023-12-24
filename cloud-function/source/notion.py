@@ -2,16 +2,24 @@ import json
 from typing import Any, Dict, Optional, Tuple, Union
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 
 def updated_notion_pages(
     notion_integration_secret: str, database_id: str, edited_on_or_after: Optional[str]
 ):
     next_cursor = None
+    session = requests.Session()
+    retries = Retry(allowed_methods=frozenset(["GET", "POST"]))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
 
     while True:
         data, next_cursor = query_notion_database(
-            notion_integration_secret, database_id, edited_on_or_after, next_cursor
+            session,
+            notion_integration_secret,
+            database_id,
+            edited_on_or_after,
+            next_cursor,
         )
 
         yield from data
@@ -21,6 +29,7 @@ def updated_notion_pages(
 
 
 def query_notion_database(
+    session: requests.Session,
     notion_integration_secret: str,
     database_id: str,
     edited_on_or_after: Optional[str],
@@ -29,6 +38,7 @@ def query_notion_database(
     """Queries a Notion database to return pages edited on or after a date or time.
 
     Args:
+        session (requests.Session): Session object to use for requests.
         notion_integration_secret (str): Self-describing.
         database_id (str): Source database id to get pages from.
         edited_on_or_after (str, optional): Date to filter pages on (ISO 8601).
@@ -60,7 +70,7 @@ def query_notion_database(
         "Notion-Version": "2022-06-28",
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
+    response = session.post(url, headers=headers, data=payload)
     response_json = response.json()
     response_results = response_json.get("results", [])
     next_cursor = response_json.get("next_cursor", None)
