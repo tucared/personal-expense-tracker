@@ -47,7 +47,7 @@
     <li>
         <a href="#usage">Usage</a>
         <ul>
-            <li><a href="#invoking-function">Invoking function</a></li>
+            <li><a href="#invoking-function-to-ingest-new-data">Invoking function to ingest new data</a></li>
             <li><a href="#visualising-logs-and-metadata">Visualising logs and metadata</a></li>
             <li><a href="#sequence-diagram">Sequence diagram</a></li>
         </ul>
@@ -75,6 +75,9 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+> [!NOTE]
+> This project is currently being repurposed into a generic self-hosted lakehouse demonstrator.
+
 This project aims at providing individuals and groups of individuals with a lightweight solution to record expenses and visualise related insights to drive better financial decisions.
 
 The main requirements for the project are:
@@ -92,6 +95,7 @@ The main requirements for the project are:
 - [![OpenTofu][OpenTofu.org]][OpenTofu-url]
 - [![Terragrunt][Terragrunt.io]][Terragrunt-url]
 - [![Python][Python.org]][Python-url]
+- [![Streamlit][Streamlit.io]][Streamlit-url]
 - [![Notion][Notion.so]][Notion-url] _(free tier)_
 - [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url] _(free tier)_
 
@@ -242,14 +246,25 @@ To get a copy of the project up and running follow the steps below.
 
 #### Deploy your infrastructure
 
-```shell
-terragrunt apply
+1. Deploy infrastructure on cloud
 
-# Remote state GCS bucket ...-tfstate does not exist [...]. Would you like Terragrunt to create it? (y/n) y
+    ```shell
+    terragrunt apply
 
-# Do you want to perform these actions?
-# Enter a value: yes
-```
+    # Remote state GCS bucket ...-tfstate does not exist [...]. Would you like Terragrunt to create it? (y/n) y
+
+    # Do you want to perform these actions?
+    # Enter a value: yes
+    ```
+
+2. Trigger streamlit app build and deploy
+
+    ```shell
+    gcloud builds triggers run $(terragrunt output streamlit_build_trigger_name | sed 's/"//g') \
+        --region=$(terragrunt output streamlit_build_trigger_region | sed 's/"//g')
+
+    gcloud builds list --region=$(terragrunt output streamlit_build_trigger_region | sed 's/"//g')
+    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -279,25 +294,25 @@ You have 2 options for cleaning up deployment:
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-- The **User** manually logs each expense as a [Page] in a [Notion database] with some metadata.
+- The **User** manually logs each expense as a [Page] in a [Notion database] with some custom properties.
 - Either the User, or the **Cloud Scheduler**, invokes a private **HTTP Cloud Function** to extract either all or new and updated Pages from aforementioned Notion database, then loads them into a **BigQuery** native table.
-- **TODO**: An **[Evidence.dev]** IAM-protected static website provides visualisations, built each time BigQuery table data is updated.
+- The User then access a **Streamlit app**, hosted on a public **Cloud Run** service, to query the BigQuery table using **DuckDB** engine.
 
-### Invoking function
+### Invoking function to ingest new data
 
 Function can be triggered either by invoking it directly or by force running the scheduler that invokes it:
-
-- Calling function directly (append strategy)
-
-    ```shell
-    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g') \
-        -H "Authorization: bearer $(gcloud auth print-identity-token)"
-    ```
 
 - Calling function directly (full refresh strategy)
 
     ```shell
     curl -i -X POST $(terragrunt output function_uri | sed 's/"//g')\?full_refresh=true \
+        -H "Authorization: bearer $(gcloud auth print-identity-token)"
+    ```
+
+- Calling function directly (append strategy)
+
+    ```shell
+    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g') \
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
@@ -364,7 +379,6 @@ sequenceDiagram
     participant GCS as Cloud Storage
     participant BQ as BigQuery
     participant CR as Cloud Run
-    participant GCSw as Cloud Storage<br>(website)
     end
 
     U->>N: Logs in
@@ -378,7 +392,7 @@ sequenceDiagram
     end
     CF->>+GCS: Fetches last<br>query timestamp
     GCS--)-CF: Returns last<br>query timestamp
-    CF->>+N: Queries new and edited expenses since last query
+    CF->>+N: Queries new and edited expenses since timestamp
     N--)-CF: Returns new and edited expenses
     CF->>GCS: Updates last<br>query timestamp
     opt if new or edited expenses returned
@@ -399,13 +413,10 @@ sequenceDiagram
         CF->>-BQ: Overwrite all expenses to table
     end
 
-    loop On BigQuery table update
-        BQ-->+CR: Triggers Evidence<br>website build
-        CR--)-GCSw: Stores static<br><website files
-    end
-
-    U->>GCSw: Queries reporting website
-    GCSw-->>U: Displays reporting website
+    U->>+CR: Opens website and query data
+    CR->>+BQ: Queries data<br>using DuckDB
+    BQ--)-CR: Receives data
+    CR-->>-U: Displays queried data
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -413,10 +424,8 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Add data modelling (local [dbt-core](https://github.com/dbt-labs/dbt-core)?)
-- [ ] Add visualisation with [Evidence.dev]
-- [ ] Add Automated transaction collection with [SimpleFIN Bridge]
-- [ ] Add budgeting feature (i.e., target versus actual)
+- [ ] Replace BigQuery table to parquet files in Cloud Storage as storage medium (switching to [dlt](https://dlthub.com/docs/pipelines/notion/load-data-with-python-from-notion-to-filesystem-gcs) in the process).
+- [ ] (maybe) Create a branch that integrates **dlt** to Cloud Run to fetch, store and query data in Streamlit app directly.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -512,7 +521,7 @@ Follow steps below to be able to test changes you made to Cloud Function source.
 #### Watch costs using [Infracost]
 
 > [!NOTE]
-> As mentionned earlier, **deploying this infrastructure costs nothing as it leverages Google Cloud Free Tier**.
+> As mentionned earlier, deploying this infrastructure costs nothing as it leverages Google Cloud Free Tier. But that only applies if you do not have any other live GCP project or significant Notion databases (3k rows no image costs nothing on my own deployment).
 
 [Infracost] is a CLI-based tool that provides a cloud monthly cost estimate from `.tf` files and a [`infracost-usage.yml`](infracost-usage.yml) file.
 
@@ -575,6 +584,8 @@ Tucared - <1v8ufskf@duck.com>
 [Terragrunt-url]: https://terragrunt.gruntwork.io/
 [Python.org]: https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue
 [Python-url]: https://www.python.org/
+[Streamlit.io]: https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=blue
+[Streamlit-url]: https://streamlit.io/
 [Notion.so]: https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white
 [Notion-url]: https://www.notion.so/
 [Console.cloud.google.com]: https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white

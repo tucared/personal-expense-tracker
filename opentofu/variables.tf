@@ -91,6 +91,13 @@ variable "region" {
   default     = "europe-west9"
 }
 
+# https://cloud.google.com/build/docs/locations#restricted_regions_for_some_projects
+variable "region_streamlit_build" {
+  description = "Region where Streamlit image is built"
+  type        = string
+  default     = "europe-west1"
+}
+
 variable "sa_account_id_cloud_function" {
   description = "ID of service account used for running Cloud Function"
   type        = string
@@ -113,6 +120,23 @@ variable "zone" {
   description = "Default zone for creating resources"
   type        = string
   default     = "europe-west9-a"
+}
+
+variable "streamlit_cloudrun_limits" {
+  type = object({
+    cpu    = string
+    memory = string
+  })
+  default = {
+    cpu    = "2"
+    memory = "1024Mi"
+  }
+}
+
+variable "streamlit_artifact_registry" {
+  description = "Artifact Registry containing Streamlit image"
+  type        = string
+  default     = "streamlit"
 }
 
 locals {

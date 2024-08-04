@@ -1,9 +1,10 @@
 # Python
 __pycache__
+.python-version
 
-# Local Cloud Function testing
+# Local testing
 cloud-function/data/
-cloud-function/secret/
+secret/
 
 # Infracost files
 .infracost/

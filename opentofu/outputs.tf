@@ -67,3 +67,23 @@ output "sa_email_tofu" {
   description = "Email of service account used whe running tofu commands"
   value       = local.tofu_service_account
 }
+
+output "streamlit_build_trigger_name" {
+  description = "Name of Cloud Build trigger for Streamlit service"
+  value       = google_cloudbuild_trigger.streamlit.name
+}
+
+output "streamlit_build_trigger_region" {
+  description = "Region of Cloud Build trigger for Streamlit service"
+  value       = google_cloudbuild_trigger.streamlit.location
+}
+
+output "streamlit_service_url" {
+  description = "URL of deployed Streamlit service"
+  value       = google_cloud_run_v2_service.streamlit.uri
+}
+
+output "sa_email_streamlit_cloud_run" {
+  description = "Email of service account used by Cloud Run when running Streamlit service"
+  value       = google_service_account.streamlit.email
+}

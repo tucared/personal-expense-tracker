@@ -1,0 +1,13 @@
+cookie:
+  expiry_days: 30
+  key: some_signature_key
+  name: some_cookie_name
+credentials:
+  usernames:
+    rbriggs:
+      email: rbriggs@gmail.com
+      failed_login_attempts: 0
+      first_name: Rebecca
+      last_name: Briggs
+      logged_in: true
+      password: $2b$12$5ulmnT0qxAuavvIKKTNFaOMBLMEkTOw/eDoTE5TXMp2rBC7Ec/Yo.

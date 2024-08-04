@@ -1,0 +1,5 @@
+docker-compose.yml
+README.md
+.ruff_cache
+.venv
+secret
