@@ -146,9 +146,9 @@ resource "google_service_account" "cloud_scheduler" {
 # https://github.com/hashicorp/terraform-provider-google/issues/15264
 resource "google_cloud_run_service_iam_binding" "binding" {
   location = google_cloudfunctions2_function.this.location
-  project = google_cloudfunctions2_function.this.project
-  service = google_cloudfunctions2_function.this.name
-  role = "roles/run.invoker"
+  project  = google_cloudfunctions2_function.this.project
+  service  = google_cloudfunctions2_function.this.name
+  role     = "roles/run.invoker"
   members = [
     "serviceAccount:${google_service_account.cloud_scheduler.email}"
   ]
