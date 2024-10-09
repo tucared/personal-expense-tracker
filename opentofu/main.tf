@@ -175,10 +175,12 @@ resource "google_cloud_scheduler_job" "append" {
 resource "google_cloud_scheduler_job" "full_refresh" {
   paused = var.cloud_schedulers_parameters.paused
 
-  name        = var.cloud_schedulers_parameters.full_refresh_scheduler.name
-  description = "Cloud Function invoker, refreshing all items in BigQuery"
-  schedule    = var.cloud_schedulers_parameters.full_refresh_scheduler.schedule
-  region      = var.cloud_schedulers_parameters.region
+  name             = var.cloud_schedulers_parameters.full_refresh_scheduler.name
+  description      = "Cloud Function invoker, refreshing all items in BigQuery"
+  schedule         = var.cloud_schedulers_parameters.full_refresh_scheduler.schedule
+  region           = var.cloud_schedulers_parameters.region
+  attempt_deadline = "640s"
+
 
   http_target {
     http_method = "POST"
