@@ -429,93 +429,6 @@ sequenceDiagram
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- HOW TO DEVELOP LOCALLY -->
-## Local development
-
-### Cloud Function
-
-Follow steps below to be able to test changes you made to Cloud Function source.
-
-1. (_Optional_) [Setup and deploy](#installation) a development project (e.g., `terragrunt/dev`)
-
-2. Pause Cloud Schedulers to prevent the deployed Cloud Function to be triggered automatically.
-
-    ```yaml
-    # terragrunt/dev/env_vars.yaml
-    cloud_schedulers:
-        paused: true
-    ```
-
-    ```shell
-    cd terragrunt/dev
-    terragrunt apply
-    ```
-
-3. Either:
-   - Edit [Cloud Function source files](/cloud-functions/notion-to-bigquery/), [deploy changes](#deploy-your-infrastructure) and [invoke function](#invoking-function).
-
-   - Run function locally using [`functions-framework`].
-
-4. If you performed step 1., eventually [clean-up your deployment](#clean-up).
-
-#### Running Cloud Function locally with `functions-framework`
-
-1. Navigate to `terragrunt/` subfolder corresponding to test infrastructure.
-
-    ```shell
-    cd terragrunt/dev
-    ```
-
-2. Download service account key file used for Cloud Function.
-
-    ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../cloud-function/secret/$(echo "${PWD##*/}")_sa-key.json
-    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
-        --iam-account=$(terragrunt output sa_email_cloud_function | sed 's/"//g')
-    ```
-
-3. [Create a virtual environment and] install dependencies.
-
-    ```shell
-    export SOURCE=../../cloud-function/source
-    pip install -r $SOURCE/requirements.txt
-    pip install -r $SOURCE/requirements.local.txt
-    ```
-
-4. Start local server.
-
-    ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../cloud-function/secret/$(echo "${PWD##*/}")_sa-key.json
-    export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
-    export ENTRYPOINT=$(grep "entrypoint" ../common_vars.yaml | awk '{print $2}' | tr -d '"')
-    export SOURCE=../../cloud-function/source
-
-    export TG_OUTPUT=$(tg output -json function_env_vars)
-    eval "$(echo "$TG_OUTPUT" | jq -r 'to_entries | .[] | "export \(.key)=\"\(.value)\""')"
-
-    GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_APPLICATION_CREDENTIALS_PATH) \
-    GOOGLE_CLOUD_PROJECT=$(echo $PROJECT_ID) \
-    DATA_FILE_PATH=../../cloud-function/data/$(echo "${PWD##*/}")_notion.json \
-    functions-framework \
-        --target=$ENTRYPOINT \
-        --source=$SOURCE/main.py \
-        --debug
-    ```
-
-    > Source changes are automatically loaded to local server, meaning you can code the function and invoking its latest version without restarting the local server.
-
-5. Open another shell, and invoke function locally.
-
-    ```shell
-    # Append strategy
-    curl localhost:8080
-
-    # Full refresh strategy
-    curl "localhost:8080?full_refresh=true"
-    ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ### Cloud infrastructure
 
 #### Watch costs using [Infracost]
@@ -606,7 +519,6 @@ Tucared - <1v8ufskf@duck.com>
 [Page]: https://developers.notion.com/reference/page
 [Notion database]: https://developers.notion.com/reference/database
 
-[`functions-framework`]: https://github.com/GoogleCloudPlatform/functions-framework-python
 [Evidence.dev]: https://evidence.dev/
 [Infracost]: https://github.com/infracost/infracost/tree/master
 [SimpleFin Bridge]: https://beta-bridge.simplefin.org/
