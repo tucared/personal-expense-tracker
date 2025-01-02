@@ -286,7 +286,7 @@ You have 2 options for cleaning up deployment:
     # Do you want to continue (Y/n)?: Y
 
     rm -rf .terraform.lock.hcl
-    rm -rf .terragrunt-cache 
+    rm -rf .terragrunt-cache
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -325,7 +325,7 @@ Function can be triggered either by invoking it directly or by force running the
     ```
 
 - Force running scheduler (full refresh strategy)
-  
+
     ```shell
     gcloud scheduler jobs run $(terragrunt output scheduler_full_refresh_name | sed 's/"//g') \
         --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
