@@ -7,8 +7,9 @@ from yaml.loader import SafeLoader
 
 import streamlit as st
 
-BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", "placeholder-project-id")
-BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", "placeholder-dataset-id")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
+HMAC_ACCESS_ID = os.getenv("HMAC_ACCESS_ID")
+HMAC_SECRET = os.getenv("HMAC_SECRET")
 
 with open("config.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -27,15 +28,14 @@ except Exception as e:
 
 if st.session_state["authentication_status"]:
     authenticator.logout()
-    st.write(f'Welcome *{st.session_state["name"]}*')
+    st.write(f"Welcome *{st.session_state['name']}*")
     st.title("Powered by DuckDB")
 
     con = duckdb.connect()
-    con.install_extension("bigquery", repository="community")
-    con.load_extension("bigquery")
-    # To change for prepared statement
+    con.execute("install httpfs;")  # con.install_extension() does not work
+    con.execute("load httpfs;")  # con.load_extension() does not work
     con.execute(
-        f"ATTACH 'project={BQ_PROJECT_ID}' AS bq (TYPE bigquery, READ_ONLY);"
+        f"CREATE SECRET (TYPE GCS, KEY_ID '{HMAC_ACCESS_ID}', SECRET '{HMAC_SECRET}');"
     ).fetchone()
 
     st.header("Streamlit Hello World")
@@ -46,17 +46,11 @@ if st.session_state["authentication_status"]:
 
     st.header("SQL Query")
     st.text("Example queries")
-    st.code("SELECT 42;", language="sql")
-    st.code("SHOW ALL TABLES;", language="sql")
     st.code(
-        f"SELECT * FROM bigquery_query('bq', 'SELECT * FROM\n{BQ_DATASET_ID}.INFORMATION_SCHEMA.TABLES');",
+        f"SELECT *\nFROM ('gs://{GCS_BUCKET_NAME}/<filname>.parquet');",
         language="sql",
     )
-    st.code(
-        f"SUMMARIZE SELECT * FROM bq.{BQ_DATASET_ID}.raw_transactions__duplicated",
-        language="sql",
-    )
-    query = st.text_area("Enter your query", "SHOW ALL TABLES;", height=100)
+    query = st.text_area("Enter your query", "SELECT 42;", height=100)
     if query is not None:
         try:
             # Execute query and convert to pandas DataFrame

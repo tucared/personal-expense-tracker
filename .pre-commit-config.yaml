@@ -15,10 +15,25 @@ repos:
       - id: tofu_fmt
       - id: tofu_validate
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.9.2
     hooks:
       # Run the linter.
       - id: ruff
         args: [ --fix ]
       # Run the formatter.
       - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.5.21
+    hooks:
+      - id: uv-lock
+        name: uv-lock (streamlit)
+        files: streamlit/pyproject.toml
+        args: [--project, streamlit]
+      - id: uv-lock
+        name: uv-lock (notion_pipeline)
+        files: notion_pipeline/pyproject.toml
+        args: [--project, notion_pipeline]
+      - id: uv-export
+        name: uv-export (notion_pipeline)
+        files: notion_pipeline/pyproject.toml
+        args: [--project, notion_pipeline, "--frozen", "--output-file=notion_pipeline/requirements.txt"]

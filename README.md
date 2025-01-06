@@ -223,7 +223,7 @@ To get a copy of the project up and running follow the steps below.
     gcloud projects add-iam-policy-binding $PROJECT_ID \
         --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
         --project $PROJECT_ID \
-        --role "roles/cloudfunctions.developer"
+        --role "roles/cloudfunctions.admin"
 
     gcloud projects add-iam-policy-binding $PROJECT_ID \
         --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
@@ -295,41 +295,26 @@ You have 2 options for cleaning up deployment:
 ## Usage
 
 - The **User** manually logs each expense as a [Page] in a [Notion database] with some custom properties.
-- Either the User, or the **Cloud Scheduler**, invokes a private **HTTP Cloud Function** to extract either all or new and updated Pages from aforementioned Notion database, then loads them into a **BigQuery** native table.
-- The User then access a **Streamlit app**, hosted on a public **Cloud Run** service, to query the BigQuery table using **DuckDB** engine.
+- Either the User, or the **Cloud Scheduler**, invokes a private **HTTP Cloud Function** to trigger pipeline that saves all Notion database to a **Cloud Storage** bucket.
+- The User then access a **Streamlit app**, hosted on a public **Cloud Run** service, to query the bucket data table using **DuckDB** engine.
 
 ### Invoking function to ingest new data
 
 Function can be triggered either by invoking it directly or by force running the scheduler that invokes it:
 
-- Calling function directly (full refresh strategy)
-
-    ```shell
-    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g')\?full_refresh=true \
-        -H "Authorization: bearer $(gcloud auth print-identity-token)"
-    ```
-
-- Calling function directly (append strategy)
+- Calling function directly
 
     ```shell
     curl -i -X POST $(terragrunt output function_uri | sed 's/"//g') \
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
-- Force running scheduler (append strategy)
+- Force running scheduler (must not be paused)
 
     ```shell
-    gcloud scheduler jobs run $(terragrunt output scheduler_append_name | sed 's/"//g') \
+    gcloud scheduler jobs run $(terragrunt output scheduler_dlt_name | sed 's/"//g') \
         --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
         --location=$(terragrunt output scheduler_append_region | sed 's/"//g')
-    ```
-
-- Force running scheduler (full refresh strategy)
-
-    ```shell
-    gcloud scheduler jobs run $(terragrunt output scheduler_full_refresh_name | sed 's/"//g') \
-        --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
-        --location=$(terragrunt output scheduler_full_refresh_region | sed 's/"//g')
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -344,27 +329,6 @@ gcloud functions logs read $(terragrunt output function_name | sed 's/"//g') \
     --region=$(terragrunt output function_region | sed 's/"//g')
 ```
 
-Destination table metadata, including last updated time:
-
-```shell
-bq show $(terragrunt output bq_table_id_colon | sed 's/"//g')
-```
-
-Recent additions to destination table:
-
-```shell
-bq query --use_legacy_sql=false \
-    "SELECT
-        id,
-        url,
-        created_time,
-        last_edited_time
-    FROM
-        \`$(terragrunt output bq_table_id | sed 's/"//g')\`
-    ORDER BY last_edited_time DESC
-    LIMIT 10;"
-```
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Sequence diagram
@@ -377,45 +341,26 @@ sequenceDiagram
     participant CS as Cloud Scheduler
     participant CF as HTTP Cloud Function
     participant GCS as Cloud Storage
-    participant BQ as BigQuery
     participant CR as Cloud Run
     end
 
     U->>N: Logs in
 
-    U->>N: Adds or modifies an expense
+    U->>N: Modifies or<br>several database
     opt
-        U-)CF: Forces run on append strategy
+        U-)CF: Forces run
     end
     loop Hourly
-        CS-)+CF: Triggers function<br>on append strategy
-    end
-    CF->>+GCS: Fetches last<br>query timestamp
-    GCS--)-CF: Returns last<br>query timestamp
-    CF->>+N: Queries new and edited expenses since timestamp
-    N--)-CF: Returns new and edited expenses
-    CF->>GCS: Updates last<br>query timestamp
-    opt if new or edited expenses returned
-        CF->>-BQ: Appends expenses to table
+        CS-)+CF: Triggers dlt pipeline
     end
 
-    U->>N: Deletes an expense
-    opt
-        U-)+CF: Forces run on full refresh strategy
-    end
-    loop Daily
-        CS-)+CF: Triggers function<br>on full refresh strategy
-    end
-    CF->>+N: Queries all expenses
-    N--)-CF: Returns all expenses
-    CF->>GCS: Updates last<br>query timestamp
-    opt if any expense returned
-        CF->>-BQ: Overwrite all expenses to table
-    end
+    CF->>+N: Queries all pages in database
+    N-->>-CF: Returns all pages
+    CF->>-GCS: Stores data as parquet
 
     U->>+CR: Opens website and query data
-    CR->>+BQ: Queries data<br>using DuckDB
-    BQ--)-CR: Receives data
+    CR->>+GCS: Queries data<br>using DuckDB
+    GCS--)-CR: Receives data
     CR-->>-U: Displays queried data
 ```
 
@@ -424,8 +369,8 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Replace BigQuery table to parquet files in Cloud Storage as storage medium (switching to [dlt](https://dlthub.com/docs/pipelines/notion/load-data-with-python-from-notion-to-filesystem-gcs) in the process).
-- [ ] (maybe) Create a branch that integrates **dlt** to Cloud Run to fetch, store and query data in Streamlit app directly.
+- [ ] Transform the notion pipeline into a OpenTofu/Terraform module
+- [ ] Create a branch to a version with embedded dlt to Streamlit (no Cloud Storage)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -519,8 +464,6 @@ Tucared - <1v8ufskf@duck.com>
 [Page]: https://developers.notion.com/reference/page
 [Notion database]: https://developers.notion.com/reference/database
 
-[Evidence.dev]: https://evidence.dev/
 [Infracost]: https://github.com/infracost/infracost/tree/master
-[SimpleFin Bridge]: https://beta-bridge.simplefin.org/
 
 [Infracost specifies]: https://www.infracost.io/docs/supported_resources/google/

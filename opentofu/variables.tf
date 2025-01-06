@@ -3,79 +3,36 @@ variable "project_id" {
   type        = string
 }
 
-variable "notion_database_id" {
-  description = "Notion database ID data is fetched from"
-  type        = string
-}
-
 variable "notion_secret_value" {
   description = "Notion integration token with read access to database"
   type        = string
 }
 
-variable "bq_dataset_id" {
-  description = "ID of BigQuery dataset containing Notion raw data loaded from Cloud Function"
-  type        = string
-  default     = "budget"
-}
-
-variable "bq_location" {
-  description = "Location of all BigQuery ressources"
-  type        = string
-  default     = "EU"
-}
-
-variable "bq_notion_table_name" {
-  description = "Name of native table containing Notion raw data loaded from Cloud Function"
-  type        = string
-  default     = "raw_transactions__duplicated"
-}
-
-variable "destination_blob_name_state_file" {
-  description = "Path to file containing timestamp of last Cloud Function run"
-  type        = string
-  default     = "last_update_time.txt"
-}
-
 variable "cloud_function_parameters" {
   type = object({
-    entrypoint = string
-    name       = string
-    runtime    = string
-    source     = string
+    name    = string
+    runtime = string
+    source  = string
   })
   default = {
-    entrypoint = "insert_notion_pages_to_bigquery"
-    name       = "notion-to-bigquery"
-    runtime    = "python312"
-    source     = "cloud-function/source"
+    name    = "notion_pipeline"
+    runtime = "python312"
+    source  = "streamlit"
   }
 }
 
-variable "cloud_schedulers_parameters" {
+variable "cloud_scheduler_parameters" {
   type = object({
-    paused = bool
-    region = string
-    append_scheduler = object({
-      name     = string
-      schedule = string
-    })
-    full_refresh_scheduler = object({
-      name     = string
-      schedule = string
-    })
+    paused   = bool
+    region   = string
+    name     = string
+    schedule = string
   })
   default = {
-    paused = false
-    region = "europe-west6"
-    append_scheduler = {
-      name     = "cloud-function-invoker-append"
-      schedule = "0 * * * *" # every hour
-    }
-    full_refresh_scheduler = {
-      name     = "cloud-function-invoker-full-refresh"
-      schedule = "30 0 * * *" # every day at 00:30 UTC
-    }
+    paused   = false
+    region   = "europe-west6"
+    name     = "cloud-function-invoker"
+    schedule = "0 * * * *" # every hour
   }
 }
 
@@ -98,6 +55,12 @@ variable "region_streamlit_build" {
   default     = "europe-west1"
 }
 
+variable "zone" {
+  description = "Default zone for creating resources"
+  type        = string
+  default     = "europe-west9-a"
+}
+
 variable "sa_account_id_cloud_function" {
   description = "ID of service account used for running Cloud Function"
   type        = string
@@ -114,12 +77,6 @@ variable "sa_tofu" {
   description = "Used when running OpenTofu commands"
   type        = string
   default     = "tofu-sa"
-}
-
-variable "zone" {
-  description = "Default zone for creating resources"
-  type        = string
-  default     = "europe-west9-a"
 }
 
 variable "streamlit_cloudrun_limits" {
@@ -140,6 +97,5 @@ variable "streamlit_artifact_registry" {
 }
 
 locals {
-  bq_table_id          = join(".", [var.project_id, var.bq_dataset_id, var.bq_notion_table_name])
   tofu_service_account = "${var.sa_tofu}@${var.project_id}.iam.gserviceaccount.com"
 }

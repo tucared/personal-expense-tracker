@@ -3,25 +3,19 @@
 # Mandatory variables
 # -------------------
 project_id: GLOBALLY_UNIQUE_PROJECT_ID
-notion_database_id: xxxxxxxxxxxxxx
-notion_secret_value: secret_XXXXXX
+notion_secret_value: secret_XXXX
+sa_tofu: tofu-sa
 
 # Optional variables
 # ------------------
 region: europe-west9
+region_streamlit_build: europe-west1
 zone: europe-west9-a
-sa_tofu: tofu-sa
 
-cloud_schedulers_parameters:
-  paused: false
-  region: europe-west6
+cloud_scheduler_parameters:
+  paused: true
+  schedule: "0 * * * *" # every hour
 
-  append_scheduler:
-    schedule: "0 * * * *" # every hour
-
-  full_refresh_scheduler:
-    schedule: "30 0 * * *" # every day at 00:30 UTC
-
-bq_dataset_id: budget
-bq_location: EU
-bq_notion_table_name: raw_transactions__duplicated
+streamlit_cloudrun_limits:
+  memory: 1024Mi
+  cpu: 2

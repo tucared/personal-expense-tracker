@@ -8,22 +8,15 @@ locals {
 }
 
 inputs = {
-  destination_state_file = local.common_vars.destination_state_file
-
   cloud_function_parameters = {
-    entrypoint = local.common_vars.cloud_function_parameters.entrypoint
     name       = local.common_vars.cloud_function_parameters.name
     runtime    = local.common_vars.cloud_function_parameters.runtime
     source     = local.common_vars.cloud_function_parameters.source
   }
 
-  cloud_schedulers_parameters = {
-    append_scheduler = {
-      name = local.common_vars.cloud_schedulers_parameters.append_scheduler.name
-    }
-    full_refresh_scheduler = {
-      name = local.common_vars.cloud_schedulers_parameters.full_refresh_scheduler.name
-    }
+  cloud_scheduler_parameters = {
+    region   = local.common_vars.cloud_scheduler_parameters.region
+    name     = local.common_vars.cloud_scheduler_parameters.name
   }
 
   gsm_notion_secret_name        = local.common_vars.gsm_notion_secret_name

@@ -24,25 +24,21 @@ remote_state {
 
 inputs = {
   project_id          = local.env_vars.project_id
-  notion_database_id  = local.env_vars.notion_database_id
   notion_secret_value = local.env_vars.notion_secret_value
 
-  region  = local.env_vars.region
-  zone    = local.env_vars.zone
   sa_tofu = local.env_vars.sa_tofu
 
-  cloud_schedulers_parameters = {
-    paused = local.env_vars.cloud_schedulers_parameters.paused
-    region = local.env_vars.cloud_schedulers_parameters.region
-    append_scheduler = {
-      schedule = local.env_vars.cloud_schedulers_parameters.append_scheduler.schedule
-    }
-    full_refresh_scheduler = {
-      schedule = local.env_vars.cloud_schedulers_parameters.full_refresh_scheduler.schedule
-    }
+  region                 = local.env_vars.region
+  region_streamlit_build = local.env_vars.region_streamlit_build
+  zone                   = local.env_vars.zone
+
+  cloud_scheduler_parameters = {
+    paused   = local.env_vars.cloud_scheduler_parameters.paused
+    schedule = local.env_vars.cloud_scheduler_parameters.schedule
   }
 
-  bq_dataset_id        = local.env_vars.bq_dataset_id
-  bq_location          = local.env_vars.bq_location
-  bq_notion_table_name = local.env_vars.bq_notion_table_name
+  streamlit_cloudrun_limits = {
+    cpu    = local.env_vars.streamlit_cloudrun_limits.cpu
+    memory = local.env_vars.streamlit_cloudrun_limits.memory
+  }
 }

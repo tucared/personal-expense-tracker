@@ -1,7 +1,5 @@
 # Streamlit App
 
-> **Warning**: This app does not support querying struct data from BigQuery tables. There are no plans to implement this feature as the storage medium will be migrated from BigQuery to flat files (Parquet) in Cloud Storage.
-
 ## Setup
 
 1. Install [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) if not done already
@@ -22,7 +20,7 @@
    - Username: `rbriggs`
    - Password: `abc` (hashed in `config.yaml`)
 
-## Running with BigQuery connection
+## Running with access to cloud storage bucket
 
 1. Deploy your infrastructure on the cloud (and refresh dataset)
 
@@ -33,23 +31,13 @@
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
-2. Download service account key file used for Cloud Function.
+2. Start local server by passing deployed cloud run service account credentials (docker env not supported yet)
 
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../streamlit/secret/$(echo "${PWD##*/}")_sa-key.json
-    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
-        --iam-account=$(terragrunt output sa_email_streamlit_cloud_run | sed 's/"//g')
-    ```
-
-3. Start local server by passing deployed cloud run service account credentials
-
-    ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=/secret/$(echo "${PWD##*/}")_sa-key.json
-    export BQ_PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
-    export BQ_DATASET_ID=$(grep "bq_dataset_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
-
+    GCS_BUCKET_NAME=$(terragrunt output bucket_name_cloud_function | sed 's/"//g') \
+    HMAC_ACCESS_ID=$(terragrunt output hmac_access_id | sed 's/"//g') \
+    HMAC_SECRET=$(terragrunt output hmac_secret | sed 's/"//g') \
     uv run --directory="../../streamlit" streamlit run app.py
-    # docker env not supported yet
     ```
 
 ## Editing

@@ -1,4 +1,0 @@
-functions_framework
-mypy
-types-requests
-types-google-cloud-ndb

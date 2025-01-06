@@ -19,18 +19,39 @@ resource "google_secret_manager_secret_version" "notion" {
   secret_data = var.notion_secret_value
 }
 
-resource "google_bigquery_dataset" "this" {
-  dataset_id                 = var.bq_dataset_id
-  location                   = var.bq_location
-  friendly_name              = "Notion dataset"
-  delete_contents_on_destroy = true
-  description                = "Dataset only containing data loaded from Cloud Function"
-}
-
 resource "google_service_account" "cloud_function" {
   account_id   = var.sa_account_id_cloud_function
   display_name = "Cloud Function SA"
 }
+
+resource "google_secret_manager_secret" "cloud_function_key" {
+  secret_id = "cloud-function-key"
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "cloud_function_key" {
+  secret      = google_secret_manager_secret.cloud_function_key.id
+  secret_data = jsondecode(base64decode(google_service_account_key.cloud_function.private_key))["private_key"]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloud_function_key" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.cloud_function_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_function.email}"
+}
+
+resource "google_service_account_key" "cloud_function" {
+  service_account_id = google_service_account.cloud_function.name
+}
+
 
 resource "random_id" "cloud_function_bucket_prefix" {
   byte_length = 8
@@ -50,29 +71,11 @@ resource "google_storage_bucket_iam_member" "cloud_function" {
   member = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
-resource "google_project_iam_member" "cloud_function" {
-  project = var.project_id
-  role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
 resource "google_secret_manager_secret_iam_member" "cloud_function" {
   project   = var.project_id
   secret_id = google_secret_manager_secret.notion.secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
-resource "google_bigquery_dataset_iam_member" "cloud_function_editor" {
-  dataset_id = google_bigquery_dataset.this.dataset_id
-  role       = "roles/bigquery.dataEditor"
-  member     = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
-resource "google_bigquery_dataset_iam_member" "cloud_function_viewer" {
-  dataset_id = google_bigquery_dataset.this.dataset_id
-  role       = "roles/bigquery.dataViewer"
-  member     = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
 resource "random_id" "cloud_function_source_bucket_prefix" {
@@ -90,7 +93,7 @@ data "archive_file" "cloud_function_source" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
   source_dir  = var.cloud_function_parameters.source
-  excludes    = ["__pycache__", "requirements.local.txt", ".gcloudignore"]
+  excludes    = ["__pycache__", "requirements.local.txt", ".gcloudignore", ".venv", "secret", "uv.lock", "pyproject.toml", "README.md"]
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
@@ -106,8 +109,7 @@ resource "google_cloudfunctions2_function" "this" {
   description = "Function used to query latest added and edited items"
 
   build_config {
-    runtime     = var.cloud_function_parameters.runtime
-    entry_point = var.cloud_function_parameters.entrypoint
+    runtime = var.cloud_function_parameters.runtime
     source {
       storage_source {
         bucket = google_storage_bucket.cloud_function_source.name
@@ -127,13 +129,28 @@ resource "google_cloudfunctions2_function" "this" {
     available_memory      = "256Mi"
     timeout_seconds       = 600
     service_account_email = google_service_account.cloud_function.email
+
     environment_variables = {
-      PROJECT_ID                       = var.project_id
-      BQ_TABLE_ID                      = local.bq_table_id
-      NOTION_DATABASE_ID               = var.notion_database_id
-      GSM_NOTION_SECRET_NAME           = var.gsm_notion_secret_name
-      BUCKET_NAME                      = google_storage_bucket.cloud_function.name
-      DESTINATION_BLOB_NAME_STATE_FILE = var.destination_blob_name_state_file
+      DESTINATION__FILESYSTEM__BUCKET_URL                = "gs://${google_storage_bucket.cloud_function.name}"
+      DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL = google_service_account.cloud_function.email
+      DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID   = var.project_id
+      NORMALIZE__LOADER_FILE_FORMAT                      = "parquet"
+      RUNTIME__LOG_LEVEL                                 = "WARNING"
+      RUNTIME__DLTHUB_TELEMETRY                          = false
+    }
+
+    secret_environment_variables {
+      project_id = var.project_id
+      key        = "SOURCES__NOTION__API_KEY"
+      secret     = google_secret_manager_secret.notion.secret_id
+      version    = "latest"
+    }
+
+    secret_environment_variables {
+      project_id = var.project_id
+      key        = "DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY"
+      secret     = google_secret_manager_secret.cloud_function_key.secret_id
+      version    = "latest"
     }
   }
 }
@@ -143,24 +160,21 @@ resource "google_service_account" "cloud_scheduler" {
   display_name = "Cloud Scheduler SA"
 }
 
-# https://github.com/hashicorp/terraform-provider-google/issues/15264
-resource "google_cloud_run_service_iam_binding" "binding" {
-  location = google_cloudfunctions2_function.this.location
-  project  = google_cloudfunctions2_function.this.project
-  service  = google_cloudfunctions2_function.this.name
-  role     = "roles/run.invoker"
-  members = [
-    "serviceAccount:${google_service_account.cloud_scheduler.email}"
-  ]
+resource "google_cloudfunctions2_function_iam_member" "invoker" {
+  project        = google_cloudfunctions2_function.this.project
+  location       = google_cloudfunctions2_function.this.location
+  cloud_function = google_cloudfunctions2_function.this.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = "serviceAccount:${google_service_account.cloud_scheduler.email}"
 }
 
-resource "google_cloud_scheduler_job" "append" {
-  paused = var.cloud_schedulers_parameters.paused
+resource "google_cloud_scheduler_job" "dlt" {
+  paused = var.cloud_scheduler_parameters.paused
 
-  name        = var.cloud_schedulers_parameters.append_scheduler.name
-  description = "Cloud Function invoker, appending new items to BigQuery"
-  schedule    = var.cloud_schedulers_parameters.append_scheduler.schedule
-  region      = var.cloud_schedulers_parameters.region
+  name        = var.cloud_scheduler_parameters.name
+  description = "Cloud Function dlt invoker"
+  schedule    = var.cloud_scheduler_parameters.schedule
+  region      = var.cloud_scheduler_parameters.region
 
   http_target {
     http_method = "POST"
@@ -172,31 +186,50 @@ resource "google_cloud_scheduler_job" "append" {
   }
 }
 
-resource "google_cloud_scheduler_job" "full_refresh" {
-  paused = var.cloud_schedulers_parameters.paused
+####################
+# Streamlit
+####################
 
-  name             = var.cloud_schedulers_parameters.full_refresh_scheduler.name
-  description      = "Cloud Function invoker, refreshing all items in BigQuery"
-  schedule         = var.cloud_schedulers_parameters.full_refresh_scheduler.schedule
-  region           = var.cloud_schedulers_parameters.region
-  attempt_deadline = "640s"
+# Bucket reader
+
+resource "google_service_account" "data_bucket_reader" {
+  account_id   = "bucket-reader-sa"
+  display_name = "SA to reads data from bucket"
+}
+
+resource "google_storage_bucket_iam_member" "data_bucket_reader" {
+  bucket = google_storage_bucket.cloud_function.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.data_bucket_reader.email}"
+}
 
 
-  http_target {
-    http_method = "POST"
-    # Query param to trigger full refresh
-    uri = "${google_cloudfunctions2_function.this.service_config[0].uri}/?full_refresh=true"
+resource "google_storage_hmac_key" "data_bucket_reader" {
+  service_account_email = google_service_account.data_bucket_reader.email
+}
 
-    oidc_token {
-      service_account_email = google_service_account.cloud_scheduler.email
-      audience              = google_cloudfunctions2_function.this.service_config[0].uri
+resource "google_secret_manager_secret" "hmac" {
+  secret_id = "bucket-reader-hmac"
+
+  labels = {
+    application = "bucket-reader"
+  }
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
     }
   }
 }
 
-####################
-# Streamlit
-####################
+resource "google_secret_manager_secret_version" "hmac" {
+  secret      = google_secret_manager_secret.hmac.id
+  secret_data = google_storage_hmac_key.data_bucket_reader.secret
+}
+
+# Cloud build trigger
 
 resource "google_service_account" "cloudbuild_trigger" {
   account_id   = "cloudbuild-trigger-sa"
@@ -231,72 +264,6 @@ resource "google_project_iam_member" "cloudbuild_trigger_log_writer" {
   project = var.project_id
   role    = "roles/logging.logWriter"
   member  = "serviceAccount:${google_service_account.cloudbuild_trigger.email}"
-}
-
-resource "google_service_account" "streamlit" {
-  account_id   = "streamlit-sa"
-  display_name = "Streamlit Cloud Run SA"
-}
-
-resource "google_bigquery_dataset_iam_member" "streamlit_viewer" {
-  dataset_id = google_bigquery_dataset.this.dataset_id
-  role       = "roles/bigquery.dataViewer"
-  member     = "serviceAccount:${google_service_account.streamlit.email}"
-}
-
-resource "google_project_iam_member" "streamlit_job_user" {
-  project = var.project_id
-  role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:${google_service_account.streamlit.email}"
-}
-
-resource "google_project_iam_member" "streamlit_read_session" {
-  project = var.project_id
-  role    = "roles/bigquery.readSessionUser"
-  member  = "serviceAccount:${google_service_account.streamlit.email}"
-}
-
-resource "google_cloud_run_v2_service" "streamlit" {
-  name                = "streamlit-app"
-  location            = var.region
-  deletion_protection = false
-
-  template {
-    service_account = google_service_account.streamlit.email
-    containers {
-      image = "us-docker.pkg.dev/cloudrun/container/hello"
-      env {
-        name  = "BQ_PROJECT_ID"
-        value = var.project_id
-      }
-      env {
-        name  = "BQ_DATASET_ID"
-        value = google_bigquery_dataset.this.dataset_id
-      }
-      resources {
-        limits = {
-          cpu    = var.streamlit_cloudrun_limits.cpu
-          memory = var.streamlit_cloudrun_limits.memory
-        }
-      }
-    }
-  }
-
-  # Ignore changes due to Cloud Build trigger
-  lifecycle {
-    ignore_changes = [
-      template[0].containers[0].image,
-      client,
-      client_version
-    ]
-  }
-}
-
-resource "google_cloud_run_service_iam_member" "public" {
-  service  = google_cloud_run_v2_service.streamlit.name
-  location = google_cloud_run_v2_service.streamlit.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
 }
 
 resource "random_id" "streamlit_source_bucket_prefix" {
@@ -404,4 +371,58 @@ resource "google_cloudbuild_trigger" "streamlit" {
       repository_event_config
     ]
   }
+}
+
+# Streamlit
+
+resource "google_service_account" "streamlit" {
+  account_id   = "streamlit-sa"
+  display_name = "Streamlit Cloud Run SA"
+}
+
+resource "google_cloud_run_v2_service" "streamlit" {
+  name                = "streamlit-app"
+  location            = var.region
+  deletion_protection = false
+
+  template {
+    service_account = google_service_account.streamlit.email
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+      env {
+        name  = "GCS_BUCKET_NAME"
+        value = google_storage_bucket.cloud_function.name
+      }
+      env {
+        name  = "HMAC_ACCESS_ID"
+        value = google_storage_hmac_key.data_bucket_reader.access_id
+      }
+      env {
+        name  = "HMAC_SECRET"
+        value = google_secret_manager_secret_version.hmac.secret_data
+      }
+      resources {
+        limits = {
+          cpu    = var.streamlit_cloudrun_limits.cpu
+          memory = var.streamlit_cloudrun_limits.memory
+        }
+      }
+    }
+  }
+
+  # Ignore changes due to Cloud Build trigger
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image,
+      client,
+      client_version
+    ]
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "public" {
+  service  = google_cloud_run_v2_service.streamlit.name
+  location = google_cloud_run_v2_service.streamlit.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }
