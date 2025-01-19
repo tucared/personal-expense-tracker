@@ -4,18 +4,14 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <!-- <a href="https://github.com/tucared/notion-budget-tracker">
+  <!-- <a href="https://github.com/tucared/lakehouse-starter">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a> -->
 
-<h1 align="center">Notion Budget Tracker</h1>
+<h1 align="center">Lakehouse Starter</h1>
 
   <strong><p align="center">
-    Self-hosted expense tracker with reporting website</strong>
-    <br />
-    <a href="https://www.notion.so/3b78e071709e4a28ab16798de93e12c6?v=e8126179c6b64a029d8e20675dc4e48e">View expense logger demo</a>
-    ·
-    <a href="https://github.com/tucared/notion-budget-tracker">[TODO] View reporting website demo</a>
+    A production-ready lakehouse template using Terraform, DLT, and Streamlit on GCP.</strong>
   </p>
 </div>
 
@@ -54,17 +50,7 @@
     </li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li>
-        <a href="#local-development">Local development</a>
-        <ul>
-            <li><a href="#cloud-function">Cloud Function</a></li>
-            <ul>
-                <li><a href="#running-cloud-function-locally-with-functions-framework">Running Cloud Function locally with `functions-framework`</a></li>
-            </ul>
-            <li><a href="#cloud-infrastructure">Cloud infrastructure</a></li>
-            <ul>
-                <li><a href="#watch-costs-using-infracost">Watch costs using Infracost</a></li>
-            </ul>
-        </ul>
+        <a href="#watch-costs-using-infracost">Watch costs using Infracost</a>
     </li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -75,29 +61,32 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+This project provides a production-ready lakehouse template using Terraform, DLT, and Streamlit on GCP. Start with Notion data ingestion and customize for your needs.
+
 > [!NOTE]
-> This project is currently being repurposed into a generic self-hosted lakehouse demonstrator.
+> When deployed as provided, this project remains within GCP's free tier limits.
 
-This project aims at providing individuals and groups of individuals with a lightweight solution to record expenses and visualise related insights to drive better financial decisions.
+The main features of this project are:
 
-The main requirements for the project are:
+- Infrastructure-as-code deployment using Terraform on Google Cloud Platform
+- Modular data ingestion pipeline powered by DLT, starting with Notion as a data source
+- SQL-based analytics using DuckDB for efficient querying of data files
+- Interactive data exploration through a Streamlit web application
+- Extensible architecture designed for easy customization and addition of new data sources
+- Cost-optimized implementation staying within GCP's free tier limits
 
-- Reduce user friction regarding transactions data collection.
-- Integrate with a wide variety of banks, regardless of digitalisation or regulatory frameworks.
-- Be conscious of data privacy and of data security.
-- Allow for expense metadata fields customisation, initially aimed at expense categories.
-- Be free, or extremely low price.
+This template demonstrates modern data engineering practices while maintaining a simple, understandable structure that can be used as a foundation for your own data platform.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
 
 - [![OpenTofu][OpenTofu.org]][OpenTofu-url]
+- [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url]
 - [![Terragrunt][Terragrunt.io]][Terragrunt-url]
 - [![Python][Python.org]][Python-url]
 - [![Streamlit][Streamlit.io]][Streamlit-url]
-- [![Notion][Notion.so]][Notion-url] _(free tier)_
-- [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url] _(free tier)_
+- [![Notion][Notion.so]][Notion-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -120,9 +109,7 @@ To get a copy of the project up and running follow the steps below.
 
 #### Setup your Notion database
 
-1. Duplicate this [Notion public template database] into a Workspace you own.
-
-2. [Setup an internal Notion integration] with **Read content** capability, and [add it as a connection to your database].
+1. [Setup an internal Notion integration] with **Read content** capability, and [add it as a connection to your database].
 
 #### Setup your local repository
 
@@ -294,9 +281,21 @@ You have 2 options for cleaning up deployment:
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-- The **User** manually logs each expense as a [Page] in a [Notion database] with some custom properties.
-- Either the User, or the **Cloud Scheduler**, invokes a private **HTTP Cloud Function** to trigger pipeline that saves all Notion database to a **Cloud Storage** bucket.
-- The User then access a **Streamlit app**, hosted on a public **Cloud Run** service, to query the bucket data table using **DuckDB** engine.
+The data flow in this lakehouse architecture follows these steps:
+
+1. **Data Source**:
+   - Data is maintained in Notion databases (currently implemented)
+   - Can be extended to other sources by modifying the DLT pipeline
+
+2. **Data Ingestion**:
+   - Triggered either manually or automatically via Cloud Scheduler
+   - Executed through a private HTTP Cloud Function
+   - Uses DLT to extract and load data into Cloud Storage
+
+3. **Data Analysis**:
+   - Access data through a Streamlit web application hosted on Cloud Run
+   - Query data directly from Cloud Storage using DuckDB
+   - Explore and analyze data using SQL queries
 
 ### Invoking function to ingest new data
 
@@ -369,21 +368,20 @@ sequenceDiagram
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Transform the notion pipeline into a OpenTofu/Terraform module
+- [ ] Transform the DLT notion pipeline into a OpenTofu/Terraform module
 - [ ] Create a branch to a version with embedded dlt to Streamlit (no Cloud Storage)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Cloud infrastructure
-
-#### Watch costs using [Infracost]
+### Watch costs using [Infracost]
 
 > [!NOTE]
-> As mentionned earlier, deploying this infrastructure costs nothing as it leverages Google Cloud Free Tier. But that only applies if you do not have any other live GCP project or significant Notion databases (3k rows no image costs nothing on my own deployment).
+> When deployed as provided, this project stays within GCP's Free Tier limits, assuming:
+>
+> - You have no other active GCP projects
+> - Your Notion databases are moderate in size (tested with ~3,000 rows without images)
 
-[Infracost] is a CLI-based tool that provides a cloud monthly cost estimate from `.tf` files and a [`infracost-usage.yml`](infracost-usage.yml) file.
-
-When modifying resources, before deploying resources or commiting to repo, it can be insightful to use Infracost to highlight costs spikes:
+[Infracost] helps you estimate monthly cloud costs by analyzing your Terraform files. To check potential costs before deploying changes:
 
 ```shell
 export TG_DIR=terragrunt/dev/
@@ -392,14 +390,12 @@ infracost breakdown --path=$TG_DIR \
 ```
 
 > [!IMPORTANT]
-> [Infracost specifies] free trials and free tiers, which are usually **not** a significant part of cloud costs, are ignored.
-> Meaning Infracost is intended as a necessary, but unsufficient tool:
+> Understanding Infracost Results:
 >
-> - It will most likely display a non-zero cost;
->
-> - If this cost is low (i.e., few cents), you should still verify your usage remains within the Free tier;
->
-> - If this cost is high, this may indicate you are not under Free Tier anymore.
+> - [Infracost ignores] free tiers in its calculations
+> - A small cost estimate (few cents) usually means you're still within free tier limits
+> - A larger cost estimate may indicate you've exceeded free tier limits
+> - Always verify your actual GCP usage alongside Infracost estimates
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -455,15 +451,11 @@ Tucared - <1v8ufskf@duck.com>
 [OpenTofu]: https://opentofu.org/docs/intro/install/
 [Terragrunt]: https://terragrunt.gruntwork.io/docs/getting-started/install/
 
-[Notion public template database]: https://adjoining-heath-cac.notion.site/ae50475a83bd40edbced0544315364fa?v=d212f11f17c646cc862983622904c8bb
 [Setup an internal Notion integration]: https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up
 [add it as a connection to your database]: https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages
 [how to retrieve a database ID]: https://developers.notion.com/reference/retrieve-a-database
 [how to pick a project ID]: https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin
 
-[Page]: https://developers.notion.com/reference/page
-[Notion database]: https://developers.notion.com/reference/database
-
 [Infracost]: https://github.com/infracost/infracost/tree/master
 
-[Infracost specifies]: https://www.infracost.io/docs/supported_resources/google/
+[Infracost ignores]: https://www.infracost.io/docs/supported_resources/google/
