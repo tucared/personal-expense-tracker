@@ -74,6 +74,7 @@ This project provides a template for building a modern data lakehouse that:
 - [![Terragrunt][Terragrunt.io]][Terragrunt-url]
 - [![Python][Python.org]][Python-url]
 - [![Streamlit][Streamlit.io]][Streamlit-url]
+- [![Dlt][dltHub.com]][dlt-url]
 - [![Notion][Notion.so]][Notion-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -355,6 +356,9 @@ Tucared - <1v8ufskf@duck.com>
 [Python-url]: https://www.python.org/
 [Streamlit.io]: https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=blue
 [Streamlit-url]: https://streamlit.io/
+[dltHub.com]: https://img.shields.io/badge/Dlt-C6D300?style=for-the-badge&logo=dlt&logoColor=green
+[dlt-url]: https://dlthub.com/
+
 [Notion.so]: https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white
 [Notion-url]: https://www.notion.so/
 [Console.cloud.google.com]: https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white
