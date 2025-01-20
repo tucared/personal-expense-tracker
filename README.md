@@ -237,8 +237,7 @@ This project stays within GCP's free tier when:
 Use [Infracost] to estimate costs ([free tier ignored]):
 
 ```shell
-export TG_DIR=terragrunt/dev/
-infracost breakdown --path=$TG_DIR --usage-file=infracost-usage.yml
+infracost breakdown --path terragrunt/example
 ```
 
 ## Roadmap
