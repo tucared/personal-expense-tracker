@@ -1,13 +1,4 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
-<a name="readme-top"></a>
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <!-- <a href="https://github.com/tucared/lakehouse-starter">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a> -->
-
 <h1 align="center">Lakehouse Starter</h1>
 
   <strong><p align="center">
@@ -17,42 +8,6 @@
   ![Lakehouse Architecture](lakehouse.svg)
 </div>
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#overview">Overview</a></li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation-steps">Installation Steps</a></li>
-            <ul>
-                <li><a href="#setup-notion-database">Setup Notion Database</a></li>
-                <li><a href="#configure-local-repository">Configure Local Repository</a></li>
-                <li><a href="#setup-google-cloud-project">Setup Google Cloud Project</a></li>
-                <li><a href="#configure-service-account">Configure Service Account</a></li>
-                <li><a href="#deploy-infrastructure">Deploy Infrastructure</a></li>
-            </ul>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a>
-        <ul>
-            <li><a href="#data-flow">Data Flow</a></li>
-            <li><a href="#triggering-data-ingestion">Triggering Data Ingestion</a></li>
-            <li><a href="#cleanup">Cleanup</a></li>
-            <li><a href="#sequence-diagram">Sequence diagram</a></li>
-        </ul>
-    </li>
-    <li><a href="#cost-management">Cost Management</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ol>
-</details>
-
-<!-- OVERVIEW -->
 ## Overview
 
 This project provides a template for building a modern data lakehouse that:
@@ -62,8 +17,6 @@ This project provides a template for building a modern data lakehouse that:
 - Enables SQL analytics using DuckDB for efficient data querying
 - Features a Streamlit web application for interactive data exploration
 - Stays within GCP's free tier limits when used as provided
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -77,8 +30,6 @@ To get a copy of the project up and running follow the steps below.
 - [gcloud CLI] installed
 - [OpenTofu] installed
 - [Terragrunt] installed
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Installation Steps
 
@@ -200,9 +151,6 @@ gcloud builds triggers run $(terragrunt output streamlit_build_trigger_name | se
     --region=$(terragrunt output streamlit_build_trigger_region | sed 's/"//g')
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- USAGE -->
 ## Usage
 
 ### Data Flow
@@ -279,9 +227,6 @@ gcloud projects delete $PROJECT_ID
 rm -rf .terraform.lock.hcl .terragrunt-cache
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- COST MANAGEMENT -->
 ## Cost Management
 
 This project stays within GCP's free tier when:
@@ -296,17 +241,11 @@ export TG_DIR=terragrunt/dev/
 infracost breakdown --path=$TG_DIR --usage-file=infracost-usage.yml
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ROADMAP -->
 ## Roadmap
 
 - [ ] Transform the DLT notion pipeline and Streamlit app into OpenTofu modules
 - [ ] Create a branch for embedding DLT to Streamlit (removing need for Cloud Storage)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
 ## Contributing
 
 1. Fork the project
@@ -315,21 +254,13 @@ infracost breakdown --path=$TG_DIR --usage-file=infracost-usage.yml
 4. Push to branch (`git push origin feature/AmazingFeature)`
 5. Open a Pull Request
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTACT -->
 ## Contact
 
 Tucared - <1v8ufskf@duck.com>
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
