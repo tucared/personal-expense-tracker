@@ -17,3 +17,6 @@ terragrunt/*/
 
 # Precommit
 .terraform
+
+# Draw.io
+*.drawio

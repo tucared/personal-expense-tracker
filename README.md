@@ -13,17 +13,15 @@
   <strong><p align="center">
     A production-ready data lakehouse template using OpenTofu, DLT, and Streamlit on Google Cloud Platform (GCP).</strong>
   </p>
+
+  ![Lakehouse Architecture](lakehouse.svg)
 </div>
 
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#overview">Overview</a>
-      <ul>
-        <li><a href="#tech-stack">Tech Stack</a></li>
-      </ul>
-    </li>
+    <li><a href="#overview">Overview</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
@@ -64,18 +62,6 @@ This project provides a template for building a modern data lakehouse that:
 - Enables SQL analytics using DuckDB for efficient data querying
 - Features a Streamlit web application for interactive data exploration
 - Stays within GCP's free tier limits when used as provided
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-### Tech Stack
-
-- [![OpenTofu][OpenTofu.org]][OpenTofu-url]
-- [![Google Cloud][Console.cloud.google.com]][Google-Cloud-url]
-- [![Terragrunt][Terragrunt.io]][Terragrunt-url]
-- [![Python][Python.org]][Python-url]
-- [![Streamlit][Streamlit.io]][Streamlit-url]
-- [![Dlt][dltHub.com]][dlt-url]
-- [![Notion][Notion.so]][Notion-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -347,23 +333,6 @@ Tucared - <1v8ufskf@duck.com>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[OpenTofu.org]: https://img.shields.io/badge/OpenTofu-FFDA18?style=for-the-badge&logo=opentofu&logoColor=black
-[OpenTofu-url]: https://opentofu.org/
-<!-- https://github.com/simple-icons/simple-icons/issues/7650 -->
-[Terragrunt.io]: https://img.shields.io/badge/terragrunt-565AE1?style=for-the-badge&logo=terragrunt
-[Terragrunt-url]: https://terragrunt.gruntwork.io/
-[Python.org]: https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue
-[Python-url]: https://www.python.org/
-[Streamlit.io]: https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=blue
-[Streamlit-url]: https://streamlit.io/
-[dltHub.com]: https://img.shields.io/badge/Dlt-C6D300?style=for-the-badge&logo=dlt&logoColor=green
-[dlt-url]: https://dlthub.com/
-
-[Notion.so]: https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white
-[Notion-url]: https://www.notion.so/
-[Console.cloud.google.com]: https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white
-[Google-Cloud-url]: https://console.cloud.google.com
-
 [Notion account]: https://www.notion.so/signup
 [Google Cloud billing account]: https://cloud.google.com/billing/docs/how-to/create-billing-account
 [gcloud CLI]: https://cloud.google.com/sdk/docs/install
