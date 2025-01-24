@@ -1,3 +1,23 @@
+#################################
+# Common Resources
+#################################
+
+resource "random_id" "cloud_function_bucket_prefix" {
+  byte_length = 8
+}
+
+resource "google_storage_bucket" "cloud_function" {
+  name          = "${random_id.cloud_function_bucket_prefix.hex}-cloud-function"
+  force_destroy = true
+  location      = var.region
+
+  uniform_bucket_level_access = true
+}
+
+#################################
+# Ingestion Pipeline Resources
+#################################
+
 resource "google_secret_manager_secret" "notion" {
   secret_id = var.gsm_notion_secret_name
 
@@ -50,19 +70,6 @@ resource "google_secret_manager_secret_iam_member" "cloud_function_key" {
 
 resource "google_service_account_key" "cloud_function" {
   service_account_id = google_service_account.cloud_function.name
-}
-
-
-resource "random_id" "cloud_function_bucket_prefix" {
-  byte_length = 8
-}
-
-resource "google_storage_bucket" "cloud_function" {
-  name          = "${random_id.cloud_function_bucket_prefix.hex}-cloud-function"
-  force_destroy = true
-  location      = var.region
-
-  uniform_bucket_level_access = true
 }
 
 resource "google_storage_bucket_iam_member" "cloud_function" {
@@ -186,11 +193,9 @@ resource "google_cloud_scheduler_job" "dlt" {
   }
 }
 
-####################
-# Streamlit
-####################
-
-# Bucket reader
+#################################
+# Streamlit App Resources
+#################################
 
 resource "google_service_account" "data_bucket_reader" {
   account_id   = "bucket-reader-sa"
