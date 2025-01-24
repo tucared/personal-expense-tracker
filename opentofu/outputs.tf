@@ -1,6 +1,6 @@
 output "bucket_name" {
   description = "Name of bucket containing cloud function state file"
-  value       = google_storage_bucket.cloud_function.name
+  value       = google_storage_bucket.this.name
 }
 
 output "function_name" {
@@ -40,7 +40,7 @@ output "sa_email_cloud_function" {
 
 output "bucket_name_cloud_function" {
   description = "Name of bucket containing cloud function state file"
-  value       = google_storage_bucket.cloud_function.name
+  value       = google_storage_bucket.this.name
 }
 
 output "sa_email_cloud_scheduler" {

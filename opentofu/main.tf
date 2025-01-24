@@ -2,12 +2,12 @@
 # Common Resources
 #################################
 
-resource "random_id" "cloud_function_bucket_prefix" {
+resource "random_id" "bucket_prefix" {
   byte_length = 8
 }
 
-resource "google_storage_bucket" "cloud_function" {
-  name          = "${random_id.cloud_function_bucket_prefix.hex}-cloud-function"
+resource "google_storage_bucket" "this" {
+  name          = "${random_id.bucket_prefix.hex}-data-bucket"
   force_destroy = true
   location      = var.region
 
@@ -73,7 +73,7 @@ resource "google_service_account_key" "cloud_function" {
 }
 
 resource "google_storage_bucket_iam_member" "cloud_function" {
-  bucket = google_storage_bucket.cloud_function.name
+  bucket = google_storage_bucket.this.name
   role   = "roles/storage.objectUser"
   member = "serviceAccount:${google_service_account.cloud_function.email}"
 }
@@ -138,7 +138,7 @@ resource "google_cloudfunctions2_function" "this" {
     service_account_email = google_service_account.cloud_function.email
 
     environment_variables = {
-      DESTINATION__FILESYSTEM__BUCKET_URL                = "gs://${google_storage_bucket.cloud_function.name}"
+      DESTINATION__FILESYSTEM__BUCKET_URL                = "gs://${google_storage_bucket.this.name}"
       DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL = google_service_account.cloud_function.email
       DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID   = var.project_id
       NORMALIZE__LOADER_FILE_FORMAT                      = "parquet"
@@ -203,7 +203,7 @@ resource "google_service_account" "data_bucket_reader" {
 }
 
 resource "google_storage_bucket_iam_member" "data_bucket_reader" {
-  bucket = google_storage_bucket.cloud_function.name
+  bucket = google_storage_bucket.this.name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.data_bucket_reader.email}"
 }
@@ -396,7 +396,7 @@ resource "google_cloud_run_v2_service" "streamlit" {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
         name  = "GCS_BUCKET_NAME"
-        value = google_storage_bucket.cloud_function.name
+        value = google_storage_bucket.this.name
       }
       env {
         name  = "HMAC_ACCESS_ID"
