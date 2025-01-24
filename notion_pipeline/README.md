@@ -50,9 +50,9 @@ Running Cloud Function locally with [`functions-framework`]
 
     SOURCES__NOTION__API_KEY=$(grep "notion_secret_value" env_vars.yaml | awk '{print $2}' | tr -d '"') \
     DESTINATION__FILESYSTEM__BUCKET_URL=gs://$(terragrunt output bucket_name | sed 's/"//g') \
-    DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL=$(terragrunt output sa_email_cloud_function | sed 's/"//g') \
+    DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.client_email') \
     DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.private_key') \
-    DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
+    DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.project_id') \
     NORMALIZE__LOADER_FILE_FORMAT="parquet" \
     RUNTIME__LOG_LEVEL="WARNING" \
     RUNTIME__DLTHUB_TELEMETRY=false \
