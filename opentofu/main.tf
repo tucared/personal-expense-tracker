@@ -18,6 +18,8 @@ resource "google_storage_bucket" "this" {
 # Ingestion Pipeline Resources
 #################################
 
+# Source secret(s)
+
 resource "google_secret_manager_secret" "notion" {
   secret_id = var.gsm_notion_secret_name
 
@@ -39,38 +41,14 @@ resource "google_secret_manager_secret_version" "notion" {
   secret_data = var.notion_secret_value
 }
 
+# Service account
+
 resource "google_service_account" "cloud_function" {
   account_id   = var.sa_account_id_cloud_function
   display_name = "Cloud Function SA"
 }
 
-resource "google_secret_manager_secret" "cloud_function_key" {
-  secret_id = "cloud-function-key"
-
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
-}
-
-resource "google_secret_manager_secret_version" "cloud_function_key" {
-  secret      = google_secret_manager_secret.cloud_function_key.id
-  secret_data = jsondecode(base64decode(google_service_account_key.cloud_function.private_key))["private_key"]
-}
-
-resource "google_secret_manager_secret_iam_member" "cloud_function_key" {
-  project   = var.project_id
-  secret_id = google_secret_manager_secret.cloud_function_key.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
-resource "google_service_account_key" "cloud_function" {
-  service_account_id = google_service_account.cloud_function.name
-}
+## Granting the service account read/write access to the bucket and the secret
 
 resource "google_storage_bucket_iam_member" "cloud_function" {
   bucket = google_storage_bucket.this.name
@@ -84,6 +62,40 @@ resource "google_secret_manager_secret_iam_member" "cloud_function" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.cloud_function.email}"
 }
+
+## Saving the service account private key in Secret Manager
+
+resource "google_secret_manager_secret" "cloud_function_service_account_key" {
+  secret_id = "CLOUD_FUNCTION_SERVICE_ACCOUNT_KEY"
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "cloud_function_service_account_key" {
+  secret      = google_secret_manager_secret.cloud_function_service_account_key.id
+  secret_data = jsondecode(base64decode(google_service_account_key.cloud_function.private_key))["private_key"]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloud_function_service_account_key" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.cloud_function_service_account_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_function.email}"
+}
+
+resource "google_service_account_key" "cloud_function" {
+  service_account_id = google_service_account.cloud_function.name
+}
+
+# Deployment of Cloud Function
+
+## Saving source code in a bucket
 
 resource "random_id" "cloud_function_source_bucket_prefix" {
   byte_length = 8
@@ -109,6 +121,8 @@ resource "google_storage_bucket_object" "cloud_function_source" {
   bucket       = google_storage_bucket.cloud_function_source.name
   source       = data.archive_file.cloud_function_source.output_path
 }
+
+## Deployment of the Cloud Function
 
 resource "google_cloudfunctions2_function" "this" {
   name        = var.cloud_function_parameters.name
@@ -156,11 +170,13 @@ resource "google_cloudfunctions2_function" "this" {
     secret_environment_variables {
       project_id = var.project_id
       key        = "DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY"
-      secret     = google_secret_manager_secret.cloud_function_key.secret_id
+      secret     = google_secret_manager_secret.cloud_function_service_account_key.secret_id
       version    = "latest"
     }
   }
 }
+
+# Cloud Scheduler to invoke the Cloud Function regularly
 
 resource "google_service_account" "cloud_scheduler" {
   account_id   = var.sa_account_id_cloud_scheduler
