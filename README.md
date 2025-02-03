@@ -200,16 +200,16 @@ sequenceDiagram
 Manual trigger:
 
 ```shell
-curl -i -X POST $(terragrunt output function_uri | sed 's/"//g') \
+curl -i -X POST $(terragrunt output notion_pipeline_function_uri | sed 's/"//g') \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
 Force scheduler run:
 
 ```shell
-gcloud scheduler jobs run $(terragrunt output scheduler_dlt_name | sed 's/"//g') \
-    --project=$PROJECT_ID \
-    --location=$(terragrunt output scheduler_append_region | sed 's/"//g')
+gcloud scheduler jobs run $(terragrunt output notion_pipeline_scheduler_dlt_name | sed 's/"//g') \
+    --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
+    --location=$(terragrunt output notion_pipeline_scheduler_dlt_region | sed 's/"//g')
 ```
 
 ### Cleanup

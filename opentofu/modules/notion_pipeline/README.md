@@ -45,7 +45,7 @@ Running Cloud Function locally with [`functions-framework`]
 2. Start local server.
 
     ```shell
-    export SOURCE=../../notion_pipeline
+    export SOURCE=../../notion_pipeline/src/
     export GOOGLE_APPLICATION_CREDENTIALS_PATH=$SOURCE/secret/$(echo "${PWD##*/}")_sa-key.json
 
     SOURCES__NOTION__API_KEY=$(grep "notion_secret_value" env_vars.yaml | awk '{print $2}' | tr -d '"') \
@@ -72,6 +72,7 @@ Running Cloud Function locally with [`functions-framework`]
 ## Export to requirements.txt for Cloud Function deployment
 
 ```shell
+cd opentofu/modules/notion_pipeline/src
 uv export --format requirements-txt > requirements.txt
 # or run pre commits
 ```

@@ -3,7 +3,6 @@ __pycache__
 .python-version
 
 # Local testing
-cloud-function/data/
 secret/
 
 # Infracost files
