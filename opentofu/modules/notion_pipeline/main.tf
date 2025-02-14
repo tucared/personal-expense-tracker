@@ -172,6 +172,14 @@ resource "google_cloudfunctions2_function_iam_member" "invoker" {
   member         = "serviceAccount:${google_service_account.cloud_scheduler.email}"
 }
 
+resource "google_cloud_run_service_iam_member" "invoker" {
+  project  = google_cloudfunctions2_function.this.project
+  location = google_cloudfunctions2_function.this.location
+  service  = google_cloudfunctions2_function.this.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.cloud_scheduler.email}"
+}
+
 resource "google_cloud_scheduler_job" "dlt" {
   paused = var.cloud_scheduler_parameters.paused
 
@@ -185,6 +193,13 @@ resource "google_cloud_scheduler_job" "dlt" {
     http_method = "POST"
     oidc_token {
       service_account_email = google_service_account.cloud_scheduler.email
+      audience              = google_cloudfunctions2_function.this.service_config[0].uri
     }
   }
+
+  depends_on = [
+    google_cloudfunctions2_function.this,
+    google_cloudfunctions2_function_iam_member.invoker,
+    google_cloud_run_service_iam_member.invoker
+  ]
 }

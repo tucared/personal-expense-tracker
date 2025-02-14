@@ -31,7 +31,8 @@ variable "cloud_function_parameters" {
     entrypoint = string
   })
   default = {
-    name       = "notion_pipeline"
+    # Does not support underscores in the name
+    name       = "notion-pipeline"
     runtime    = "python312"
     source     = "./modules/notion_pipeline/src"
     entrypoint = "notion_pipeline"
