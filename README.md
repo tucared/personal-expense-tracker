@@ -207,7 +207,7 @@ curl -i -X POST $(terragrunt output notion_pipeline_function_uri | sed 's/"//g')
 Force scheduler run:
 
 ```shell
-gcloud scheduler jobs run $(terragrunt output notion_pipeline_scheduler_dlt_name | sed 's/"//g') \
+gcloud scheduler jobs run $(terragrunt output notion_pipeline_scheduler_name | sed 's/"//g') \
     --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
     --location=$(terragrunt output notion_pipeline_scheduler_dlt_region | sed 's/"//g')
 ```

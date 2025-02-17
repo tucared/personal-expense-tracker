@@ -1,34 +1,9 @@
-# Source secret(s)
-
-resource "google_secret_manager_secret" "notion" {
-  secret_id = var.gsm_notion_secret_name
-
-  labels = {
-    application = "notion"
-  }
-
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
-}
-
-resource "google_secret_manager_secret_version" "notion" {
-  secret      = google_secret_manager_secret.notion.id
-  secret_data = var.notion_secret_value
-}
-
-# Service account
+# Cloud function service account
 
 resource "google_service_account" "cloud_function" {
   account_id   = var.sa_account_id_cloud_function
   display_name = "Cloud Function SA"
 }
-
-## Granting the service account read/write access to the bucket and the secret
 
 resource "google_storage_bucket_iam_member" "cloud_function" {
   bucket = var.bucket_name
@@ -36,14 +11,11 @@ resource "google_storage_bucket_iam_member" "cloud_function" {
   member = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cloud_function" {
-  project   = var.project_id
-  secret_id = google_secret_manager_secret.notion.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
 ## Saving the service account private key in Secret Manager
+
+resource "google_service_account_key" "cloud_function" {
+  service_account_id = google_service_account.cloud_function.name
+}
 
 resource "google_secret_manager_secret" "cloud_function_service_account_key" {
   secret_id = "CLOUD_FUNCTION_SERVICE_ACCOUNT_KEY"
@@ -69,8 +41,34 @@ resource "google_secret_manager_secret_iam_member" "cloud_function_service_accou
   member    = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
-resource "google_service_account_key" "cloud_function" {
-  service_account_id = google_service_account.cloud_function.name
+# Notion source secret
+
+resource "google_secret_manager_secret" "notion" {
+  secret_id = var.gsm_notion_secret_name
+
+  labels = {
+    application = "notion"
+  }
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "notion" {
+  secret      = google_secret_manager_secret.notion.id
+  secret_data = var.notion_secret_value
+}
+
+resource "google_secret_manager_secret_iam_member" "cloud_function_notion" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.notion.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
 # Deployment of Cloud Function
