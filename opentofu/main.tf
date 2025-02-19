@@ -21,10 +21,11 @@ resource "google_storage_bucket" "this" {
 module "notion_pipeline" {
   source = "./modules/notion_pipeline"
 
-  project_id          = var.project_id
-  bucket_name         = google_storage_bucket.this.name
-  notion_secret_value = var.notion_secret_value
-  region              = var.region
+  project_id                 = var.project_id
+  region                     = var.region
+  bucket_name                = google_storage_bucket.this.name
+  notion_secret_value        = var.notion_pipeline.notion_secret_value
+  cloud_scheduler_parameters = var.notion_pipeline.cloud_scheduler_parameters
 }
 
 #################################

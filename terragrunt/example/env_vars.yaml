@@ -3,19 +3,22 @@
 # Mandatory variables
 # -------------------
 project_id: GLOBALLY_UNIQUE_PROJECT_ID
-notion_secret_value: secret_XXXX
 sa_tofu: tofu-sa
-
-# Optional variables
-# ------------------
 region: europe-west9
-region_streamlit_build: europe-west1
 zone: europe-west9-a
 
-cloud_scheduler_parameters:
-  paused: true
-  schedule: "0 * * * *" # every hour
+# Notion pipeline variables
+# --------------------
+notion_pipeline:
+  notion_secret_value: secret_XXXX
+  cloud_scheduler_parameters:
+    paused: true
+    schedule: "0 * * * *" # every hour
+    region: europe-west6
 
+# Streamlit variables
+# ------------------
+region_streamlit_build: europe-west1
 streamlit_cloudrun_limits:
   memory: 1024Mi
   cpu: 2

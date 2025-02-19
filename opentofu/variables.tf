@@ -27,9 +27,15 @@ locals {
 
 # Notion pipeline module
 
-variable "notion_secret_value" {
-  description = "Notion integration token with read access to database"
-  type        = string
+variable "notion_pipeline" {
+  type = object({
+    notion_secret_value = string
+    cloud_scheduler_parameters = object({
+      paused   = bool
+      schedule = string
+      region   = string
+    })
+  })
 }
 
 # Streamlit module

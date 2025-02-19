@@ -7,7 +7,7 @@ locals {
 # Cloud function service account
 
 resource "google_service_account" "cloud_function" {
-  account_id   = var.sa_account_id_cloud_function
+  account_id   = "sa-cloud-function"
   display_name = "Cloud Function SA"
 }
 
@@ -50,7 +50,7 @@ resource "google_secret_manager_secret_iam_member" "cloud_function_service_accou
 # Notion source secret
 
 resource "google_secret_manager_secret" "notion" {
-  secret_id = var.gsm_notion_secret_name
+  secret_id = "NOTION_INTEGRATION_SECRET"
 
   labels = {
     application = "notion"
@@ -97,12 +97,12 @@ resource "google_storage_bucket" "cloud_function_source" {
 data "archive_file" "cloud_function_source" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
-  source_dir  = var.cloud_function_parameters.source
+  source_dir  = "./modules/notion_pipeline/src"
   excludes    = ["__pycache__", "requirements.local.txt", ".gcloudignore", ".venv", "secret", "uv.lock", "pyproject.toml", "README.md"]
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
-  name         = var.cloud_function_parameters.name
+  name         = "notion-pipeline"
   content_type = "application/zip"
   bucket       = google_storage_bucket.cloud_function_source.name
   source       = data.archive_file.cloud_function_source.output_path
@@ -111,19 +111,19 @@ resource "google_storage_bucket_object" "cloud_function_source" {
 ## Deployment of the Cloud Function
 
 resource "google_cloudfunctions2_function" "this" {
-  name        = var.cloud_function_parameters.name
+  name        = "notion-pipeline" # Avoid underscores in the name
   location    = var.region
   description = "Function used to query latest added and edited items"
 
   build_config {
-    runtime = var.cloud_function_parameters.runtime
+    runtime = "python312"
     source {
       storage_source {
         bucket = google_storage_bucket.cloud_function_source.name
         object = google_storage_bucket_object.cloud_function_source.name
       }
     }
-    entry_point = var.cloud_function_parameters.entrypoint
+    entry_point = "notion_pipeline"
   }
 
   lifecycle {
@@ -168,7 +168,7 @@ resource "google_cloudfunctions2_function" "this" {
 # Cloud Scheduler to invoke the Cloud Function regularly
 
 resource "google_service_account" "cloud_scheduler" {
-  account_id   = var.sa_account_id_cloud_scheduler
+  account_id   = "sa-cloud-scheduler"
   display_name = "Cloud Scheduler SA"
 }
 
@@ -191,7 +191,7 @@ resource "google_cloud_run_service_iam_member" "invoker" {
 resource "google_cloud_scheduler_job" "dlt" {
   paused = var.cloud_scheduler_parameters.paused
 
-  name        = var.cloud_scheduler_parameters.name
+  name        = "cloud-function-invoker"
   description = "Cloud Function dlt invoker"
   schedule    = var.cloud_scheduler_parameters.schedule
   region      = var.cloud_scheduler_parameters.region
