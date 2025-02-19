@@ -1,3 +1,9 @@
+locals {
+  labels = {
+    module = "notion_pipeline"
+  }
+}
+
 # Cloud function service account
 
 resource "google_service_account" "cloud_function" {
@@ -84,6 +90,8 @@ resource "google_storage_bucket" "cloud_function_source" {
   force_destroy               = true
   location                    = var.region
   uniform_bucket_level_access = true
+
+  labels = local.labels
 }
 
 data "archive_file" "cloud_function_source" {
@@ -123,6 +131,8 @@ resource "google_cloudfunctions2_function" "this" {
       google_storage_bucket_object.cloud_function_source
     ]
   }
+
+  labels = local.labels
 
   service_config {
     max_instance_count    = 1
