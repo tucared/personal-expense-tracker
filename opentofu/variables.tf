@@ -29,7 +29,7 @@ locals {
 
 variable "notion_pipeline" {
   type = object({
-    notion_secret_value = string
+    notion_api_key = string
     cloud_scheduler_parameters = object({
       paused   = bool
       schedule = string

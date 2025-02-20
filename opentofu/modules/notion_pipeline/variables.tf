@@ -8,7 +8,7 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "notion_secret_value" {
+variable "notion_api_key" {
   description = "Notion integration token with read access to database"
   type        = string
 }

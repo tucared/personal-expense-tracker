@@ -49,7 +49,7 @@ Running Cloud Function locally with [`functions-framework`]
     export SOURCE=../../notion_pipeline/src/
     export GOOGLE_APPLICATION_CREDENTIALS_PATH=$SOURCE/secret/$(echo "${PWD##*/}")_sa-key.json
 
-    SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_secret_value' env_vars.yaml) \
+    SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
     DESTINATION__FILESYSTEM__BUCKET_URL=gs://$(terragrunt output bucket_name | sed 's/"//g') \
     DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.client_email') \
     DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.private_key') \

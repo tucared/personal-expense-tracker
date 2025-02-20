@@ -24,7 +24,7 @@ module "notion_pipeline" {
   project_id                 = var.project_id
   region                     = var.region
   bucket_name                = google_storage_bucket.this.name
-  notion_secret_value        = var.notion_pipeline.notion_secret_value
+  notion_api_key             = var.notion_pipeline.notion_api_key
   cloud_scheduler_parameters = var.notion_pipeline.cloud_scheduler_parameters
 }
 

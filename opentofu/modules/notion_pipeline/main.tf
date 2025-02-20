@@ -50,7 +50,7 @@ resource "google_secret_manager_secret_iam_member" "cloud_function_service_accou
 # Notion source secret
 
 resource "google_secret_manager_secret" "notion" {
-  secret_id = "NOTION_INTEGRATION_SECRET"
+  secret_id = "NOTION_API_KEY"
 
   labels = {
     application = "notion"
@@ -67,7 +67,7 @@ resource "google_secret_manager_secret" "notion" {
 
 resource "google_secret_manager_secret_version" "notion" {
   secret      = google_secret_manager_secret.notion.id
-  secret_data = var.notion_secret_value
+  secret_data = var.notion_api_key
 }
 
 resource "google_secret_manager_secret_iam_member" "cloud_function_notion" {

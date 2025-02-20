@@ -10,7 +10,7 @@ zone: europe-west9-a
 # Notion pipeline variables
 # --------------------
 notion_pipeline:
-  notion_secret_value: secret_XXXX
+  notion_api_key: secret_XXXX
   cloud_scheduler_parameters:
     paused: true
     schedule: "0 * * * *" # every hour
