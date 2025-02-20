@@ -188,11 +188,11 @@ resource "google_cloud_run_service_iam_member" "invoker" {
   member   = "serviceAccount:${google_service_account.cloud_scheduler.email}"
 }
 
-resource "google_cloud_scheduler_job" "dlt" {
+resource "google_cloud_scheduler_job" "this" {
   paused = var.cloud_scheduler_parameters.paused
 
   name        = "cloud-function-invoker"
-  description = "Cloud Function dlt invoker"
+  description = "Triggers the Cloud Function to query Notion API"
   schedule    = var.cloud_scheduler_parameters.schedule
   region      = var.cloud_scheduler_parameters.region
 

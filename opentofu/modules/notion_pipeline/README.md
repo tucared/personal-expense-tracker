@@ -1,4 +1,4 @@
-# DLT pipeline
+# Notion pipeline (using DLT)
 
 Running Cloud Function locally with [`functions-framework`]
 

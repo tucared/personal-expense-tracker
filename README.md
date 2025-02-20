@@ -209,7 +209,7 @@ Force scheduler run:
 ```shell
 gcloud scheduler jobs run $(terragrunt output notion_pipeline_scheduler_name | sed 's/"//g') \
     --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
-    --location=$(terragrunt output notion_pipeline_scheduler_dlt_region | sed 's/"//g')
+    --location=$(terragrunt output notion_pipeline_scheduler_region | sed 's/"//g')
 ```
 
 ### Cleanup

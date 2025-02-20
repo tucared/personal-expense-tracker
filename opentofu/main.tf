@@ -43,7 +43,6 @@ resource "google_storage_bucket_iam_member" "data_bucket_reader" {
   member = "serviceAccount:${google_service_account.data_bucket_reader.email}"
 }
 
-
 resource "google_storage_hmac_key" "data_bucket_reader" {
   service_account_email = google_service_account.data_bucket_reader.email
 }

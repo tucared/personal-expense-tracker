@@ -12,10 +12,29 @@ output "hmac_secret" {
   sensitive = true
 }
 
-output "sa_email_tofu" {
+output "tofu_service_account" {
   description = "Email of service account used whe running tofu commands"
   value       = local.tofu_service_account
 }
+
+# Outputs for Notion pipeline module
+
+output "notion_pipeline_function_uri" {
+  description = "URI of deployed Cloud Function"
+  value       = module.notion_pipeline.function_uri
+}
+
+output "notion_pipeline_scheduler_name" {
+  description = "Name of deployed Cloud Function"
+  value       = module.notion_pipeline.scheduler_name
+}
+
+output "notion_pipeline_scheduler_region" {
+  description = "Region of deployed Cloud Function"
+  value       = module.notion_pipeline.scheduler_region
+}
+
+# Outputs for Streamlit module
 
 output "streamlit_build_trigger_name" {
   description = "Name of Cloud Build trigger for Streamlit service"
@@ -32,22 +51,7 @@ output "streamlit_service_url" {
   value       = google_cloud_run_v2_service.streamlit.uri
 }
 
-output "sa_email_streamlit_cloud_run" {
+output "streamlit_service_account_email" {
   description = "Email of service account used by Cloud Run when running Streamlit service"
   value       = google_service_account.streamlit.email
-}
-
-output "notion_pipeline_function_uri" {
-  description = "URI of deployed Cloud Function"
-  value       = module.notion_pipeline.function_uri
-}
-
-output "notion_pipeline_scheduler_dlt_name" {
-  description = "Name of deployed Cloud Function"
-  value       = module.notion_pipeline.scheduler_dlt_name
-}
-
-output "notion_pipeline_scheduler_dlt_region" {
-  description = "Region of deployed Cloud Function"
-  value       = module.notion_pipeline.scheduler_dlt_region
 }
