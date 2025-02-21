@@ -132,7 +132,7 @@ resource "google_storage_bucket_object" "streamlit_source" {
 
 resource "google_artifact_registry_repository" "streamlit-app" {
   location      = var.region
-  repository_id = var.streamlit_artifact_registry
+  repository_id = "streamlit"
   description   = "Image used to deploy Streamlit app on Cloud Run"
   format        = "DOCKER"
 }
@@ -160,7 +160,7 @@ locals {
 
 resource "google_cloudbuild_trigger" "streamlit" {
   name            = "streamlit-build-trigger"
-  location        = var.region_streamlit_build
+  location        = var.streamlit.build_region
   service_account = google_service_account.cloudbuild_trigger.id
 
   build {
@@ -242,8 +242,8 @@ resource "google_cloud_run_v2_service" "streamlit" {
       }
       resources {
         limits = {
-          cpu    = var.streamlit_cloudrun_limits.cpu
-          memory = var.streamlit_cloudrun_limits.memory
+          cpu    = var.streamlit.cloudrun_limits.cpu
+          memory = var.streamlit.cloudrun_limits.memory
         }
       }
     }

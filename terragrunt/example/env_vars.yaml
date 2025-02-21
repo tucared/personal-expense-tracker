@@ -18,7 +18,8 @@ notion_pipeline:
 
 # Streamlit variables
 # ------------------
-region_streamlit_build: europe-west1
-streamlit_cloudrun_limits:
-  memory: 1024Mi
-  cpu: 2
+streamlit:
+  build_region: europe-west1
+  cloudrun_limits:
+    memory: 1024Mi
+    cpu: 2

@@ -40,26 +40,20 @@ variable "notion_pipeline" {
 
 # Streamlit module
 
-# https://cloud.google.com/build/docs/locations#restricted_regions_for_some_projects
-variable "region_streamlit_build" {
-  description = "Region where Streamlit image is built"
-  type        = string
-  default     = "europe-west1"
-}
-
-variable "streamlit_cloudrun_limits" {
+variable "streamlit" {
   type = object({
-    cpu    = string
-    memory = string
+    # https://cloud.google.com/build/docs/locations#restricted_regions_for_some_projects
+    build_region = string
+    cloudrun_limits = object({
+      memory = string
+      cpu    = string
+    })
   })
   default = {
-    cpu    = "2"
-    memory = "1024Mi"
+    build_region = "europe-west1"
+    cloudrun_limits = {
+      memory = "1024Mi"
+      cpu    = "2"
+    }
   }
-}
-
-variable "streamlit_artifact_registry" {
-  description = "Artifact Registry containing Streamlit image"
-  type        = string
-  default     = "streamlit"
 }
