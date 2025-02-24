@@ -27,17 +27,17 @@
     ```shell
     cd terragrunt/dev
     tg apply              # More detail in root README.md
-    curl -i -X POST $(terragrunt output function_uri | sed 's/"//g')\?full_refresh=true \
+    curl -i -X POST $(terragrunt output notion_pipeline_function_uri | sed 's/"//g')\?full_refresh=true \
         -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
 2. Start local server by passing deployed cloud run service account credentials (docker env not supported yet)
 
     ```shell
-    GCS_BUCKET_NAME=$(terragrunt output bucket_name_cloud_function | sed 's/"//g') \
-    HMAC_ACCESS_ID=$(terragrunt output hmac_access_id | sed 's/"//g') \
-    HMAC_SECRET=$(terragrunt output hmac_secret | sed 's/"//g') \
-    uv run --directory="../../streamlit" streamlit run app.py
+    GCS_BUCKET_NAME=$(terragrunt output bucket_name | sed 's/"//g') \
+    HMAC_ACCESS_ID=$(terragrunt output streamlit_hmac_access_id | sed 's/"//g') \
+    HMAC_SECRET=$(terragrunt output streamlit_hmac_secret | sed 's/"//g') \
+    uv run --directory="../../opentofu/modules/streamlit/src/" streamlit run app.py
     ```
 
 ## Editing
