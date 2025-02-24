@@ -23,22 +23,25 @@ remote_state {
 }
 
 inputs = {
-  project_id          = local.env_vars.project_id
-  notion_secret_value = local.env_vars.notion_secret_value
+  project_id = local.env_vars.project_id
+  sa_tofu    = local.env_vars.sa_tofu
+  region     = local.env_vars.region
+  zone       = local.env_vars.zone
 
-  sa_tofu = local.env_vars.sa_tofu
-
-  region                 = local.env_vars.region
-  region_streamlit_build = local.env_vars.region_streamlit_build
-  zone                   = local.env_vars.zone
-
-  cloud_scheduler_parameters = {
-    paused   = local.env_vars.cloud_scheduler_parameters.paused
-    schedule = local.env_vars.cloud_scheduler_parameters.schedule
+  notion_pipeline = {
+    notion_api_key = local.env_vars.notion_pipeline.notion_api_key
+    cloud_scheduler_parameters = {
+      paused   = local.env_vars.notion_pipeline.cloud_scheduler_parameters.paused
+      schedule = local.env_vars.notion_pipeline.cloud_scheduler_parameters.schedule
+      region   = local.env_vars.notion_pipeline.cloud_scheduler_parameters.region
+    }
   }
 
-  streamlit_cloudrun_limits = {
-    cpu    = local.env_vars.streamlit_cloudrun_limits.cpu
-    memory = local.env_vars.streamlit_cloudrun_limits.memory
+  streamlit = {
+    build_region = local.env_vars.streamlit.build_region
+    cloudrun_limits = {
+      memory = local.env_vars.streamlit.cloudrun_limits.memory
+      cpu    = local.env_vars.streamlit.cloudrun_limits.cpu
+    }
   }
 }
