@@ -67,7 +67,7 @@ resource "google_storage_bucket" "cloud_function_source" {
 data "archive_file" "cloud_function_source" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
-  source_dir  = "./modules/notion_pipeline/src"
+  source_dir  = "${path.module}/src"
   excludes    = ["__pycache__", ".venv", "uv.lock", "pyproject.toml"]
 }
 

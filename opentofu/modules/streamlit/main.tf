@@ -85,8 +85,8 @@ resource "google_storage_bucket" "streamlit_source" {
 data "archive_file" "streamlit_source" {
   type        = "zip"
   output_path = "/tmp/streamlit-source.zip"
-  source_dir  = "./modules/streamlit/src"
-  excludes    = ["docker-compose.yml", "README.md", ".ruff_cache", ".venv", "secret"]
+  source_dir  = "${path.module}/src"
+  excludes    = ["docker-compose.yml", "README.md", ".ruff_cache", ".venv"]
 }
 
 resource "google_storage_bucket_object" "streamlit_source" {
@@ -183,6 +183,18 @@ resource "google_cloudbuild_trigger" "streamlit" {
 resource "google_service_account" "streamlit" {
   account_id   = "streamlit-sa"
   display_name = "Streamlit Cloud Run SA"
+}
+
+resource "google_storage_bucket_iam_member" "streamlit" {
+  bucket = var.bucket_name
+  role   = "roles/storage.legacyBucketReader"
+  member = "serviceAccount:${google_service_account.streamlit.email}"
+}
+
+resource "google_storage_bucket_iam_member" "streamlit_object_viewer" {
+  bucket = var.bucket_name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.streamlit.email}"
 }
 
 resource "google_cloud_run_v2_service" "streamlit" {

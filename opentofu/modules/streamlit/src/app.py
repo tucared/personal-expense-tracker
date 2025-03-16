@@ -5,6 +5,9 @@ import streamlit_authenticator as stauth  # type: ignore
 import yaml
 from yaml.loader import SafeLoader
 
+from google.cloud import storage
+from typing import List
+
 import streamlit as st
 
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
@@ -45,11 +48,28 @@ if st.session_state["authentication_status"]:
         st.write(result[0])
 
     st.header("SQL Query")
-    st.text("Example queries")
-    st.code(
-        f"SELECT *\nFROM ('gs://{GCS_BUCKET_NAME}/<filname>.parquet');",
-        language="sql",
-    )
+    # Get list of parquet files
+
+    def scan_gcs_for_parquet_files() -> List[str]:
+        """Scan the GCS bucket for all parquet files."""
+        client = storage.Client()
+        bucket = client.get_bucket(GCS_BUCKET_NAME)
+        blobs = bucket.list_blobs()
+
+        parquet_files = []
+        for blob in blobs:
+            if blob.name.endswith(".parquet"):
+                parquet_files.append(f"gs://{GCS_BUCKET_NAME}/{blob.name}")
+
+        return parquet_files
+
+    st.text("Example queries for available parquet files:")
+    parquet_files = scan_gcs_for_parquet_files()
+    for file in parquet_files:
+        st.code(
+            f"SELECT *\nFROM '{file}';",
+            language="sql",
+        )
     query = st.text_area("Enter your query", "SELECT 42;", height=100)
     if query is not None:
         try:
