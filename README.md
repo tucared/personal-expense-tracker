@@ -53,10 +53,14 @@ Edit `terragrunt/prod/env_vars.yaml` with your:
 #### Setup Google Cloud Project
 
 ```shell
-export BILLING_ACCOUNT_ID=your_billing_account_id
+# Login with default credentials
+gcloud auth application-default login
+
+export BILLING_ACCOUNT_ID=<your_billing_account_id>
 cd terragrunt/prod
 export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
 
+# Create project
 gcloud projects create $PROJECT_ID
 gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
 
@@ -71,74 +75,6 @@ gcloud services enable iam.googleapis.com --project=$PROJECT_ID
 gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
 ```
 
-#### Configure Service Account
-
-```shell
-unset GOOGLE_CREDENTIALS
-gcloud auth application-default login --no-launch-browser
-```
-
-Then create and configure the service account using the provided script below.
-
-<details><summary>Script to create service account and assign permissions</summary>
-
-```shell
-export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
-export TOFU_SERVICE_ACCOUNT=$(grep "sa_tofu" env_vars.yaml | awk '{print $2}' | tr -d '"')
-export USER_ACCOUNT_ID=$(echo `gcloud config get core/account`)
-
-gcloud iam service-accounts create $TOFU_SERVICE_ACCOUNT \
-    --display-name "OpenTofu SA" \
-    --description "Used when running OpenTofu commands" \
-    --project $PROJECT_ID
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/editor"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/secretmanager.admin"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/bigquery.dataEditor"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/iam.serviceAccountCreator"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/resourcemanager.projectIamAdmin"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/cloudfunctions.admin"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/cloudscheduler.admin"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member "serviceAccount:$TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
-    --project $PROJECT_ID \
-    --role "roles/run.admin"
-
-gcloud iam service-accounts add-iam-policy-binding \
-    $TOFU_SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
-    --project $PROJECT_ID \
-    --member "user:$USER_ACCOUNT_ID" \
-    --role "roles/iam.serviceAccountTokenCreator"
-```
-
 </details>
 
 #### Deploy Infrastructure
@@ -146,7 +82,7 @@ gcloud iam service-accounts add-iam-policy-binding \
 ```shell
 terragrunt apply
 
-# Deploy Streamlit app
+# Build and Deploy Streamlit App
 gcloud builds triggers run $(terragrunt output streamlit_build_trigger_name | sed 's/"//g') \
     --region=$(terragrunt output streamlit_build_trigger_region | sed 's/"//g')
 ```

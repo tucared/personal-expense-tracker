@@ -3,11 +3,6 @@ output "bucket_name" {
   value       = google_storage_bucket.this.name
 }
 
-output "tofu_service_account" {
-  description = "Email of service account used whe running tofu commands"
-  value       = local.tofu_service_account
-}
-
 # Outputs for Notion pipeline module
 
 output "notion_pipeline_function_uri" {

@@ -3,7 +3,6 @@
 # Mandatory variables
 # -------------------
 project_id: GLOBALLY_UNIQUE_PROJECT_ID
-sa_tofu: tofu-sa
 region: europe-west9
 zone: europe-west9-a
 

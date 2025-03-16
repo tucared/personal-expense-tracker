@@ -1,67 +1,55 @@
 # Streamlit App
 
-## Setup
+Running app locally with `uv` or `docker`.
 
-1. Install [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) if not done already
+## Pre-requisites
 
-2. Setup virtual env
+- Have [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) or [a docker engine](https://docs.orbstack.dev/install) installed
+
+- Having deployed your infrastructure with 'terragrunt apply' if running with Cloud Storage access, and [load dataset](README.md#Triggering-Data-Ingestion) if not done already
+
+## Running locally
+
+### Without impersonation or access to Cloud Storage data bucket
+
+1. Navigate to folder
 
     ```shell
-    uv sync
+    cd ../../opentofu/modules/streamlit/src/
     ```
 
-## Running locally without dependencies
-
-1. Start server
+2. Start server
    - In python environment: `uv run streamlit run app.py`
    - In dockerised environment: `docker-compose up --build`
 
-2. Go to <http://localhost:8501/>
+3. Go to <http://localhost:8501/>
    - Username: `rbriggs`
    - Password: `abc` (hashed in `config.yaml`)
 
-## Running with access to cloud storage bucket
+### With access to Cloud Storage bucket and Cloud Run impersonation
 
-1. Deploy your infrastructure on the cloud (and refresh dataset)
+1. Navigate to `terragrunt/` subfolder corresponding to your project.
 
     ```shell
     cd terragrunt/dev
-    tg apply              # More detail in root README.md
-    curl -i -X POST $(terragrunt output notion_pipeline_function_uri | sed 's/"//g')\?full_refresh=true \
-        -H "Authorization: bearer $(gcloud auth print-identity-token)"
     ```
 
 2. Start local server by passing deployed cloud run service account credentials (docker env not supported yet)
 
     ```shell
+    # Get the service account email
+    SERVICE_ACCOUNT=$(terragrunt output streamlit_service_account_email | sed 's/"//g')
+
+    # Impersonate the service account
+    gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
+
+    # Run with minimal environment variables
     GCS_BUCKET_NAME=$(terragrunt output bucket_name | sed 's/"//g') \
     HMAC_ACCESS_ID=$(terragrunt output streamlit_hmac_access_id | sed 's/"//g') \
     HMAC_SECRET=$(terragrunt output streamlit_hmac_secret | sed 's/"//g') \
-    uv run --directory="../../opentofu/modules/streamlit/src/" streamlit run app.py
-    ```
+    uv run --directory="../../opentofu/modules/streamlit/src/" \
+        streamlit run app.py
 
-## Editing
-
-- Check linting and type errors
-
-    ```shell
-    uv run ruff check
-    uv run mypy app.py
-    ```
-
-- Run formatter and fix linting errors
-
-    ```shell
-    uv run ruff format
-    uv run ruff check --fix
-    ```
-
-- Add/remove dependency
-
-    ```shell
-    uv add pandas
-    uv remove pandas
-
-    uv add ruff --dev
-    uv remove ruff --dev
+    # Reset impersonation to use your default credentials for Terraform
+    gcloud config unset auth/impersonate_service_account
     ```

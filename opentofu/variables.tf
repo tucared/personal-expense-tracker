@@ -15,16 +15,6 @@ variable "zone" {
   default     = "europe-west9-a"
 }
 
-variable "sa_tofu" {
-  description = "Used when running OpenTofu commands"
-  type        = string
-  default     = "tofu-sa"
-}
-
-locals {
-  tofu_service_account = "${var.sa_tofu}@${var.project_id}.iam.gserviceaccount.com"
-}
-
 # Notion pipeline module
 
 variable "notion_pipeline" {

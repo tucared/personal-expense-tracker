@@ -24,7 +24,6 @@ remote_state {
 
 inputs = {
   project_id = local.env_vars.project_id
-  sa_tofu    = local.env_vars.sa_tofu
   region     = local.env_vars.region
   zone       = local.env_vars.zone
 
