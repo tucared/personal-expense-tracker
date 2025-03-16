@@ -27,13 +27,13 @@ repos:
     hooks:
       - id: uv-lock
         name: uv-lock (streamlit)
-        files: streamlit/pyproject.toml
-        args: [--project, streamlit]
+        files: opentofu/modules/streamlit/src/pyproject.toml
+        args: [--project, opentofu/modules/streamlit/src/]
       - id: uv-lock
         name: uv-lock (notion_pipeline)
-        files: notion_pipeline/pyproject.toml
-        args: [--project, notion_pipeline]
+        files: opentofu/modules/notion_pipeline/src/pyproject.toml
+        args: [--project, opentofu/modules/notion_pipeline/src/]
       - id: uv-export
         name: uv-export (notion_pipeline)
-        files: notion_pipeline/pyproject.toml
-        args: [--project, notion_pipeline, "--frozen", "--output-file=notion_pipeline/requirements.txt"]
+        files: opentofu/modules/notion_pipeline/src/pyproject.toml
+        args: [--project, opentofu/modules/notion_pipeline/src/, "--frozen", "--output-file=opentofu/modules/notion_pipeline/src/requirements.txt"]
