@@ -1,55 +1,117 @@
-# Streamlit App
+# Streamlit Dashboard Service
 
-Running app locally with `uv` or `docker`.
+This service provides a web dashboard for visualizing and analyzing data stored in Google Cloud Storage. This guide explains how to run the application locally for development and testing.
 
-## Pre-requisites
+## Prerequisites
 
-- Have [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) or [a docker engine](https://docs.orbstack.dev/install) installed
+- **Development tools**: Install one of the following:
+  - [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) Python package manager
+  - [Docker engine](https://docs.orbstack.dev/install) for containerized deployment
 
-- Having deployed your infrastructure with 'terragrunt apply' if running with Cloud Storage access, and [load dataset](README.md#Triggering-Data-Ingestion) if not done already
+- **Cloud infrastructure**:
+  - Ensure infrastructure is deployed with `terragrunt apply`
+  - Verify dataset is loaded by checking [Data Ingestion Status](README.md#Triggering-Data-Ingestion)
+  - Confirm appropriate IAM permissions for your user or service account
 
-## Running locally
+## Verification Steps
 
-### Without impersonation or access to Cloud Storage data bucket
+Before proceeding, verify these prerequisites:
 
-1. Navigate to folder
+```shell
+# Check uv installation
+uv --version
 
-    ```shell
-    cd ../../opentofu/modules/streamlit/src/
-    ```
+# Verify terragrunt deployment status
+cd terragrunt/dev
+terragrunt output bucket_name
+# Should return a valid bucket name
+```
 
-2. Start server
-   - In python environment: `uv run streamlit run app.py`
-   - In dockerised environment: `docker-compose up --build`
+## Running Locally
 
-3. Go to <http://localhost:8501/>
-   - Username: `rbriggs`
-   - Password: `abc` (hashed in `config.yaml`)
+### Option 1: Standalone Mode (No Cloud Storage Access)
 
-### With access to Cloud Storage bucket and Cloud Run impersonation
+This option uses mock data and doesn't require Cloud credentials.
 
-1. Navigate to `terragrunt/` subfolder corresponding to your project.
+1. Navigate to the application source:
 
-    ```shell
-    cd terragrunt/dev
-    ```
+   ```shell
+   cd ../../opentofu/modules/streamlit/src/
+   ```
 
-2. Start local server by passing deployed cloud run service account credentials (docker env not supported yet)
+2. Start the server:
+   - **Using Python**:
 
-    ```shell
-    # Get the service account email
-    SERVICE_ACCOUNT=$(terragrunt output streamlit_service_account_email | sed 's/"//g')
+     ```shell
+     uv run streamlit run app.py
+     ```
 
-    # Impersonate the service account
-    gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
+   - **Using Docker**:
 
-    # Run with minimal environment variables
-    GCS_BUCKET_NAME=$(terragrunt output bucket_name | sed 's/"//g') \
-    HMAC_ACCESS_ID=$(terragrunt output streamlit_hmac_access_id | sed 's/"//g') \
-    HMAC_SECRET=$(terragrunt output streamlit_hmac_secret | sed 's/"//g') \
-    uv run --directory="../../opentofu/modules/streamlit/src/" \
-        streamlit run app.py
+     ```shell
+     docker-compose up --build
+     ```
 
-    # Reset impersonation to use your default credentials for Terraform
-    gcloud config unset auth/impersonate_service_account
-    ```
+3. Access the application:
+   - URL: <http://localhost:8501/>
+   - Default credentials:
+     - Username: `rbriggs`
+     - Password: `abc` (hashed in `config.yaml`)
+
+### Option 2: Cloud-Connected Mode (With GCS Access)
+
+This option connects to actual Cloud Storage data using service account impersonation.
+
+1. Navigate to your environment directory:
+
+   ```shell
+   cd terragrunt/dev
+   ```
+
+2. Export required environment variables:
+
+   ```shell
+   # Extract required values from terragrunt outputs
+   export SERVICE_ACCOUNT=$(terragrunt output -raw streamlit_service_account_email)
+   export GCS_BUCKET_NAME=$(terragrunt output -raw bucket_name)
+   export HMAC_ACCESS_ID=$(terragrunt output -raw streamlit_hmac_access_id)
+   export HMAC_SECRET=$(terragrunt output -raw streamlit_hmac_secret)
+
+   # Verify exports were successful
+   echo "Using service account: $SERVICE_ACCOUNT"
+   echo "Using bucket: $GCS_BUCKET_NAME"
+   ```
+
+3. Impersonate the service account (temporary credentials):
+
+   ```shell
+   gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
+   ```
+
+4. Start the application:
+
+   ```shell
+   uv run --directory="../../opentofu/modules/streamlit/src/" streamlit run app.py
+   ```
+
+5. When finished, reset credentials:
+
+   ```shell
+   gcloud config unset auth/impersonate_service_account
+   ```
+
+## Troubleshooting
+
+- **Permission errors**: Ensure your account has permission to impersonate the service account
+- **Missing bucket**: Verify the bucket exists and your terragrunt deployment was successful
+- **Data not appearing**: Check if data ingestion has completed by running the Notion pipeline
+
+## Security Notes
+
+- Service account impersonation credentials are temporary but powerful
+- Never commit or share HMAC credentials
+- For production usage, consider using Workload Identity Federation instead of impersonation
+
+## Related Services
+
+This Streamlit app visualizes data loaded by the [Notion Pipeline](./opentofu/modules/notion_pipeline/README.md), which populates the GCS bucket used by this service.

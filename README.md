@@ -8,186 +8,233 @@
   ![Lakehouse Architecture](lakehouse.svg)
 </div>
 
-## Overview
+## What Is This?
 
-This project provides a template for building a modern data lakehouse that:
+A complete, ready-to-deploy data lakehouse that combines:
 
-- Deploys infrastructure-as-code using OpenTofu on GCP
-- Includes a modular data pipeline powered by DLT (starting with Notion integration)
-- Enables SQL analytics using DuckDB for efficient data querying
-- Features a Streamlit web application for interactive data exploration
-- Stays within GCP's free tier limits when used as provided
+- **Data storage**: Cloud-native storage using GCP Cloud Storage
+- **Data ingestion**: Automated pipelines for extracting and loading data
+- **Data transformation**: DLT (Data Load Tool) for ELT workflows
+- **Data analytics**: DuckDB for high-performance SQL queries against cloud storage
+- **Data visualization**: Interactive Streamlit dashboards
+- **Infrastructure-as-code**: Everything defined with OpenTofu and Terragrunt
 
-<!-- GETTING STARTED -->
+All components are designed to work within GCP's free tier (with typical usage patterns).
+
 ## Getting Started
-
-To get a copy of the project up and running follow the steps below.
 
 ### Prerequisites
 
-- [Notion account]
-- [Google Cloud billing account]
-- [gcloud CLI] installed
-- [OpenTofu] installed
-- [Terragrunt] installed
+- **Accounts & Services**:
+  - [Notion account](https://www.notion.so/signup) for data source
+  - [Google Cloud billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account) (most resources stay within free tier)
 
-### Installation Steps
+- **CLI Tools**:
+  - [gcloud CLI](https://cloud.google.com/sdk/docs/install) with current auth
+  - [OpenTofu](https://opentofu.org/docs/intro/install/) for infrastructure
+  - [Terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/install/) for infrastructure orchestration
 
-#### Setup Notion Database
+### Quick Start Guide
 
-- [Create an internal Notion integration] with read permissions
+#### 1. Configure Notion Integration
 
-- [Connect the integration to your database]
+1. [Create an internal Notion integration](https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up)
+   - Name your integration (e.g., "Lakehouse Connector")
+   - Set read permissions only (no write access needed)
 
-#### Configure Local Repository
+2. [Connect the integration to your database](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages)
+   - Share your database with the integration
+   - Copy your integration's secret key for the next steps
+
+#### 2. Configure Local Environment
 
 ```shell
+# Create your environment configuration from example
 cp -a terragrunt/example terragrunt/prod
+
+# Edit configuration files
+nano terragrunt/prod/env_vars.yaml
 ```
 
-Edit `terragrunt/prod/env_vars.yaml` with your:
+Update `env_vars.yaml` with:
 
-- project_id (unique GCP identifier)
-- notion_secret_value
+- `project_id`: A unique GCP project identifier (create a new one)
+- `notion_pipeline.notion_api_key`: Your Notion integration secret
+- Optional: Adjust scheduler timing, region, etc.
 
-#### Setup Google Cloud Project
+#### 3. Provision Google Cloud Environment
 
 ```shell
-# Login with default credentials
+# Authenticate with Google Cloud
 gcloud auth application-default login
 
-export BILLING_ACCOUNT_ID=<your_billing_account_id>
+# Set environment variables
+export BILLING_ACCOUNT_ID=$(gcloud billing accounts list --format="value(ACCOUNT_ID)" --limit=1)
 cd terragrunt/prod
 export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
 
-# Create project
+# Create and configure project
 gcloud projects create $PROJECT_ID
 gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT_ID
 
 # Enable required APIs
-gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
-gcloud services enable cloudfunctions.googleapis.com --project=$PROJECT_ID
-gcloud services enable cloudscheduler.googleapis.com --project=$PROJECT_ID
-gcloud services enable run.googleapis.com --project=$PROJECT_ID
-gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
-gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-gcloud services enable iam.googleapis.com --project=$PROJECT_ID
-gcloud services enable cloudresourcemanager.googleapis.com --project=$PROJECT_ID
+gcloud services enable \
+  secretmanager.googleapis.com cloudfunctions.googleapis.com \
+  cloudscheduler.googleapis.com \
+  run.googleapis.com cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com \
+  iam.googleapis.com \
+  cloudresourcemanager.googleapis.com \
+  --project=$PROJECT_ID
 ```
 
-</details>
-
-#### Deploy Infrastructure
+#### 4. Deploy Infrastructure
 
 ```shell
+# Deploy all infrastructure components
 terragrunt apply
 
-# Build and Deploy Streamlit App
-gcloud builds triggers run $(terragrunt output streamlit_build_trigger_name | sed 's/"//g') \
-    --region=$(terragrunt output streamlit_build_trigger_region | sed 's/"//g')
+# Build and deploy Streamlit web application
+gcloud builds triggers run $(terragrunt output -raw streamlit_build_trigger_name) \
+    --region=$(terragrunt output -raw streamlit_build_trigger_region)
 ```
 
-## Usage
+#### 5. Access Your Lakehouse
 
-### Data Flow
-
-1. **Source**: Data stored in Notion databases
-2. **Ingestion**: Automated via Cloud Scheduler or manual triggers
-3. **Storage**: Data stored in Cloud Storage
-4. **Analysis**: Access via Streamlit webapp using DuckDB
-
-<details><summary>Sequence diagram</summary>
-
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant N as Notion
-    box Google Cloud Platform
-    participant CS as Cloud Scheduler
-    participant CF as HTTP Cloud Function
-    participant GCS as Cloud Storage
-    participant CR as Cloud Run
-    end
-
-    U->>N: Logs in
-
-    U->>N: Modifies or<br>several database
-    opt
-        U-)CF: Forces run
-    end
-    loop Hourly
-        CS-)+CF: Triggers dlt pipeline
-    end
-
-    CF->>+N: Queries all pages in database
-    N-->>-CF: Returns all pages
-    CF->>-GCS: Stores data as parquet
-
-    U->>+CR: Opens website and query data
-    CR->>+GCS: Queries data<br>using DuckDB
-    GCS--)-CR: Receives data
-    CR-->>-U: Displays queried data
-```
-
-</details>
-
-### Triggering Data Ingestion
-
-Manual trigger:
+After deployment completes:
 
 ```shell
-curl -i -X POST $(terragrunt output notion_pipeline_function_uri | sed 's/"//g') \
+# Get Streamlit webapp URL
+echo "Streamlit URL: $(terragrunt output -raw streamlit_service_url)"
+
+# Trigger initial data load
+curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
-Force scheduler run:
+## Using Your Lakehouse
 
-```shell
-gcloud scheduler jobs run $(terragrunt output notion_pipeline_scheduler_name | sed 's/"//g') \
-    --project=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"') \
-    --location=$(terragrunt output notion_pipeline_scheduler_region | sed 's/"//g')
+### Data Flow Process
+
+```mermaid
+flowchart LR
+    A[Notion Database] -->|Hourly sync| B[Cloud Function]
+    B -->|Parquet files| C[Cloud Storage]
+    C -->|DuckDB SQL| D[Streamlit Dashboard]
+    D -->|Visualizations| E[End Users]
 ```
 
-### Cleanup
+### Managing Data Ingestion
 
-Option 1 - Remove resources except state bucket:
+**Manual Data Refresh:**
 
 ```shell
+# Using curl
+curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
+    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+
+# Using Cloud Scheduler
+gcloud scheduler jobs run $(terragrunt output -raw notion_pipeline_scheduler_name) \
+    --project=$PROJECT_ID \
+    --location=$(terragrunt output -raw notion_pipeline_scheduler_region)
+```
+
+**View Ingestion Logs:**
+
+```shell
+# Get function name
+FUNCTION_NAME=$(terragrunt output -raw notion_pipeline_function_name)
+
+# View recent logs
+gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
+```
+
+### Running Services Locally
+
+For local development and testing:
+
+- [Streamlit App Development Guide](opentofu/modules/streamlit/README.md)
+- [Notion Pipeline Development Guide](opentofu/modules/notion_pipeline/README.md)
+
+## Cost Management
+
+This solution uses GCP's [free tier](https://cloud.google.com/free?hl=en) resources:
+
+| Component | Free Tier Limit | Typical Usage |
+|-----------|-----------------|---------------|
+| Cloud Storage | 5GB | < 1GB for most use cases |
+| Cloud Functions | 2M invocations | ~720 invocations/month (hourly) |
+| Cloud Run | 2M requests, 360K GB-seconds | Well below with periodic usage |
+| Cloud Scheduler | 3 jobs | 1 job used |
+
+To estimate costs for larger deployments:
+
+```shell
+# Install Infracost CLI
+brew install infracost  # or equivalent for your OS
+
+# Run cost analysis
+infracost breakdown --path terragrunt/prod
+```
+
+> Note: Infracost doesn't account for free tier usage. Actual costs will likely be lower.
+
+## Maintenance & Troubleshooting
+
+### Common Issues
+
+- **Data not showing up?** Check Cloud Function logs and verify Notion API connection
+- **Streamlit app not loading?** Ensure Cloud Build trigger has completed successfully
+- **Permission errors?** Verify service account roles are properly configured
+
+### Updating Components
+
+```shell
+# Pull latest code
+git pull
+
+# Apply infrastructure changes
+terragrunt apply
+
+# Rebuild Streamlit app if needed
+gcloud builds triggers run $(terragrunt output -raw streamlit_build_trigger_name) \
+    --region=$(terragrunt output -raw streamlit_build_trigger_region)
+```
+
+## Cleanup
+
+### Option 1: Remove Individual Resources
+
+```shell
+# Preserve state bucket for future use
 terragrunt destroy
 ```
 
-Option 2 - Delete entire project:
+### Option 2: Complete Removal
 
 ```shell
+# Delete entire project and local state
 gcloud projects delete $PROJECT_ID
 rm -rf .terraform.lock.hcl .terragrunt-cache
 ```
 
-## Cost Management
-
-This project stays within GCP's free tier when:
-
-- It's your only active GCP project
-- Notion databases are moderate in size (~few thousands rows without images)
-
-Use [Infracost] to estimate costs ([free tier ignored]):
-
-```shell
-infracost breakdown --path terragrunt/example
-```
-
 ## Roadmap
 
-- [ ] Transform the DLT notion pipeline and Streamlit app into OpenTofu modules
-- [ ] Create a branch for embedding DLT to Streamlit (removing need for Cloud Storage)
+- [ ] Add support for additional data sources (Google Sheets, CSV uploads)
+- [ ] Implement basic dbt integration for transformations
+- [ ] Create a lightweight version with DLT embedded directly in Streamlit
+- [ ] Add authentication options beyond basic auth
+- [ ] Develop pre-built dashboard templates for common use cases
 
 ## Contributing
 
+We welcome contributions to improve this starter template:
+
 1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature)`
-5. Open a Pull Request
+2. Create your feature branch (`git checkout -b feature/new-connector`)
+3. Commit changes (`git commit -m 'Add new connector for XYZ'`)
+4. Push to branch (`git push origin feature/new-connector`)
+5. Open a Pull Request with detailed description
 
 ## License
 
@@ -197,17 +244,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Tucared - <1v8ufskf@duck.com>
 
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[Notion account]: https://www.notion.so/signup
-[Google Cloud billing account]: https://cloud.google.com/billing/docs/how-to/create-billing-account
-[gcloud CLI]: https://cloud.google.com/sdk/docs/install
-[OpenTofu]: https://opentofu.org/docs/intro/install/
-[Terragrunt]: https://terragrunt.gruntwork.io/docs/getting-started/install/
-
-[Create an internal Notion integration]: https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up
-[Connect the integration to your database]: https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages
-
-[Infracost]: https://github.com/infracost/infracost/tree/master
-
-[free tier ignored]: https://www.infracost.io/docs/supported_resources/google/
+Project Link: [https://github.com/tucared/lakehouse-starter](https://github.com/tucared/lakehouse-starter)

@@ -1,65 +1,164 @@
-# Notion pipeline (using DLT)
+# Notion Data Pipeline
 
-Running Cloud Function locally with `uv` and [`functions-framework`](https://github.com/GoogleCloudPlatform/functions-framework-python)
+This service extracts data from Notion and loads it into Google Cloud Storage using the Data Load Tool (DLT) framework. The pipeline runs as a Cloud Function triggered by a Cloud Scheduler.
 
-## Pre-requisites
+## Prerequisites
 
-- Have [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) installed
+- **Development tools**:
+  - [`uv`](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) Python package manager
+  - [`gcloud`](https://cloud.google.com/sdk/docs/install) CLI tool with configured authentication
+  - [`yq`](https://github.com/mikefarah/yq#install) for YAML processing (only needed for local testing)
 
-- Having deployed your infrastructure with 'terragrunt apply', preferably with paused Cloud Schedulers to avoid interference
+- **Cloud infrastructure**:
+  - Infrastructure deployed with `terragrunt apply`
+  - Notion API key configured in `env_vars.yaml`
+  - Appropriate IAM permissions configured
 
-    ```yaml
-    # terragrunt/dev/env_vars.yaml
-    notion_pipeline:
-        cloud_scheduler_parameters:
-            paused: true
-    ```
+## Verification Steps
 
-## Running locally
-
-1. Navigate to `terragrunt/` subfolder corresponding to your project.
-
-    ```shell
-    cd terragrunt/dev
-    ```
-
-2. Start local server.
-
-    ```shell
-    # Get the service account email
-    SERVICE_ACCOUNT=$(terragrunt output notion_pipeline_function_service_account_email | sed 's/"//g')
-
-    # Impersonate the service account
-    gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
-
-    # Run with minimal environment variables
-    SOURCE=../../opentofu/modules/notion_pipeline/src/
-    SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
-    DESTINATION__FILESYSTEM__BUCKET_URL=gs://$(terragrunt output bucket_name | sed 's/"//g') \
-    NORMALIZE__LOADER_FILE_FORMAT="parquet" \
-    RUNTIME__LOG_LEVEL="DEBUG" \
-    RUNTIME__DLTHUB_TELEMETRY=false \
-    uv run --directory="../../opentofu/modules/notion_pipeline/src/" \
-        functions-framework \
-        --target=notion_pipeline \
-        --debug
-
-    # Reset impersonation to use your default credentials for Terraform
-    gcloud config unset auth/impersonate_service_account
-    ```
-
-    > Source changes are automatically loaded to local server, meaning you can code the function and invoking its latest version without restarting the local server.
-
-3. Open another shell, and invoke function locally.
-
-    ```shell
-    curl localhost:8080
-    ```
-
-## Export to requirements.txt for Cloud Function deployment
+Verify your setup before proceeding:
 
 ```shell
-cd opentofu/modules/notion_pipeline/src
-uv export --format requirements-txt > requirements.txt
-# or run pre commits
+# Check uv installation
+uv --version
+
+# Verify gcloud configuration
+gcloud config list account
+
+# Verify terragrunt deployment
+cd terragrunt/dev
+terragrunt output notion_pipeline_function_service_account_email
+# Should return a valid service account email
 ```
+
+## Running Locally
+
+### Step 1: Pause Cloud Schedulers (Recommended)
+
+To avoid conflicts between local and cloud execution, pause the scheduler:
+
+```yaml
+# Update terragrunt/dev/env_vars.yaml
+notion_pipeline:
+    cloud_scheduler_parameters:
+        paused: true
+```
+
+Then apply the changes:
+
+```shell
+cd terragrunt/dev
+terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.notion_pipeline
+```
+
+### Step 2: Start Local Server
+
+1. Navigate to your environment directory:
+
+   ```shell
+   cd terragrunt/dev
+   ```
+
+2. Extract configuration values:
+
+   ```shell
+   # Get service account email and verify it exists
+   export SERVICE_ACCOUNT=$(terragrunt output -raw notion_pipeline_function_service_account_email)
+   echo "Using service account: $SERVICE_ACCOUNT"
+
+   # Verify Notion API key exists
+   if ! yq -e '.notion_pipeline.notion_api_key' env_vars.yaml > /dev/null; then
+     echo "ERROR: Notion API key not found in env_vars.yaml"
+     exit 1
+   fi
+
+   # Get bucket name
+   export BUCKET_NAME=$(terragrunt output -raw bucket_name)
+   echo "Using bucket: $BUCKET_NAME"
+   ```
+
+3. Start server with service account impersonation:
+
+   ```shell
+   # Impersonate service account (temporary credentials)
+   gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
+
+   # Start local functions framework server
+   SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
+   DESTINATION__FILESYSTEM__BUCKET_URL=gs://$BUCKET_NAME \
+   NORMALIZE__LOADER_FILE_FORMAT="parquet" \
+   RUNTIME__LOG_LEVEL="DEBUG" \
+   RUNTIME__DLTHUB_TELEMETRY=false \
+   uv run --directory="../../opentofu/modules/notion_pipeline/src/" \
+       functions-framework \
+       --target=notion_pipeline \
+       --debug
+   ```
+
+### Step 3: Trigger the Function
+
+In a separate terminal:
+
+```shell
+# Basic invocation
+curl localhost:8080
+
+# With optional parameters (example)
+curl localhost:8080?full_refresh=true
+```
+
+### Step 4: Reset Credentials
+
+When finished testing:
+
+```shell
+gcloud config unset auth/impersonate_service_account
+```
+
+## Deployment
+
+### Updating Requirements
+
+When making code changes that require new dependencies:
+
+1. Generate updated requirements:
+
+   ```shell
+   cd opentofu/modules/notion_pipeline/src
+   uv export --format requirements-txt > requirements.txt
+   ```
+
+2. Deploy the updated function:
+
+   ```shell
+   cd terragrunt/dev
+   terragrunt apply -target=module.notion_pipeline
+   ```
+
+### Re-enabling Cloud Scheduler
+
+After local testing, re-enable the scheduler if needed:
+
+```yaml
+# Update terragrunt/dev/env_vars.yaml
+notion_pipeline:
+    cloud_scheduler_parameters:
+        paused: false
+```
+
+Then apply the changes:
+
+```shell
+terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.notion_pipeline
+```
+
+## Troubleshooting
+
+- **Permission errors**: Ensure your account has permission to impersonate the service account
+- **Missing API key**: Verify the Notion API key is correctly set in `env_vars.yaml`
+- **Data not appearing in bucket**: Check function logs for extraction or loading errors
+- **Function timeouts**: For large data extractions, consider increasing function timeout in your terraform configuration
+
+## Related Services
+
+This pipeline populates data for the [Streamlit Dashboard](./opentofu/modules/streamlit/README.md) service, which visualizes the data loaded into Cloud Storage.
