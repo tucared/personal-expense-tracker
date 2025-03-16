@@ -15,6 +15,11 @@ output "notion_pipeline_function_uri" {
   value       = module.notion_pipeline.function_uri
 }
 
+output "notion_pipeline_function_service_account_email" {
+  description = "Email of service account used when running the Cloud Function"
+  value       = module.notion_pipeline.function_service_account_email
+}
+
 output "notion_pipeline_scheduler_name" {
   description = "Name of deployed Cloud Function"
   value       = module.notion_pipeline.scheduler_name

@@ -21,18 +21,11 @@ Running Cloud Function locally with [`functions-framework`]
     cd terragrunt/dev
     ```
 
-2. Download service account key file used for Cloud Function.
+2. Install dependencies.
 
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=../../notion_pipeline/secret/$(echo "${PWD##*/}")_sa-key.json
-    gcloud iam service-accounts keys create $GOOGLE_APPLICATION_CREDENTIALS_PATH \
-        --iam-account=$(terragrunt output sa_email_cloud_function | sed 's/"//g')
-    ```
-
-3. Install dependencies.
-
-    ```shell
-    uv sync
+    export SOURCE=../../opentofu/modules/notion_pipeline/src/
+    uv sync --directory=$SOURCE
     ```
 
 ## Running
@@ -46,16 +39,17 @@ Running Cloud Function locally with [`functions-framework`]
 2. Start local server.
 
     ```shell
-    export SOURCE=../../notion_pipeline/src/
-    export GOOGLE_APPLICATION_CREDENTIALS_PATH=$SOURCE/secret/$(echo "${PWD##*/}")_sa-key.json
+    # Get the service account email
+    SERVICE_ACCOUNT=$(terragrunt output notion_pipeline_function_service_account_email | sed 's/"//g')
 
+    # Impersonate the service account
+    gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
+
+    # Run with minimal environment variables
     SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
     DESTINATION__FILESYSTEM__BUCKET_URL=gs://$(terragrunt output bucket_name | sed 's/"//g') \
-    DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.client_email') \
-    DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.private_key') \
-    DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID=$(cat $GOOGLE_APPLICATION_CREDENTIALS_PATH | jq -r '.project_id') \
     NORMALIZE__LOADER_FILE_FORMAT="parquet" \
-    RUNTIME__LOG_LEVEL="WARNING" \
+    RUNTIME__LOG_LEVEL="DEBUG" \
     RUNTIME__DLTHUB_TELEMETRY=false \
     uv run --directory=$SOURCE functions-framework \
         --target=notion_pipeline \

@@ -2,9 +2,6 @@
 __pycache__
 .python-version
 
-# Local testing
-secret/
-
 # Infracost files
 .infracost/
 

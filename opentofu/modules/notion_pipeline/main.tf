@@ -17,36 +17,6 @@ resource "google_storage_bucket_iam_member" "cloud_function" {
   member = "serviceAccount:${google_service_account.cloud_function.email}"
 }
 
-## Saving the service account private key in Secret Manager
-
-resource "google_service_account_key" "cloud_function" {
-  service_account_id = google_service_account.cloud_function.name
-}
-
-resource "google_secret_manager_secret" "cloud_function_service_account_key" {
-  secret_id = "CLOUD_FUNCTION_SERVICE_ACCOUNT_KEY"
-
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
-}
-
-resource "google_secret_manager_secret_version" "cloud_function_service_account_key" {
-  secret      = google_secret_manager_secret.cloud_function_service_account_key.id
-  secret_data = jsondecode(base64decode(google_service_account_key.cloud_function.private_key))["private_key"]
-}
-
-resource "google_secret_manager_secret_iam_member" "cloud_function_service_account_key" {
-  project   = var.project_id
-  secret_id = google_secret_manager_secret.cloud_function_service_account_key.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
 # Notion source secret
 
 resource "google_secret_manager_secret" "notion" {
@@ -98,7 +68,7 @@ data "archive_file" "cloud_function_source" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
   source_dir  = "./modules/notion_pipeline/src"
-  excludes    = ["__pycache__", "requirements.local.txt", ".gcloudignore", ".venv", "secret", "uv.lock", "pyproject.toml", "README.md"]
+  excludes    = ["__pycache__", ".venv", "uv.lock", "pyproject.toml"]
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
@@ -141,25 +111,17 @@ resource "google_cloudfunctions2_function" "this" {
     service_account_email = google_service_account.cloud_function.email
 
     environment_variables = {
-      DESTINATION__FILESYSTEM__BUCKET_URL                = "gs://${var.bucket_name}"
-      DESTINATION__FILESYSTEM__CREDENTIALS__CLIENT_EMAIL = google_service_account.cloud_function.email
-      DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID   = var.project_id
-      NORMALIZE__LOADER_FILE_FORMAT                      = "parquet"
-      RUNTIME__LOG_LEVEL                                 = "WARNING"
-      RUNTIME__DLTHUB_TELEMETRY                          = false
+      DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.bucket_name}"
+      DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID = var.project_id
+      NORMALIZE__LOADER_FILE_FORMAT                    = "parquet"
+      RUNTIME__LOG_LEVEL                               = "WARNING"
+      RUNTIME__DLTHUB_TELEMETRY                        = false
     }
 
     secret_environment_variables {
       project_id = var.project_id
       key        = "SOURCES__NOTION__API_KEY"
       secret     = google_secret_manager_secret.notion.secret_id
-      version    = "latest"
-    }
-
-    secret_environment_variables {
-      project_id = var.project_id
-      key        = "DESTINATION__FILESYSTEM__CREDENTIALS__PRIVATE_KEY"
-      secret     = google_secret_manager_secret.cloud_function_service_account_key.secret_id
       version    = "latest"
     }
   }
