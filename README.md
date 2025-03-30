@@ -93,10 +93,6 @@ gcloud services enable \
 ```shell
 # Deploy all infrastructure components
 terragrunt apply
-
-# Build and deploy Streamlit web application
-gcloud builds triggers run $(terragrunt output -raw streamlit_build_trigger_name) \
-    --region=$(terragrunt output -raw streamlit_build_trigger_region)
 ```
 
 #### 5. Access Your Lakehouse

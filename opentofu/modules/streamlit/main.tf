@@ -243,3 +243,23 @@ resource "google_cloud_run_service_iam_member" "public" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
+resource "null_resource" "trigger_cloudbuild" {
+  depends_on = [
+    google_cloudbuild_trigger.streamlit,
+    google_storage_bucket_object.streamlit_source
+  ]
+
+  # Only trigger when source content changes
+  triggers = {
+    source_zip_md5 = data.archive_file.streamlit_source.output_md5
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      gcloud builds triggers run ${google_cloudbuild_trigger.streamlit.name} \
+        --region=${var.build_region} \
+        --project=${var.project_id}
+    EOT
+  }
+}
