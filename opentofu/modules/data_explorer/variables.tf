@@ -15,13 +15,13 @@ variable "region" {
 }
 
 variable "build_region" {
-  description = "Streamlit build configuration settings"
+  description = "Cloud build configuration settings"
   type        = string
   default     = "europe-west1"
 }
 
 variable "cloudrun_limits" {
-  description = "Streamlit Cloud Run configuration settings"
+  description = "Cloud Run configuration settings"
   type = object({
     memory = string
     cpu    = string

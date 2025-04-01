@@ -468,7 +468,7 @@ if st.session_state["authentication_status"]:
 
     with col1:
         # Main content area for query and results
-        st.title("DuckDB Query Explorer")
+        st.title("DuckDB Data Explorer")
 
         # Ensure no 'SELECT *' in any generated queries
         if "current_query" not in st.session_state:

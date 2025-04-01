@@ -1,4 +1,4 @@
-# Streamlit Dashboard Service
+# Streamlit Data Explorer Service
 
 This service provides a web dashboard for visualizing and analyzing data stored in Google Cloud Storage. This guide explains how to run the application locally for development and testing.
 

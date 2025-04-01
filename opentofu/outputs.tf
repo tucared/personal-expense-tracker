@@ -25,33 +25,33 @@ output "notion_pipeline_scheduler_region" {
   value       = module.notion_pipeline.scheduler_region
 }
 
-# Outputs for Streamlit module
+# Outputs for Data explorer module
 
-output "streamlit_build_trigger_name" {
-  description = "Name of Cloud Build trigger for Streamlit service"
-  value       = module.streamlit.build_trigger_name
+output "data_explorer_build_trigger_name" {
+  description = "Name of Cloud Build trigger for data explorer service"
+  value       = module.data_explorer.build_trigger_name
 }
 
-output "streamlit_build_trigger_region" {
-  description = "Region of Cloud Build trigger for Streamlit service"
-  value       = module.streamlit.build_trigger_region
+output "data_explorer_build_trigger_region" {
+  description = "Region of Cloud Build trigger for data explorer service"
+  value       = module.data_explorer.build_trigger_region
 }
 
-output "streamlit_service_url" {
-  description = "URL of deployed Streamlit service"
-  value       = module.streamlit.service_url
+output "data_explorer_service_url" {
+  description = "URL of deployed data explorer service"
+  value       = module.data_explorer.service_url
 }
 
-output "streamlit_service_account_email" {
-  description = "Email of service account used by Cloud Run when running Streamlit service"
-  value       = module.streamlit.service_account_email
+output "data_explorer_service_account_email" {
+  description = "Email of service account used by Cloud Run when running data explorer service"
+  value       = module.data_explorer.service_account_email
 }
 
-output "streamlit_hmac_access_id" {
-  value = module.streamlit.hmac_access_id
+output "data_explorer_hmac_access_id" {
+  value = module.data_explorer.hmac_access_id
 }
 
-output "streamlit_hmac_secret" {
-  value     = module.streamlit.hmac_secret
+output "data_explorer_hmac_secret" {
+  value     = module.data_explorer.hmac_secret
   sensitive = true
 }

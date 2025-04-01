@@ -15,9 +15,9 @@ notion_pipeline:
     schedule: "0 * * * *" # every hour
     region: europe-west6
 
-# Streamlit variables
+# Data explorer variables
 # ------------------
-streamlit:
+data_explorer:
   build_region: europe-west1
   cloudrun_limits:
     memory: 1024Mi

@@ -28,9 +28,9 @@ variable "notion_pipeline" {
   })
 }
 
-# Streamlit module
+# Data explorer module
 
-variable "streamlit" {
+variable "data_explorer" {
   type = object({
     # https://cloud.google.com/build/docs/locations#restricted_regions_for_some_projects
     build_region = string

@@ -32,12 +32,12 @@ module "notion_pipeline" {
 # Streamlit App Resources
 #################################
 
-module "streamlit" {
-  source = "./modules/streamlit"
+module "data_explorer" {
+  source = "./modules/data_explorer"
 
   project_id      = var.project_id
   region          = var.region
   bucket_name     = google_storage_bucket.this.name
-  build_region    = var.streamlit.build_region
-  cloudrun_limits = var.streamlit.cloudrun_limits
+  build_region    = var.data_explorer.build_region
+  cloudrun_limits = var.data_explorer.cloudrun_limits
 }

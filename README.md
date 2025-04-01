@@ -100,8 +100,8 @@ terragrunt apply
 After deployment completes:
 
 ```shell
-# Get Streamlit webapp URL
-echo "Streamlit URL: $(terragrunt output -raw streamlit_service_url)"
+# Get data explorer webapp URL
+echo "Data Explorer URL: $(terragrunt output -raw data_explorer_service_url)"
 
 # Trigger initial data load
 curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
@@ -116,7 +116,7 @@ curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
 flowchart LR
     A[Notion Database] -->|Hourly sync| B[Cloud Function]
     B -->|Parquet files| C[Cloud Storage]
-    C -->|DuckDB SQL| D[Streamlit Dashboard]
+    C -->|DuckDB SQL| D[Streamlit App]
     D -->|Visualizations| E[End Users]
 ```
 
@@ -149,7 +149,7 @@ gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
 
 For local development and testing:
 
-- [Streamlit App Development Guide](opentofu/modules/streamlit/README.md)
+- [Data Explorer (Streamlit) App Development Guide](opentofu/modules/data_explorer/README.md)
 - [Notion Pipeline Development Guide](opentofu/modules/notion_pipeline/README.md)
 
 ## Cost Management
@@ -180,7 +180,7 @@ infracost breakdown --path terragrunt/prod
 ### Common Issues
 
 - **Data not showing up?** Check Cloud Function logs and verify Notion API connection
-- **Streamlit app not loading?** Ensure Cloud Build trigger has completed successfully
+- **Data explorer app not loading?** Ensure Cloud Build trigger has completed successfully
 - **Permission errors?** Verify service account roles are properly configured
 
 ### Updating Components
@@ -192,9 +192,9 @@ git pull
 # Apply infrastructure changes
 terragrunt apply
 
-# Rebuild Streamlit app if needed
-gcloud builds triggers run $(terragrunt output -raw streamlit_build_trigger_name) \
-    --region=$(terragrunt output -raw streamlit_build_trigger_region)
+# Rebuild data explorer app if needed
+gcloud builds triggers run $(terragrunt output -raw data_explorer_build_trigger_name) \
+    --region=$(terragrunt output -raw data_explorer_build_trigger_region)
 ```
 
 ## Cleanup

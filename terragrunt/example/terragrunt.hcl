@@ -36,11 +36,11 @@ inputs = {
     }
   }
 
-  streamlit = {
-    build_region = local.env_vars.streamlit.build_region
+  data_explorer = {
+    build_region = local.env_vars.data_explorer.build_region
     cloudrun_limits = {
-      memory = local.env_vars.streamlit.cloudrun_limits.memory
-      cpu    = local.env_vars.streamlit.cloudrun_limits.cpu
+      memory = local.env_vars.data_explorer.cloudrun_limits.memory
+      cpu    = local.env_vars.data_explorer.cloudrun_limits.cpu
     }
   }
 }
