@@ -181,7 +181,7 @@ infracost breakdown --path terragrunt/prod
 
 - **Data not showing up?** Check Cloud Function logs and verify Notion API connection
 - **Data explorer app not loading?** Ensure Cloud Build trigger has completed successfully
-- **Permission errors?** Verify service account roles are properly configured
+- **Permission errors on `terragrunt apply`?** Ensure service account impersonation is unset (`gcloud config unset auth/impersonate_service_account`)
 
 ### Updating Components
 
