@@ -1,6 +1,6 @@
 services:
-  streamlit:
-    container_name: "streamlit_app"
+  data_explorer:
+    container_name: "data_explorer_app"
     build:
       dockerfile: ./Dockerfile
       context: ./

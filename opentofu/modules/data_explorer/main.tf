@@ -42,7 +42,7 @@ resource "google_service_account" "cloudbuild_trigger" {
 }
 
 resource "google_storage_bucket_iam_member" "cloudbuild_trigger" {
-  bucket = google_storage_bucket.streamlit_source.name
+  bucket = google_storage_bucket.data_explorer_source.name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.cloudbuild_trigger.email}"
 }
@@ -71,97 +71,97 @@ resource "google_project_iam_member" "cloudbuild_trigger_log_writer" {
   member  = "serviceAccount:${google_service_account.cloudbuild_trigger.email}"
 }
 
-resource "random_id" "streamlit_source_bucket_prefix" {
+resource "random_id" "data_explorer_source_bucket_prefix" {
   byte_length = 8
 }
 
-resource "google_storage_bucket" "streamlit_source" {
-  name                        = "${random_id.streamlit_source_bucket_prefix.hex}-streamlit-source"
+resource "google_storage_bucket" "data_explorer_source" {
+  name                        = "${random_id.data_explorer_source_bucket_prefix.hex}-data-explorer-source"
   force_destroy               = true
   location                    = var.region
   uniform_bucket_level_access = true
 }
 
-data "archive_file" "streamlit_source" {
+data "archive_file" "data_explorer_source" {
   type        = "zip"
-  output_path = "/tmp/streamlit-source.zip"
+  output_path = "/tmp/data-explorer-source.zip"
   source_dir  = "${path.module}/src"
   excludes    = ["docker-compose.yml", "README.md", ".ruff_cache", ".venv"]
 }
 
-resource "google_storage_bucket_object" "streamlit_source" {
-  name         = "streamlit-source.zip"
+resource "google_storage_bucket_object" "data_explorer_source" {
+  name         = "data-explorer-source.zip"
   content_type = "application/zip"
-  bucket       = google_storage_bucket.streamlit_source.name
-  source       = data.archive_file.streamlit_source.output_path
+  bucket       = google_storage_bucket.data_explorer_source.name
+  source       = data.archive_file.data_explorer_source.output_path
 }
 
-resource "google_artifact_registry_repository" "streamlit-app" {
+resource "google_artifact_registry_repository" "data-explorer-app" {
   location      = var.region
-  repository_id = "streamlit"
-  description   = "Image used to deploy Streamlit app on Cloud Run"
+  repository_id = "data-explorer"
+  description   = "Image used to deploy Data Explorer Streamlit app on Cloud Run"
   format        = "DOCKER"
 }
 
-resource "random_id" "streamlit_logs_bucket_prefix" {
+resource "random_id" "data_explorer_logs_bucket_prefix" {
   byte_length = 8
 }
 
-resource "google_storage_bucket" "streamlit_logs" {
-  name                        = "${random_id.streamlit_logs_bucket_prefix.hex}-streamlit-logs"
+resource "google_storage_bucket" "data_explorer_logs" {
+  name                        = "${random_id.data_explorer_logs_bucket_prefix.hex}-data-explorer-logs"
   force_destroy               = true
   location                    = var.region
   uniform_bucket_level_access = true
 }
 
 resource "google_storage_bucket_iam_member" "cloudbuild_trigger_logs_admin" {
-  bucket = google_storage_bucket.streamlit_logs.name
+  bucket = google_storage_bucket.data_explorer_logs.name
   role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.cloudbuild_trigger.email}"
 }
 
 locals {
-  streamlit_image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.streamlit-app.repository_id}/streamlit-app"
+  data_explorer_image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.data-explorer-app.repository_id}/app"
 }
 
-resource "google_cloudbuild_trigger" "streamlit" {
-  name            = "streamlit-build-trigger"
+resource "google_cloudbuild_trigger" "data_explorer" {
+  name            = "data-explorer-build-trigger"
   location        = var.build_region
   service_account = google_service_account.cloudbuild_trigger.id
 
   build {
-    logs_bucket = "${google_storage_bucket.streamlit_logs.url}/build-logs"
+    logs_bucket = "${google_storage_bucket.data_explorer_logs.url}/build-logs"
     step {
       id   = "fetch-source"
       name = "gcr.io/cloud-builders/gsutil"
-      args = ["cp", "gs://${google_storage_bucket.streamlit_source.name}/${google_storage_bucket_object.streamlit_source.name}", "."]
+      args = ["cp", "gs://${google_storage_bucket.data_explorer_source.name}/${google_storage_bucket_object.data_explorer_source.name}", "."]
     }
 
     step {
       id   = "unzip-source"
       name = "ubuntu"
-      args = ["bash", "-c", "apt-get update && apt-get install -y unzip && unzip ${google_storage_bucket_object.streamlit_source.name}"]
+      args = ["bash", "-c", "apt-get update && apt-get install -y unzip && unzip ${google_storage_bucket_object.data_explorer_source.name}"]
     }
 
     step {
       id   = "build-image"
       name = "gcr.io/cloud-builders/docker"
-      args = ["build", "-t", "${local.streamlit_image}", "."]
+      args = ["build", "-t", "${local.data_explorer_image}", "."]
       env  = ["DOCKER_BUILDKIT=1"]
     }
 
     step {
       id   = "push-image"
       name = "gcr.io/cloud-builders/docker"
-      args = ["push", "${local.streamlit_image}"]
+      args = ["push", "${local.data_explorer_image}"]
     }
 
     step {
       id   = "deploy-image"
       name = "gcr.io/cloud-builders/gcloud"
       args = [
-        "run", "deploy", "streamlit-app",
-        "--image", "${local.streamlit_image}",
+        "run", "deploy", "data-explorer-app",
+        "--image", "${local.data_explorer_image}",
         "--platform", "managed",
         "--region", var.region,
         "--port", "8501",
@@ -178,32 +178,32 @@ resource "google_cloudbuild_trigger" "streamlit" {
   }
 }
 
-# Streamlit
+# App
 
-resource "google_service_account" "streamlit" {
-  account_id   = "streamlit-sa"
-  display_name = "Streamlit Cloud Run SA"
+resource "google_service_account" "data_explorer" {
+  account_id   = "data-explorer-sa"
+  display_name = "Data Explorer Cloud Run SA"
 }
 
-resource "google_storage_bucket_iam_member" "streamlit" {
+resource "google_storage_bucket_iam_member" "data_explorer" {
   bucket = var.bucket_name
   role   = "roles/storage.legacyBucketReader"
-  member = "serviceAccount:${google_service_account.streamlit.email}"
+  member = "serviceAccount:${google_service_account.data_explorer.email}"
 }
 
-resource "google_storage_bucket_iam_member" "streamlit_object_viewer" {
+resource "google_storage_bucket_iam_member" "data_explorer_object_viewer" {
   bucket = var.bucket_name
   role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.streamlit.email}"
+  member = "serviceAccount:${google_service_account.data_explorer.email}"
 }
 
-resource "google_cloud_run_v2_service" "streamlit" {
-  name                = "streamlit-app"
+resource "google_cloud_run_v2_service" "data_explorer" {
+  name                = "data-explorer-app"
   location            = var.region
   deletion_protection = false
 
   template {
-    service_account = google_service_account.streamlit.email
+    service_account = google_service_account.data_explorer.email
     containers {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
@@ -238,26 +238,26 @@ resource "google_cloud_run_v2_service" "streamlit" {
 }
 
 resource "google_cloud_run_service_iam_member" "public" {
-  service  = google_cloud_run_v2_service.streamlit.name
-  location = google_cloud_run_v2_service.streamlit.location
+  service  = google_cloud_run_v2_service.data_explorer.name
+  location = google_cloud_run_v2_service.data_explorer.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
 resource "null_resource" "trigger_cloudbuild" {
   depends_on = [
-    google_cloudbuild_trigger.streamlit,
-    google_storage_bucket_object.streamlit_source
+    google_cloudbuild_trigger.data_explorer,
+    google_storage_bucket_object.data_explorer_source
   ]
 
   # Only trigger when source content changes
   triggers = {
-    source_zip_md5 = data.archive_file.streamlit_source.output_md5
+    source_zip_md5 = data.archive_file.data_explorer_source.output_md5
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      gcloud builds triggers run ${google_cloudbuild_trigger.streamlit.name} \
+      gcloud builds triggers run ${google_cloudbuild_trigger.data_explorer.name} \
         --region=${var.build_region} \
         --project=${var.project_id}
     EOT
