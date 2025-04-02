@@ -100,7 +100,7 @@ terragrunt apply
 After deployment completes:
 
 ```shell
-# Get data explorer webapp URL
+# Get data explorer webapp URL (build will take a minute or two after `terragrunt apply`)
 echo "Data Explorer URL: $(terragrunt output -raw data_explorer_service_url)"
 
 # Trigger initial data load
