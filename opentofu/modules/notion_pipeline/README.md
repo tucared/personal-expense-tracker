@@ -48,7 +48,7 @@ Then apply the changes:
 
 ```shell
 cd terragrunt/dev
-terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.notion_pipeline
+terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 ```
 
 ### Step 2: Start Local Server
@@ -102,9 +102,6 @@ In a separate terminal:
 ```shell
 # Basic invocation
 curl localhost:8080
-
-# With optional parameters (example)
-curl localhost:8080?full_refresh=true
 ```
 
 ### Step 4: Reset Credentials
@@ -149,7 +146,7 @@ notion_pipeline:
 Then apply the changes:
 
 ```shell
-terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.notion_pipeline
+terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 ```
 
 ## Troubleshooting
@@ -161,4 +158,4 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.notio
 
 ## Related Services
 
-This pipeline populates data for the [Streamlit Dashboard](./opentofu/modules/streamlit/README.md) service, which visualizes the data loaded into Cloud Storage.
+This pipeline populates data for the [Data Explorer](./opentofu/modules/data_explorer/README.md) service, which visualizes the data loaded into Cloud Storage.
