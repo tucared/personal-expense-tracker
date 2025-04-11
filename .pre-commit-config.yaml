@@ -28,9 +28,9 @@ repos:
     rev: 0.5.21
     hooks:
       - id: uv-lock
-        name: uv-lock (streamlit)
-        files: opentofu/modules/streamlit/src/pyproject.toml
-        args: [--project, opentofu/modules/streamlit/src/]
+        name: uv-lock (data_explorer)
+        files: opentofu/modules/data_explorer/src/pyproject.toml
+        args: [--project, opentofu/modules/data_explorer/src/]
       - id: uv-lock
         name: uv-lock (notion_pipeline)
         files: opentofu/modules/notion_pipeline/src/pyproject.toml
