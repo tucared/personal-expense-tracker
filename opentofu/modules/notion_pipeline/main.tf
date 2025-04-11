@@ -56,13 +56,13 @@ resource "google_storage_bucket" "cloud_function_source" {
 
 data "archive_file" "cloud_function_source" {
   type        = "zip"
-  output_path = "/tmp/function-source.zip"
+  output_path = "${path.module}/function-source.zip"
   source_dir  = "${path.module}/src"
   excludes    = ["__pycache__", ".venv", "uv.lock", "pyproject.toml"]
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
-  name         = local.module_name
+  name         = "${local.module_name}-${data.archive_file.cloud_function_source.output_md5}.zip"
   content_type = "application/zip"
   bucket       = google_storage_bucket.cloud_function_source.name
   source       = data.archive_file.cloud_function_source.output_path
