@@ -85,6 +85,8 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   iam.googleapis.com \
   cloudresourcemanager.googleapis.com \
+  drive.googleapis.com \
+  sheets.googleapis.com \
   --project=$PROJECT_ID
 ```
 
@@ -103,8 +105,13 @@ After deployment completes:
 # Get data explorer webapp URL (build will take a minute or two after `terragrunt apply`)
 echo "Data Explorer URL: $(terragrunt output -raw data_explorer_service_url)"
 
+# Get the service account email to share your Google Sheets with
+echo "Google Sheets Service Account: $(terragrunt output -raw data_bucket_writer_service_account_email)"
+
 # Trigger initial data load
 curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
+    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+curl -i -X POST $(terragrunt output -raw google_sheets_pipeline_function_uri) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
@@ -125,22 +132,26 @@ flowchart LR
 **Manual Data Refresh:**
 
 ```shell
+# Set env vars for Notion pipeline
+export FUNCTION_URI=$(terragrunt output -raw notion_pipeline_function_uri)
+export SCHEDULER_NAME=$(terragrunt output -raw notion_pipeline_scheduler_name)
+export SCHEDULER_REGION=$(terragrunt output -raw notion_pipeline_scheduler_region)
+
+# Or for Google Sheets Pipeline
+export FUNCTION_URI=$(terragrunt output -raw google_sheets_pipeline_function_uri)
+export SCHEDULER_NAME=$(terragrunt output -raw google_sheets_pipeline_scheduler_name)
+export SCHEDULER_REGION=$(terragrunt output -raw google_sheets_pipeline_scheduler_region)
+
 # Using curl
-curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
-    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 
 # Using Cloud Scheduler
-gcloud scheduler jobs run $(terragrunt output -raw notion_pipeline_scheduler_name) \
-    --project=$PROJECT_ID \
-    --location=$(terragrunt output -raw notion_pipeline_scheduler_region)
+gcloud scheduler jobs run $SCHEDULER_NAME --project=$PROJECT_ID --location=$SCHEDULER_REGION
 ```
 
 **View Ingestion Logs:**
 
 ```shell
-# Get function name
-FUNCTION_NAME=$(terragrunt output -raw notion_pipeline_function_name)
-
 # View recent logs
 gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
 ```
@@ -151,6 +162,7 @@ For local development and testing:
 
 - [Data Explorer (Streamlit) App Development Guide](opentofu/modules/data_explorer/README.md)
 - [Notion Pipeline Development Guide](opentofu/modules/notion_pipeline/README.md)
+- [Google Sheets Pipeline Development Guide](opentofu/modules/google_sheets_pipeline/README.md)
 
 ## Cost Management
 

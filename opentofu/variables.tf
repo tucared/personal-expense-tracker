@@ -28,6 +28,19 @@ variable "notion_pipeline" {
   })
 }
 
+# Google Sheets pipeline module
+
+variable "google_sheets_pipeline" {
+  type = object({
+    spreadsheet_url_or_id = string
+    cloud_scheduler_parameters = object({
+      paused   = bool
+      schedule = string
+      region   = string
+    })
+  })
+}
+
 # Data explorer module
 
 variable "data_explorer" {

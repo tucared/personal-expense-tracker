@@ -25,6 +25,29 @@ output "notion_pipeline_scheduler_region" {
   value       = module.notion_pipeline.scheduler_region
 }
 
+# Outputs for Google sheets pipeline module
+
+output "google_sheets_pipeline_data_bucket_writer_private_key_value" {
+  description = "Private key for the data bucket writer service account"
+  value       = module.google_sheets_pipeline.data_bucket_writer_private_key_value
+  sensitive   = true
+}
+
+output "google_sheets_pipeline_function_uri" {
+  description = "URI of deployed Cloud Function"
+  value       = module.google_sheets_pipeline.function_uri
+}
+
+output "google_sheets_pipeline_scheduler_name" {
+  description = "Name of deployed Cloud Function"
+  value       = module.google_sheets_pipeline.scheduler_name
+}
+
+output "google_sheets_pipeline_scheduler_region" {
+  description = "Region of deployed Cloud Function"
+  value       = module.google_sheets_pipeline.scheduler_region
+}
+
 # Outputs for Data explorer module
 
 output "data_explorer_build_trigger_name" {

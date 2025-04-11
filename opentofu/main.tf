@@ -42,6 +42,18 @@ module "notion_pipeline" {
   notion_api_key = var.notion_pipeline.notion_api_key
 }
 
+module "google_sheets_pipeline" {
+  source = "./modules/google_sheets_pipeline"
+
+  project_id                               = var.project_id
+  region                                   = var.region
+  data_bucket_name                         = google_storage_bucket.data_bucket.name
+  data_bucket_writer_service_account_email = google_service_account.data_bucket_writer.email
+  cloud_scheduler_parameters               = var.google_sheets_pipeline.cloud_scheduler_parameters
+
+  spreadsheet_url_or_id = var.google_sheets_pipeline.spreadsheet_url_or_id
+}
+
 #################################
 # Data Explorer App Resources
 #################################

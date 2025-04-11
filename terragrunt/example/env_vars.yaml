@@ -15,6 +15,15 @@ notion_pipeline:
     schedule: "0 * * * *" # every hour
     region: europe-west6
 
+# Google Sheets variables
+# --------------------
+google_sheets_pipeline:
+  spreadsheet_url_or_id: 1VTtCiYgxjAwcIw7UM1_BSaxC3rzIpr0HwXZwd2OlPD4
+  cloud_scheduler_parameters:
+    paused: true
+    schedule: "0 * * * *" # every hour
+    region: europe-west6
+
 # Data explorer variables
 # ------------------
 data_explorer:
