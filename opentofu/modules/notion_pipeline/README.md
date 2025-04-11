@@ -73,8 +73,8 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
    fi
 
    # Get bucket name
-   export BUCKET_NAME=$(terragrunt output -raw bucket_name)
-   echo "Using bucket: $BUCKET_NAME"
+   export DATA_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
+   echo "Using bucket: $DATA_BUCKET_NAME"
    ```
 
 3. Start server with service account impersonation:
@@ -85,7 +85,7 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 
    # Start local functions framework server
    SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
-   DESTINATION__FILESYSTEM__BUCKET_URL=gs://$BUCKET_NAME \
+   DESTINATION__FILESYSTEM__BUCKET_URL=gs://$DATA_BUCKET_NAME \
    NORMALIZE__LOADER_FILE_FORMAT="parquet" \
    RUNTIME__LOG_LEVEL="DEBUG" \
    RUNTIME__DLTHUB_TELEMETRY=false \

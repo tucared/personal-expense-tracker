@@ -23,7 +23,7 @@ uv --version
 
 # Verify terragrunt deployment status
 cd terragrunt/dev
-terragrunt output bucket_name
+terragrunt output data_bucket_name
 # Should return a valid bucket name
 ```
 
@@ -73,7 +73,7 @@ This option connects to actual Cloud Storage data using service account imperson
    ```shell
    # Extract required values from terragrunt outputs
    export SERVICE_ACCOUNT=$(terragrunt output -raw streamlit_service_account_email)
-   export GCS_BUCKET_NAME=$(terragrunt output -raw bucket_name)
+   export GCS_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
    export HMAC_ACCESS_ID=$(terragrunt output -raw streamlit_hmac_access_id)
    export HMAC_SECRET=$(terragrunt output -raw streamlit_hmac_secret)
 

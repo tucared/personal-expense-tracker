@@ -4,19 +4,6 @@ locals {
   }
 }
 
-# Cloud function service account
-
-resource "google_service_account" "cloud_function" {
-  account_id   = "sa-cloud-function"
-  display_name = "Cloud Function SA"
-}
-
-resource "google_storage_bucket_iam_member" "cloud_function" {
-  bucket = var.bucket_name
-  role   = "roles/storage.objectUser"
-  member = "serviceAccount:${google_service_account.cloud_function.email}"
-}
-
 # Notion source secret
 
 resource "google_secret_manager_secret" "notion" {
@@ -44,7 +31,7 @@ resource "google_secret_manager_secret_iam_member" "cloud_function_notion" {
   project   = var.project_id
   secret_id = google_secret_manager_secret.notion.secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cloud_function.email}"
+  member    = "serviceAccount:${var.data_bucket_writer_service_account_email}"
 }
 
 # Deployment of Cloud Function
@@ -108,10 +95,10 @@ resource "google_cloudfunctions2_function" "this" {
     max_instance_count    = 1
     available_memory      = "256Mi"
     timeout_seconds       = 600
-    service_account_email = google_service_account.cloud_function.email
+    service_account_email = var.data_bucket_writer_service_account_email
 
     environment_variables = {
-      DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.bucket_name}"
+      DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.data_bucket_name}"
       DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID = var.project_id
       NORMALIZE__LOADER_FILE_FORMAT                    = "parquet"
       RUNTIME__LOG_LEVEL                               = "WARNING"

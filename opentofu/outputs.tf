@@ -1,6 +1,11 @@
-output "bucket_name" {
+output "data_bucket_name" {
   description = "Name of bucket containing cloud function state file"
-  value       = google_storage_bucket.this.name
+  value       = google_storage_bucket.data_bucket.name
+}
+
+output "data_bucket_writer_service_account_email" {
+  description = "Email of service account used to write to the data bucket"
+  value       = google_service_account.data_bucket_writer.email
 }
 
 # Outputs for Notion pipeline module
@@ -8,11 +13,6 @@ output "bucket_name" {
 output "notion_pipeline_function_uri" {
   description = "URI of deployed Cloud Function"
   value       = module.notion_pipeline.function_uri
-}
-
-output "notion_pipeline_function_service_account_email" {
-  description = "Email of service account used when running the Cloud Function"
-  value       = module.notion_pipeline.function_service_account_email
 }
 
 output "notion_pipeline_scheduler_name" {

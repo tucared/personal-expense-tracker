@@ -3,7 +3,7 @@ variable "project_id" {
   type        = string
 }
 
-variable "bucket_name" {
+variable "data_bucket_name" {
   description = "Name of the bucket where the data is stored"
   type        = string
 }

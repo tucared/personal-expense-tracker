@@ -4,7 +4,7 @@ resource "google_service_account" "data_bucket_reader" {
 }
 
 resource "google_storage_bucket_iam_member" "data_bucket_reader" {
-  bucket = var.bucket_name
+  bucket = var.data_bucket_name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.data_bucket_reader.email}"
 }
@@ -186,13 +186,13 @@ resource "google_service_account" "data_explorer" {
 }
 
 resource "google_storage_bucket_iam_member" "data_explorer" {
-  bucket = var.bucket_name
+  bucket = var.data_bucket_name
   role   = "roles/storage.legacyBucketReader"
   member = "serviceAccount:${google_service_account.data_explorer.email}"
 }
 
 resource "google_storage_bucket_iam_member" "data_explorer_object_viewer" {
-  bucket = var.bucket_name
+  bucket = var.data_bucket_name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.data_explorer.email}"
 }
@@ -208,7 +208,7 @@ resource "google_cloud_run_v2_service" "data_explorer" {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
         name  = "GCS_BUCKET_NAME"
-        value = var.bucket_name
+        value = var.data_bucket_name
       }
       env {
         name  = "HMAC_ACCESS_ID"

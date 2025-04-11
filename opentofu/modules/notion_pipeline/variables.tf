@@ -3,13 +3,19 @@ variable "project_id" {
   type        = string
 }
 
-variable "bucket_name" {
+variable "region" {
+  description = "Default region for creating resources"
+  type        = string
+  default     = "europe-west9"
+}
+
+variable "data_bucket_name" {
   description = "Name of the bucket where the data is stored"
   type        = string
 }
 
-variable "notion_api_key" {
-  description = "Notion integration token with read access to database"
+variable "data_bucket_writer_service_account_email" {
+  description = "Service account used to write to the data bucket"
   type        = string
 }
 
@@ -26,8 +32,7 @@ variable "cloud_scheduler_parameters" {
   }
 }
 
-variable "region" {
-  description = "Default region for creating resources"
+variable "notion_api_key" {
+  description = "Notion integration token with read access to database"
   type        = string
-  default     = "europe-west9"
 }
