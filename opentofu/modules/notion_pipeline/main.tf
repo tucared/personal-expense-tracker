@@ -2,6 +2,9 @@ locals {
   labels = {
     module = "notion_pipeline"
   }
+
+  # Used to name resources or prefix them
+  module_name = "notion-pipeline" # Avoid underscores in the name
 }
 
 # Notion source secret
@@ -43,7 +46,7 @@ resource "random_id" "cloud_function_source_bucket_prefix" {
 }
 
 resource "google_storage_bucket" "cloud_function_source" {
-  name                        = "${random_id.cloud_function_source_bucket_prefix.hex}-gcf-source"
+  name                        = "${random_id.cloud_function_source_bucket_prefix.hex}-${local.module_name}-gcf-source"
   force_destroy               = true
   location                    = var.region
   uniform_bucket_level_access = true
@@ -59,7 +62,7 @@ data "archive_file" "cloud_function_source" {
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {
-  name         = "notion-pipeline"
+  name         = local.module_name
   content_type = "application/zip"
   bucket       = google_storage_bucket.cloud_function_source.name
   source       = data.archive_file.cloud_function_source.output_path
@@ -68,7 +71,7 @@ resource "google_storage_bucket_object" "cloud_function_source" {
 ## Deployment of the Cloud Function
 
 resource "google_cloudfunctions2_function" "this" {
-  name        = "notion-pipeline" # Avoid underscores in the name
+  name        = local.module_name
   location    = var.region
   description = "Function used to query latest added and edited items"
 
@@ -117,8 +120,8 @@ resource "google_cloudfunctions2_function" "this" {
 # Cloud Scheduler to invoke the Cloud Function regularly
 
 resource "google_service_account" "cloud_scheduler" {
-  account_id   = "sa-cloud-scheduler"
-  display_name = "Cloud Scheduler SA"
+  account_id   = "${local.module_name}-sa-scheduler"
+  display_name = "Cloud Scheduler SA for Notion Pipeline"
 }
 
 resource "google_cloudfunctions2_function_iam_member" "invoker" {
@@ -140,7 +143,7 @@ resource "google_cloud_run_service_iam_member" "invoker" {
 resource "google_cloud_scheduler_job" "this" {
   paused = var.cloud_scheduler_parameters.paused
 
-  name        = "cloud-function-invoker"
+  name        = "${local.module_name}-invoker"
   description = "Triggers the Cloud Function to query Notion API"
   schedule    = var.cloud_scheduler_parameters.schedule
   region      = var.cloud_scheduler_parameters.region
