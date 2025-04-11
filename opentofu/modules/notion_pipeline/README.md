@@ -27,7 +27,7 @@ gcloud config list account
 
 # Verify terragrunt deployment
 cd terragrunt/dev
-terragrunt output notion_pipeline_function_service_account_email
+terragrunt output data_bucket_writer_service_account_email
 # Should return a valid service account email
 ```
 
@@ -63,7 +63,7 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 
    ```shell
    # Get service account email and verify it exists
-   export SERVICE_ACCOUNT=$(terragrunt output -raw notion_pipeline_function_service_account_email)
+   export SERVICE_ACCOUNT=$(terragrunt output -raw data_bucket_writer_service_account_email)
    echo "Using service account: $SERVICE_ACCOUNT"
 
    # Verify Notion API key exists
