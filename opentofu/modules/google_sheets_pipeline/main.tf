@@ -100,7 +100,7 @@ resource "google_cloudfunctions2_function" "this" {
 
   service_config {
     max_instance_count    = 1
-    available_memory      = "256Mi"
+    available_memory      = "512Mi"
     timeout_seconds       = 600
     service_account_email = var.data_bucket_writer_service_account_email
 
