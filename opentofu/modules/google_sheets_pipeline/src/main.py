@@ -11,7 +11,6 @@ def google_sheets_pipeline(request):
     pipeline = dlt.pipeline(
         pipeline_name="google_sheets_pipeline",
         destination="filesystem",
-        dev_mode=True,
         dataset_name="raw",
     )
     monthly_category_amounts = google_spreadsheet(range_names=["Data", "Rate"])
