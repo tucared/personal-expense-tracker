@@ -15,6 +15,7 @@ def google_sheets_pipeline(request):
     )
     monthly_category_amounts = google_spreadsheet(range_names=["Data", "Rate"])
     monthly_category_amounts.resources["Data"].apply_hints(table_name="monthly_category_amounts")
+    monthly_category_amounts.resources["Rate"].apply_hints(table_name="rate")
 
     monthly_category_amounts_info = pipeline.run(monthly_category_amounts)
     print(monthly_category_amounts_info)
