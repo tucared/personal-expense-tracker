@@ -12,10 +12,12 @@ def google_sheets_pipeline(request):
         pipeline_name="google_sheets_pipeline",
         destination="filesystem",
         dev_mode=True,
-        dataset_name="sample_google_sheet_data",
+        dataset_name="raw",
     )
-    data = google_spreadsheet(range_names=["Data"])
-    info = pipeline.run(data)
-    print(info)
+    monthly_category_amounts = google_spreadsheet(range_names=["Data", "Rate"])
+    monthly_category_amounts.resources["Data"].apply_hints(table_name="monthly_category_amounts")
+
+    monthly_category_amounts_info = pipeline.run(monthly_category_amounts)
+    print(monthly_category_amounts_info)
 
     return "Pipeline run successfully!"

@@ -9,12 +9,12 @@ def notion_pipeline(request):
     an integration.
     """
     pipeline = dlt.pipeline(
-        pipeline_name="notion",
+        pipeline_name="notion_pipeline",
         destination="filesystem",
-        dataset_name="notion_data",
+        dataset_name="raw",
     )
-    data = notion_databases()
-    info = pipeline.run(data)
-    print(info)
+    expenses = notion_databases()
+    expenses_info = pipeline.run(expenses, table_name="expenses")
+    print(expenses_info)
 
     return "Pipeline run successfully!"
