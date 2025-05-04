@@ -72,10 +72,10 @@ This option connects to actual Cloud Storage data using service account imperson
 
    ```shell
    # Extract required values from terragrunt outputs
-   export SERVICE_ACCOUNT=$(terragrunt output -raw streamlit_service_account_email)
+   export SERVICE_ACCOUNT=$(terragrunt output -raw data_explorer_service_account_email)
    export GCS_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
-   export HMAC_ACCESS_ID=$(terragrunt output -raw streamlit_hmac_access_id)
-   export HMAC_SECRET=$(terragrunt output -raw streamlit_hmac_secret)
+   export HMAC_ACCESS_ID=$(terragrunt output -raw data_explorer_hmac_access_id)
+   export HMAC_SECRET=$(terragrunt output -raw data_explorer_hmac_secret)
 
    # Verify exports were successful
    echo "Using service account: $SERVICE_ACCOUNT"
@@ -91,7 +91,7 @@ This option connects to actual Cloud Storage data using service account imperson
 4. Start the application:
 
    ```shell
-   uv run --directory="../../opentofu/modules/streamlit/src/" streamlit run app.py
+   uv run --directory="../../opentofu/modules/data_explorer/src/" streamlit run app.py
    ```
 
 5. When finished, reset credentials:
