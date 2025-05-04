@@ -146,9 +146,9 @@ def google_spreadsheet(
             name=name,
             write_disposition="replace",
         )
-    yield dlt.resource(
-        metadata_table,
-        write_disposition="merge",
-        name="spreadsheet_info",
-        merge_key="spreadsheet_id",
-    )
+    # yield dlt.resource(
+    #     metadata_table,
+    #     write_disposition="merge",
+    #     name="spreadsheet_info",
+    #     merge_key="spreadsheet_id",
+    # )
