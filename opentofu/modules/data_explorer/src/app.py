@@ -99,36 +99,54 @@ def get_query_dataframe(query: str):
     return None
 
 
-def generate_table_name(file_info: Dict) -> str:
-    """Generate a valid and clean table name from file information without adding hash."""
-    # Start with the display name
-    display_name = file_info["display_name"]
-
-    # Remove file extension
-    clean_name = display_name.replace(".parquet", "")
-
-    # Replace non-alphanumeric characters with underscores
-    clean_name = re.sub(r"[^a-zA-Z0-9_]", "_", clean_name)
-
-    # Ensure the name starts with a letter (not a number)
-    if clean_name and clean_name[0].isdigit():
-        clean_name = "t_" + clean_name
-
-    # Remove consecutive underscores
-    clean_name = re.sub(r"_+", "_", clean_name)
-
-    # Remove leading/trailing underscores
-    clean_name = clean_name.strip("_")
-
-    # If the name is empty or too short, use file ID with a prefix
-    if not clean_name or len(clean_name) < 3:
-        clean_name = f"table_{file_info['file_id']}"
-
-    # Truncate if too long but don't add the hash suffix
-    if len(clean_name) > 30:
-        clean_name = clean_name[:30]
-
-    return clean_name
+def generate_table_name(file_info: Dict) -> Tuple[str, str]:
+    """Generate schema and table name from file path.
+    
+    Example:
+    gs://bucket/raw/expenses/file.parquet -> (raw, expenses)
+    """
+    # Extract path parts from the file path
+    path = file_info["name"]
+    path_parts = path.split("/")
+    
+    # Default schema and table if we can't extract from path
+    schema_name = "main"
+    table_name = "data"
+    
+    # Need at least 2 parts (schema/table) to have a proper structure
+    if len(path_parts) >= 2:
+        # Schema is the first directory
+        schema_name = path_parts[0]
+        
+        # Table is the second directory
+        if len(path_parts) >= 3:
+            table_name = path_parts[1]
+        
+        # Clean the names - replace non-alphanumeric chars with underscores
+        schema_name = re.sub(r"[^a-zA-Z0-9_]", "_", schema_name)
+        table_name = re.sub(r"[^a-zA-Z0-9_]", "_", table_name)
+        
+        # Ensure names start with a letter (not a number)
+        if schema_name and schema_name[0].isdigit():
+            schema_name = "s_" + schema_name
+        if table_name and table_name[0].isdigit():
+            table_name = "t_" + table_name
+            
+        # Remove consecutive underscores
+        schema_name = re.sub(r"_+", "_", schema_name)
+        table_name = re.sub(r"_+", "_", table_name)
+        
+        # Remove leading/trailing underscores
+        schema_name = schema_name.strip("_")
+        table_name = table_name.strip("_")
+    
+    # If any name is empty or too short, use defaults
+    if not schema_name or len(schema_name) < 2:
+        schema_name = "main"
+    if not table_name or len(table_name) < 2:
+        table_name = "data_" + file_info['file_id']
+    
+    return schema_name, table_name
 
 
 def get_in_memory_tables() -> List[Tuple[str, str]]:
@@ -141,108 +159,55 @@ def get_in_memory_tables() -> List[Tuple[str, str]]:
     return []
 
 
-def group_files_by_folder(files: List[Dict]) -> Dict[str, List[Dict]]:
-    """Group files by their folder path for hierarchical display."""
-    folders = {}
-
-    # First pass: collect all unique folders
-    for file in files:
-        folder = file["folder"]
-        if folder not in folders:
-            folders[folder] = []
-        folders[folder].append(file)
-
-    return folders
-
-
 def load_all_tables(parquet_files: List[Dict]):
-    """Load all external parquet files into DuckDB tables with clean names, organized by folder structure."""
+    """Create views for external parquet files in DuckDB based on their path structure."""
     # Clear cache to ensure fresh data
     st.cache_data.clear()
 
     successful_loads = []
     failed_loads = []
 
-    with st.sidebar.status("Loading tables...") as status:
-        # Group files by folder for organization
-        folder_groups = {}
-        for file in parquet_files:
-            folder_path = file["folder"]
-
-            # Extract first level folder from path for schema name
-            schema_name = "external_data"  # Default schema
-            if folder_path:
-                # Extract first folder level as schema
-                first_folder = folder_path.split("/")[0]
-                if first_folder:
-                    # Clean schema name - must be a valid SQL identifier
-                    schema_name = re.sub(r"[^a-zA-Z0-9_]", "_", first_folder)
-                    # Ensure schema name starts with a letter
-                    if schema_name and schema_name[0].isdigit():
-                        schema_name = "s_" + schema_name
-
-            if schema_name not in folder_groups:
-                folder_groups[schema_name] = []
-
-            folder_groups[schema_name].append(file)
-
-        # Create schemas and load tables
+    with st.spinner("Creating views..."):
         con = get_duckdb_connection()
-        for schema_name, files in folder_groups.items():
+        
+        for file in parquet_files:
             try:
+                # Generate schema and table names from file path
+                schema_name, table_name = generate_table_name(file)
+                
                 # Create schema if needed
                 con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name};")
-
-                # Load files into tables within this schema
-                for file in files:
-                    table_name = generate_table_name(file)
-                    qualified_table_name = f"{schema_name}.{table_name}"
-
-                    # Use read_parquet() function for more explicit handling
-                    load_sql = f"CREATE OR REPLACE TABLE {qualified_table_name} AS SELECT * FROM read_parquet('{file['path']}');"
-
-                    try:
-                        con.execute(load_sql)
-                        successful_loads.append((qualified_table_name, file))
-                        status.update(
-                            label=f"Loaded {len(successful_loads)} tables...",
-                            state="running",
-                        )
-                    except Exception as e:
-                        failed_loads.append((file, str(e)))
-                        status.update(
-                            label=f"Error loading {file['display_name']}",
-                            state="running",
-                        )
-                        # Log the error and the SQL that caused it
-                        with st.sidebar.expander(
-                            f"Error details for {file['display_name']}"
-                        ):
-                            st.write(f"**Error:** {str(e)}")
-                            st.write(f"**SQL:** {load_sql}")
+                
+                # Create view instead of loading data into table
+                qualified_view_name = f"{schema_name}.{table_name}"
+                view_sql = f"CREATE OR REPLACE VIEW {qualified_view_name} AS SELECT * FROM parquet_scan('{file['path']}');"
+                
+                try:
+                    con.execute(view_sql)
+                    successful_loads.append((qualified_view_name, file))
+                except Exception as e:
+                    failed_loads.append((file, str(e)))
+                    # Log the error and the SQL that caused it
+                    with st.sidebar.expander(
+                        f"Error details for {file['display_name']}"
+                    ):
+                        st.write(f"**Error:** {str(e)}")
+                        st.write(f"**SQL:** {view_sql}")
             except Exception as e:
-                st.sidebar.error(f"Error creating schema {schema_name}: {str(e)}")
-
-        if successful_loads:
-            status.update(
-                label=f"Loaded {len(successful_loads)} tables successfully",
-                state="complete",
-            )
-        else:
-            status.update(label="No tables were loaded", state="error")
+                st.sidebar.error(f"Error processing file {file['display_name']}: {str(e)}")
 
     if failed_loads:
-        st.sidebar.error(f"Failed to load {len(failed_loads)} tables")
-        with st.sidebar.expander("Failed loads"):
+        st.sidebar.error(f"Failed to create {len(failed_loads)} views")
+        with st.sidebar.expander("Failed views"):
             for file, error in failed_loads:
                 st.write(f"**{file['display_name']}**: {error}")
 
-    # Force refresh after loading
-    st.rerun()
 
-
-def clear_in_memory_tables():
-    """Drop all user-created tables in all schemas (except system tables)."""
+def refresh_data():
+    """
+    Delete all views, scan GCS again, and create views accordingly.
+    This function is called on app launch and when the refresh button is clicked.
+    """
     try:
         con = get_duckdb_connection()
         # Get list of all schemas and tables
@@ -255,17 +220,13 @@ def clear_in_memory_tables():
         if result is not None:
             tables = result.fetchall()
 
-            if not tables:
-                st.sidebar.info("No tables to clear.")
-                return
-
             # Drop each table
-            with st.sidebar.status("Clearing tables...") as status:
+            with st.sidebar.status("Refreshing data...") as status:
                 for schema_name, table_name in tables:
                     try:
                         con.execute(f"DROP TABLE {schema_name}.{table_name};")
                         status.update(
-                            label=f"Dropped table {schema_name}.{table_name}",
+                            label=f"Dropped view {schema_name}.{table_name}",
                             state="running",
                         )
                     except Exception as e:
@@ -273,14 +234,17 @@ def clear_in_memory_tables():
                             label=f"Error dropping {schema_name}.{table_name}: {str(e)}",
                             state="error",
                         )
+                
+                # Get parquet files and load them
+                parquet_files = scan_gcs_for_parquet_files()
+                load_all_tables(parquet_files)
+                status.update(label="Refreshed data successfully", state="complete")
 
-                status.update(label=f"Cleared {len(tables)} tables", state="complete")
-
-            # Force refresh
-            st.cache_data.clear()
-            st.rerun()
+        # Force refresh cache
+        st.cache_data.clear()
+        
     except Exception as e:
-        st.sidebar.error(f"Error clearing tables: {str(e)}")
+        st.sidebar.error(f"Error refreshing data: {str(e)}")
 
 
 # Load configuration file
@@ -310,26 +274,15 @@ if st.session_state["authentication_status"]:
     st.sidebar.title("Data Navigator")
     st.sidebar.write(f"Welcome *{st.session_state['name']}*")
 
-    # Get parquet files with metadata
-    parquet_files = scan_gcs_for_parquet_files()
+    # Run refresh_data on app startup if not already loaded
+    if 'tables_loaded' not in st.session_state:
+        st.session_state['tables_loaded'] = True
+        refresh_data()
 
-    # Add the Load All Tables, Clear Tables, and Refresh buttons
-    btn_col1, btn_col2, btn_col3 = st.sidebar.columns(3)
-
-    with btn_col1:
-        if st.button(
-            "Load All Tables", key="load_all_tables", use_container_width=True
-        ):
-            load_all_tables(parquet_files)
-
-    with btn_col2:
-        if st.button("Clear Tables", key="clear_tables", use_container_width=True):
-            clear_in_memory_tables()
-
-    with btn_col3:
-        if st.button("Refresh", key="refresh_tables", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
+    # Add the Refresh button
+    if st.sidebar.button("Refresh", key="refresh_tables", use_container_width=True):
+        refresh_data()
+        st.rerun()
 
     # Custom CSS for left alignment
     st.markdown(
@@ -374,105 +327,13 @@ if st.session_state["authentication_status"]:
                             f"FROM {schema}.{table} LIMIT 100;"
                         )
 
-    # Display External Files with proper hierarchy
-    if parquet_files:
-        st.sidebar.markdown("### External Files")
-
-        # Group files by folder
-        folders = group_files_by_folder(parquet_files)
-
-        # Extract and organize folder hierarchy
-        folder_hierarchy = {}
-        for folder_path, files in folders.items():
-            if not folder_path:  # Root files
-                folder_name = "Root Files"
-            else:
-                # Split the path and extract hierarchy parts
-                path_parts = folder_path.split("/")
-
-                # For top level, use just the first part
-                folder_name = path_parts[0]
-
-                # If there are more parts, organize subfolders
-                if len(path_parts) > 1:
-                    subfolder = "/".join(path_parts[1:])
-                    folder_name = path_parts[0]
-
-                    if folder_name not in folder_hierarchy:
-                        folder_hierarchy[folder_name] = {}
-
-                    if subfolder not in folder_hierarchy[folder_name]:
-                        folder_hierarchy[folder_name][subfolder] = []
-
-                    folder_hierarchy[folder_name][subfolder].extend(files)
-                    continue  # Skip adding to top level
-
-            if folder_name not in folder_hierarchy:
-                folder_hierarchy[folder_name] = {}
-
-            if "files" not in folder_hierarchy[folder_name]:
-                folder_hierarchy[folder_name]["files"] = []
-
-            folder_hierarchy[folder_name]["files"].extend(files)
-
-        # Display the folder hierarchy
-        for folder_name in sorted(folder_hierarchy.keys()):
-            folder_data = folder_hierarchy[folder_name]
-
-            # Count total files in this folder (including subfolders)
-            total_files = len(folder_data.get("files", []))
-            for subfolder, subfolder_files in folder_data.items():
-                if subfolder != "files":
-                    total_files += len(subfolder_files)
-
-            # Create expandable section for this folder
-            with st.sidebar.expander(f"{folder_name} ({total_files})", expanded=True):
-                # Display files at root of this folder
-                for file in sorted(
-                    folder_data.get("files", []), key=lambda x: x["display_name"]
-                ):
-                    if st.button(
-                        f"{file['display_name']}",
-                        key=f"file_{file['file_id']}",
-                        help=f"Size: {file['size_kb']} KB, Modified: {file['last_modified']}",
-                        use_container_width=True,
-                    ):
-                        st.session_state["current_query"] = (
-                            f"FROM '{file['path']}' LIMIT 100;"
-                        )
-
-                # Display subfolders
-                for subfolder in sorted(
-                    [k for k in folder_data.keys() if k != "files"]
-                ):
-                    subfolder_files = folder_data[subfolder]
-
-                    # Get the last part of the subfolder path for display
-                    subfolder_display = subfolder.split("/")[-1]
-
-                    with st.sidebar.expander(
-                        f"{subfolder_display} ({len(subfolder_files)})", expanded=False
-                    ):
-                        for file in sorted(
-                            subfolder_files, key=lambda x: x["display_name"]
-                        ):
-                            if st.button(
-                                f"{file['display_name']}",
-                                key=f"file_{file['file_id']}",
-                                help=f"Size: {file['size_kb']} KB, Modified: {file['last_modified']}",
-                                use_container_width=True,
-                            ):
-                                st.session_state["current_query"] = (
-                                    f"FROM '{file['path']}' LIMIT 100;"
-                                )
-
     with col1:
         # Main content area for query and results
         st.title("DuckDB Data Explorer")
 
         # Ensure no 'SELECT *' in any generated queries
         if "current_query" not in st.session_state:
-            st.session_state["current_query"] = "SELECT 42 AS answer;"
+            st.session_state["current_query"] = "SHOW ALL TABLES;"
 
         # Store previous query state to detect CMD+Enter
         if "_previous_query" not in st.session_state:
