@@ -1,32 +1,32 @@
 <div align="center">
-<h1 align="center">Lakehouse Starter</h1>
+<h1 align="center">Personal Expense Tracker</h1>
 
   <strong><p align="center">
-    A production-ready data lakehouse template using OpenTofu, DLT, and Streamlit on Google Cloud Platform (GCP).</strong>
+    A data lakehouse for tracking personal expenses in Notion against a monthly budget in Google Sheets</strong>
   </p>
 
-  ![Lakehouse Architecture](lakehouse.svg)
+  ![Expense Tracker Architecture](architecture.svg)
 </div>
 
 ## What Is This?
 
-A complete, ready-to-deploy data lakehouse that combines:
+A ready-to-deploy expense tracking system that:
 
-- **Data storage**: Cloud-native storage using GCP Cloud Storage
-- **Data ingestion**: Automated pipelines for extracting and loading data
-- **Data transformation**: DLT (Data Load Tool) for ELT workflows
-- **Data analytics**: DuckDB for high-performance SQL queries against cloud storage
-- **Data visualization**: Interactive Streamlit dashboards
-- **Infrastructure-as-code**: Everything defined with OpenTofu and Terragrunt
+- **Logs expenses in Notion**: Track your daily expenses with date, amount, category, and payment method
+- **Manages budgets in Google Sheets**: Set and adjust monthly budget allocations by category
+- **Visualizes spending**: Interactive Streamlit dashboard to monitor budget consumption by day and category
+- **Automates data pipelines**: Scheduled syncs between Notion, Google Sheets, and your data lake
+- **Runs on GCP free tier**: Cloud-native infrastructure with minimal costs
 
-All components are designed to work within GCP's free tier (with typical usage patterns).
+This system combines the ease of logging expenses in Notion with the flexibility of budget management in Google Sheets, all visualized in an intuitive dashboard.
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Accounts & Services**:
-  - [Notion account](https://www.notion.so/signup) for data source
+- **Accounts & Templates**:
+  - [Notion account](https://www.notion.so/signup) with [expense template](https://www.notion.so/1e81ed43cd7081609485d8f73c0d5e36?v=1e81ed43cd7081f88063000c38133b27) (**duplicate this template to your workspace**)
+  - [Google Sheets budget template](https://docs.google.com/spreadsheets/d/1mf3u9zqNAhXSNc7v2GYphqUjYIN6PHYEgjTAHuvD50M/edit?gid=0#gid=0) (**make a copy** to your Drive)
   - [Google Cloud billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account) (most resources stay within free tier)
 
 - **CLI Tools**:
@@ -39,14 +39,20 @@ All components are designed to work within GCP's free tier (with typical usage p
 #### 1. Configure Notion Integration
 
 1. [Create an internal Notion integration](https://developers.notion.com/docs/authorization#internal-integration-auth-flow-set-up)
-   - Name your integration (e.g., "Lakehouse Connector")
+   - Name your integration (e.g., "Expense Tracker")
    - Set read permissions only (no write access needed)
 
-2. [Connect the integration to your database](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages)
-   - Share your database with the integration
+2. [Connect the integration to your expense database](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages)
+   - Share your expense database with the integration
    - Copy your integration's secret key for the next steps
 
-#### 2. Configure Local Environment
+#### 2. Configure Google Sheets Access
+
+1. Create a copy of the [budget template](https://example.com/sheets-budget-template)
+2. Note the Sheet ID from the URL (the long string between `/d/` and `/edit`)
+3. You'll need to share this sheet with the service account later
+
+#### 3. Configure Local Environment
 
 ```shell
 # Create your environment configuration from example
@@ -60,9 +66,11 @@ Update `env_vars.yaml` with:
 
 - `project_id`: A unique GCP project identifier (create a new one)
 - `notion_pipeline.notion_api_key`: Your Notion integration secret
+- `notion_pipeline.notion_database_id`: Your expense database ID
+- `google_sheets_pipeline.sheet_id`: Your budget sheet ID
 - Optional: Adjust scheduler timing, region, etc.
 
-#### 3. Provision Google Cloud Environment
+#### 4. Provision Google Cloud Environment
 
 ```shell
 # Authenticate with Google Cloud
@@ -90,23 +98,29 @@ gcloud services enable \
   --project=$PROJECT_ID
 ```
 
-#### 4. Deploy Infrastructure
+#### 5. Deploy Infrastructure
 
 ```shell
 # Deploy all infrastructure components
 terragrunt apply
 ```
 
-#### 5. Access Your Lakehouse
+#### 6. Share Google Sheet with Service Account
+
+```shell
+# Get the service account email to share your Google Sheet with
+echo "Google Sheets Service Account: $(terragrunt output -raw data_bucket_writer_service_account_email)"
+```
+
+Share your budget Google Sheet with this service account email (Editor access).
+
+#### 7. Access Your Expense Tracker
 
 After deployment completes:
 
 ```shell
-# Get data explorer webapp URL (build will take a minute or two after `terragrunt apply`)
-echo "Data Explorer URL: $(terragrunt output -raw data_explorer_service_url)"
-
-# Get the service account email to share your Google Sheets with
-echo "Google Sheets Service Account: $(terragrunt output -raw data_bucket_writer_service_account_email)"
+# Get expense dashboard URL
+echo "Expense Dashboard URL: $(terragrunt output -raw data_explorer_service_url)"
 
 # Trigger initial data load
 curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
@@ -115,87 +129,93 @@ curl -i -X POST $(terragrunt output -raw google_sheets_pipeline_function_uri) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
-## Using Your Lakehouse
+## Using Your Expense Tracker
+
+### Data Structure
+
+**Notion Expense Database**:
+
+- **Date**: When the expense occurred
+- **Amount**: Cost in your currency
+- **Category**: Expense category (must match budget categories)
+- **Payment Method**: How you paid (cash, card, etc.)
+
+**Google Sheets Budget**:
+
+- Monthly budget allocations by category
+- Categories must match those used in Notion
+
+### Dashboard Features
+
+The Streamlit dashboard provides:
+
+1. **Budget Overview**: See total budget vs. actual spending
+2. **Daily Consumption**: Track how much of your budget is used each day
+3. **Category Breakdown**: Filter expenses by category
+4. **Trend Analysis**: View spending patterns over time
+
+> **Authentication**: The dashboard uses [Streamlit-Authenticator](https://github.com/mkhorasani/Streamlit-Authenticator) for password protection. Edit credentials in `/opentofu/modules/data_explorer/src/config.yaml` before deployment. **Note**: This configuration file is currently committed to the repository.
 
 ### Data Flow Process
 
 ```mermaid
 flowchart LR
-    A[Notion Database] -->|Hourly sync| B[Cloud Function]
-    B -->|Parquet files| C[Cloud Storage]
-    C -->|DuckDB SQL| D[Streamlit App]
-    D -->|Visualizations| E[End Users]
+    A[Notion Expenses] -->|Hourly sync| B[Cloud Function]
+    C[Google Sheets Budget] -->|Hourly sync| D[Cloud Function]
+    B & D -->|Parquet files| E[Cloud Storage]
+    E -->|DuckDB SQL| F[Streamlit Dashboard]
+    F -->|Visualizations| G[End Users]
 ```
 
-### Managing Data Ingestion
+> **Note**: Both Notion and Google Sheets data are synced hourly by default. You can customize the sync frequency for each pipeline in the `env_vars.yaml` file before deployment.
+
+### Managing Data Refresh
 
 **Manual Data Refresh:**
 
 ```shell
-# Set env vars for Notion pipeline
+# Refresh Notion expense data
 export FUNCTION_URI=$(terragrunt output -raw notion_pipeline_function_uri)
-export SCHEDULER_NAME=$(terragrunt output -raw notion_pipeline_scheduler_name)
-export SCHEDULER_REGION=$(terragrunt output -raw notion_pipeline_scheduler_region)
-
-# Or for Google Sheets Pipeline
-export FUNCTION_URI=$(terragrunt output -raw google_sheets_pipeline_function_uri)
-export SCHEDULER_NAME=$(terragrunt output -raw google_sheets_pipeline_scheduler_name)
-export SCHEDULER_REGION=$(terragrunt output -raw google_sheets_pipeline_scheduler_region)
-
-# Using curl
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 
-# Using Cloud Scheduler
-gcloud scheduler jobs run $SCHEDULER_NAME --project=$PROJECT_ID --location=$SCHEDULER_REGION
+# Refresh Google Sheets budget data
+export FUNCTION_URI=$(terragrunt output -raw google_sheets_pipeline_function_uri)
+curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
 **View Ingestion Logs:**
 
 ```shell
-# View recent logs
+# View recent logs for Notion pipeline
+export FUNCTION_NAME=$(terragrunt output -raw notion_pipeline_function_name)
+gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
+
+# View recent logs for Google Sheets pipeline
+export FUNCTION_NAME=$(terragrunt output -raw google_sheets_pipeline_function_name)
 gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
 ```
 
-### Running Services Locally
-
-For local development and testing:
-
-- [Data Explorer (Streamlit) App Development Guide](opentofu/modules/data_explorer/README.md)
-- [Notion Pipeline Development Guide](opentofu/modules/notion_pipeline/README.md)
-- [Google Sheets Pipeline Development Guide](opentofu/modules/google_sheets_pipeline/README.md)
-
 ## Cost Management
 
-This solution uses GCP's [free tier](https://cloud.google.com/free?hl=en) resources:
+This solution uses GCP's [free tier](https://cloud.google.com/free) resources:
 
 | Component | Free Tier Limit | Typical Usage |
 |-----------|-----------------|---------------|
-| Cloud Storage | 5GB | < 1GB for most use cases |
-| Cloud Functions | 2M invocations | ~720 invocations/month (hourly) |
+| Cloud Storage | 5GB | < 1GB for personal expense data |
+| Cloud Functions | 2M invocations | ~1,440 invocations/month (hourly) |
 | Cloud Run | 2M requests, 360K GB-seconds | Well below with periodic usage |
-| Cloud Scheduler | 3 jobs | 1 job used |
+| Cloud Scheduler | 3 jobs | 2 jobs used (Notion + Google Sheets) |
 
-To estimate costs for larger deployments:
-
-```shell
-# Install Infracost CLI
-brew install infracost  # or equivalent for your OS
-
-# Run cost analysis
-infracost breakdown --path terragrunt/prod
-```
-
-> Note: Infracost doesn't account for free tier usage. Actual costs will likely be lower.
-
-## Maintenance & Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-- **Data not showing up?** Check Cloud Function logs and verify Notion API connection
-- **Data explorer app not loading?** Ensure Cloud Build trigger has completed successfully
-- **Permission errors on `terragrunt apply`?** Ensure service account impersonation is unset (`gcloud config unset auth/impersonate_service_account`)
+- **Expenses not showing up?** Check Cloud Function logs and verify Notion API connection
+- **Budget data missing?** Ensure you've shared your Google Sheet with the service account
+- **Categories not matching?** Ensure category names in Notion exactly match those in your budget sheet
+- **Dashboard not loading?** Ensure Cloud Build trigger has completed successfully
 
-### Updating Components
+### Updating the System
 
 ```shell
 # Pull latest code
@@ -204,45 +224,26 @@ git pull
 # Apply infrastructure changes
 terragrunt apply
 
-# Rebuild data explorer app if needed
+# Rebuild dashboard app if needed
 gcloud builds triggers run $(terragrunt output -raw data_explorer_build_trigger_name) \
     --region=$(terragrunt output -raw data_explorer_build_trigger_region)
 ```
 
 ## Cleanup
 
-### Option 1: Remove Individual Resources
-
 ```shell
-# Preserve state bucket for future use
+# Remove all resources
 terragrunt destroy
-```
 
-### Option 2: Complete Removal
-
-```shell
-# Delete entire project and local state
+# For complete removal, delete the project
 gcloud projects delete $PROJECT_ID
-rm -rf .terraform.lock.hcl .terragrunt-cache
 ```
 
-## Roadmap
+## Customization
 
-- [ ] Add support for additional data sources (Google Sheets, CSV uploads)
-- [ ] Implement basic dbt integration for transformations
-- [ ] Create a lightweight version with DLT embedded directly in Streamlit
-- [ ] Add authentication options beyond basic auth
-- [ ] Develop pre-built dashboard templates for common use cases
-
-## Contributing
-
-We welcome contributions to improve this starter template:
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/new-connector`)
-3. Commit changes (`git commit -m 'Add new connector for XYZ'`)
-4. Push to branch (`git push origin feature/new-connector`)
-5. Open a Pull Request with detailed description
+- **Adding expense categories**: Add new categories in both Notion and Google Sheets. **Important**: Ensure category names match exactly between Notion and Google Sheets for proper mapping in the dashboard.
+- **Budget periods**: If you want to modify the budget period structure in Google Sheets (columns or periods), you will need to update the Streamlit app code as well to ensure proper data handling and visualization.
+- **Custom visualizations**: Modify the Streamlit app in `opentofu/modules/data_explorer/app/`
 
 ## License
 
