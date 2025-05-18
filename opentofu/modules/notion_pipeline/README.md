@@ -51,7 +51,9 @@ cd terragrunt/dev
 terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 ```
 
-### Step 2: Start Local Server
+### Step 2: Run Local Server with Automated Script
+
+The provided script handles service account impersonation and automatically resets your credentials after testing.
 
 1. Navigate to your environment directory:
 
@@ -59,42 +61,17 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
    cd terragrunt/dev
    ```
 
-2. Extract configuration values:
+2. Run the script:
 
    ```shell
-   # Get service account email and verify it exists
-   export SERVICE_ACCOUNT=$(terragrunt output -raw data_bucket_writer_service_account_email)
-   echo "Using service account: $SERVICE_ACCOUNT"
+   # Make the script executable
+   chmod +x ../../opentofu/modules/notion_pipeline/run_local.sh
 
-   # Verify Notion API key exists
-   if ! yq -e '.notion_pipeline.notion_api_key' env_vars.yaml > /dev/null; then
-     echo "ERROR: Notion API key not found in env_vars.yaml"
-     exit 1
-   fi
-
-   # Get bucket name
-   export DATA_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
-   echo "Using bucket: $DATA_BUCKET_NAME"
+   # Run the script
+   ../../opentofu/modules/notion_pipeline/run_local.sh
    ```
 
-3. Start server with service account impersonation:
-
-   ```shell
-   # Impersonate service account (temporary credentials)
-   gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
-
-   # Start local functions framework server
-   SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
-   SOURCES__NOTION__DATABASE_ID=$(yq -r '.notion_pipeline.notion_database_id' env_vars.yaml) \
-   DESTINATION__FILESYSTEM__BUCKET_URL=gs://$DATA_BUCKET_NAME \
-   NORMALIZE__LOADER_FILE_FORMAT="parquet" \
-   RUNTIME__LOG_LEVEL="DEBUG" \
-   RUNTIME__DLTHUB_TELEMETRY=false \
-   uv run --directory="../../opentofu/modules/notion_pipeline/src/" \
-       functions-framework \
-       --target=notion_pipeline \
-       --debug
-   ```
+   The script will impersonate the service account, start the functions framework server, and automatically reset your credentials when done.
 
 ### Step 3: Trigger the Function
 
@@ -103,14 +80,6 @@ In a separate terminal:
 ```shell
 # Basic invocation
 curl localhost:8080
-```
-
-### Step 4: Reset Credentials
-
-When finished testing:
-
-```shell
-gcloud config unset auth/impersonate_service_account
 ```
 
 ## Deployment

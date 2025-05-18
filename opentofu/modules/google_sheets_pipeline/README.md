@@ -11,7 +11,7 @@ This service extracts data from Google Sheets and loads it into Google Cloud Sto
 
 - **Cloud infrastructure**:
   - Infrastructure deployed with `terragrunt apply`
-  - Notion API key configured in `env_vars.yaml`
+  - Google Sheets API configured with appropriate credentials
   - Appropriate IAM permissions configured
 
 ## Verification Steps
@@ -51,7 +51,9 @@ cd terragrunt/dev
 terragrunt apply -target=module.google_sheets_pipeline.google_cloud_scheduler_job.this
 ```
 
-### Step 2: Start Local Server
+### Step 2: Run Local Server with Automated Script
+
+The provided script handles service account impersonation and automatically resets your credentials after testing.
 
 1. Navigate to your environment directory:
 
@@ -59,47 +61,17 @@ terragrunt apply -target=module.google_sheets_pipeline.google_cloud_scheduler_jo
    cd terragrunt/dev
    ```
 
-2. Extract configuration values:
+2. Run the script:
 
    ```shell
-   # Get service account email and verify it exists
-   export SERVICE_ACCOUNT=$(terragrunt output -raw data_bucket_writer_service_account_email)
-   echo "Using service account: $SERVICE_ACCOUNT"
+   # Make the script executable
+   chmod +x ../../opentofu/modules/google_sheets_pipeline/run_local.sh
 
-   # Verify spreadsheet url or id exists
-   if ! yq -e '.google_sheets_pipeline.spreadsheet_url_or_id' env_vars.yaml > /dev/null; then
-     echo "ERROR: Spreadsheet URL or ID not found in env_vars.yaml"
-     exit 1
-   fi
-
-   # Get bucket name
-   export DATA_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
-   echo "Using bucket: $DATA_BUCKET_NAME"
-
-   # Get secret value
-   export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PRIVATE_KEY=$(terragrunt output -raw google_sheets_pipeline_data_bucket_writer_private_key_value)
-   echo "SOURCES__GOOGLE_SHEETS__CREDENTIALS__PRIVATE_KEY loaded"
+   # Run the script
+   ../../opentofu/modules/google_sheets_pipeline/run_local.sh
    ```
 
-3. Start server with service account impersonation:
-
-   ```shell
-   # Impersonate service account (temporary credentials)
-   gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
-
-   # Start local functions framework server
-   SOURCES__GOOGLE_SHEETS__CREDENTIALS__CLIENT_EMAIL=$SERVICE_ACCOUNT \
-   SOURCES__GOOGLE_SHEETS__CREDENTIALS__PROJECT_ID=$(yq -r '.project_id' env_vars.yaml) \
-   SOURCES__GOOGLE_SHEETS__SPREADSHEET_URL_OR_ID=$(yq -r '.google_sheets_pipeline.spreadsheet_url_or_id' env_vars.yaml) \
-   DESTINATION__FILESYSTEM__BUCKET_URL=gs://$DATA_BUCKET_NAME \
-   NORMALIZE__LOADER_FILE_FORMAT="parquet" \
-   RUNTIME__LOG_LEVEL="DEBUG" \
-   RUNTIME__DLTHUB_TELEMETRY=false \
-   uv run --directory="../../opentofu/modules/google_sheets_pipeline/src/" \
-       functions-framework \
-       --target=google_sheets_pipeline \
-       --debug
-   ```
+   The script will impersonate the service account, start the functions framework server, and automatically reset your credentials when done.
 
 ### Step 3: Trigger the Function
 
@@ -108,14 +80,6 @@ In a separate terminal:
 ```shell
 # Basic invocation
 curl localhost:8080
-```
-
-### Step 4: Reset Credentials
-
-When finished testing:
-
-```shell
-gcloud config unset auth/impersonate_service_account
 ```
 
 ## Deployment
@@ -160,6 +124,7 @@ terragrunt apply -target=module.google_sheets_pipeline.google_cloud_scheduler_jo
 - **Permission errors**: Ensure your account has permission to impersonate the service account
 - **Data not appearing in bucket**: Check function logs for extraction or loading errors
 - **Function timeouts**: For large data extractions, consider increasing function timeout in your terraform configuration
+- **Authentication issues**: If you see credential errors, verify that service account impersonation is working correctly
 
 ## Related Services
 
