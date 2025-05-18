@@ -31,7 +31,7 @@ variable "notion_pipeline" {
 
 # Google Sheets pipeline module
 
-variable "google_sheets_pipeline" {
+variable "gsheets_pipeline" {
   type = object({
     spreadsheet_url_or_id = string
     cloud_scheduler_parameters = object({

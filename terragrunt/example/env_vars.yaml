@@ -18,7 +18,7 @@ notion_pipeline:
 
 # Google Sheets variables
 # --------------------
-google_sheets_pipeline:
+gsheets_pipeline:
   spreadsheet_url_or_id: 1VTtCiYgxjAwcIw7UM1_BSaxC3rzIpr0HwXZwd2OlPD4
   cloud_scheduler_parameters:
     paused: true

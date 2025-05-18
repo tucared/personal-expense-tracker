@@ -1,80 +1,31 @@
+
 output "data_bucket_name" {
-  description = "Name of bucket containing cloud function state file"
+  description = "Name of the data bucket"
   value       = google_storage_bucket.data_bucket.name
 }
 
 output "data_bucket_writer_service_account_email" {
-  description = "Email of service account used to write to the data bucket"
+  description = "Email of the service account used to write to the data bucket"
   value       = google_service_account.data_bucket_writer.email
 }
 
-# Outputs for Notion pipeline module
-
-output "notion_pipeline_function_uri" {
-  description = "URI of deployed Cloud Function"
-  value       = module.notion_pipeline.function_uri
-}
-
-output "notion_pipeline_scheduler_name" {
-  description = "Name of deployed Cloud Function"
-  value       = module.notion_pipeline.scheduler_name
-}
-
-output "notion_pipeline_scheduler_region" {
-  description = "Region of deployed Cloud Function"
-  value       = module.notion_pipeline.scheduler_region
-}
-
-# Outputs for Google sheets pipeline module
-
-output "google_sheets_pipeline_data_bucket_writer_private_key_value" {
-  description = "Private key for the data bucket writer service account"
-  value       = module.google_sheets_pipeline.data_bucket_writer_private_key_value
+output "data_bucket_writer_private_key" {
+  description = "Private key of the service account (for Google Sheets auth)"
+  value       = local.data_bucket_writer_private_key
   sensitive   = true
 }
 
-output "google_sheets_pipeline_function_uri" {
-  description = "URI of deployed Cloud Function"
-  value       = module.google_sheets_pipeline.function_uri
+output "notion_pipeline_function_uri" {
+  description = "URI of the Notion pipeline cloud function"
+  value       = module.notion_pipeline.function_uri
 }
 
-output "google_sheets_pipeline_scheduler_name" {
-  description = "Name of deployed Cloud Function"
-  value       = module.google_sheets_pipeline.scheduler_name
-}
-
-output "google_sheets_pipeline_scheduler_region" {
-  description = "Region of deployed Cloud Function"
-  value       = module.google_sheets_pipeline.scheduler_region
-}
-
-# Outputs for Data explorer module
-
-output "data_explorer_build_trigger_name" {
-  description = "Name of Cloud Build trigger for data explorer service"
-  value       = module.data_explorer.build_trigger_name
-}
-
-output "data_explorer_build_trigger_region" {
-  description = "Region of Cloud Build trigger for data explorer service"
-  value       = module.data_explorer.build_trigger_region
+output "gsheets_pipeline_function_uri" {
+  description = "URI of the Google Sheets pipeline cloud function"
+  value       = module.gsheets_pipeline.function_uri
 }
 
 output "data_explorer_service_url" {
-  description = "URL of deployed data explorer service"
+  description = "URL of the deployed Data Explorer"
   value       = module.data_explorer.service_url
-}
-
-output "data_explorer_service_account_email" {
-  description = "Email of service account used by Cloud Run when running data explorer service"
-  value       = module.data_explorer.service_account_email
-}
-
-output "data_explorer_hmac_access_id" {
-  value = module.data_explorer.hmac_access_id
-}
-
-output "data_explorer_hmac_secret" {
-  value     = module.data_explorer.hmac_secret
-  sensitive = true
 }

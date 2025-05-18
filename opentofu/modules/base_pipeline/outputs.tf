@@ -1,19 +1,19 @@
 output "function_uri" {
   description = "URI of the deployed cloud function"
-  value       = module.base_pipeline.function_uri
+  value       = google_cloudfunctions2_function.this.service_config[0].uri
 }
 
 output "function_name" {
   description = "Name of the deployed cloud function"
-  value       = module.base_pipeline.function_name
+  value       = google_cloudfunctions2_function.this.name
 }
 
 output "scheduler_job_name" {
   description = "Name of the cloud scheduler job"
-  value       = module.base_pipeline.scheduler_job_name
+  value       = google_cloud_scheduler_job.this.name
 }
 
 output "scheduler_service_account_email" {
   description = "Service account email used by the cloud scheduler"
-  value       = module.base_pipeline.scheduler_service_account_email
+  value       = google_service_account.cloud_scheduler.email
 }

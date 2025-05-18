@@ -67,7 +67,7 @@ Update `env_vars.yaml` with:
 - `project_id`: A unique GCP project identifier (create a new one)
 - `notion_pipeline.notion_api_key`: Your Notion integration secret
 - `notion_pipeline.notion_database_id`: Your expense database ID
-- `google_sheets_pipeline.sheet_id`: Your budget sheet ID
+- `gsheets_pipeline.sheet_id`: Your budget sheet ID
 - Optional: Adjust scheduler timing, region, etc.
 
 #### 4. Provision Google Cloud Environment
@@ -125,7 +125,7 @@ echo "Expense Dashboard URL: $(terragrunt output -raw data_explorer_service_url)
 # Trigger initial data load
 curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
-curl -i -X POST $(terragrunt output -raw google_sheets_pipeline_function_uri) \
+curl -i -X POST $(terragrunt output -raw gsheets_pipeline_function_uri) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
@@ -179,21 +179,27 @@ export FUNCTION_URI=$(terragrunt output -raw notion_pipeline_function_uri)
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 
 # Refresh Google Sheets budget data
-export FUNCTION_URI=$(terragrunt output -raw google_sheets_pipeline_function_uri)
+export FUNCTION_URI=$(terragrunt output -raw gsheets_pipeline_function_uri)
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
-**View Ingestion Logs:**
+## Local Development
+
+For developers who want to test pipelines locally before deploying to the cloud:
 
 ```shell
-# View recent logs for Notion pipeline
-export FUNCTION_NAME=$(terragrunt output -raw notion_pipeline_function_name)
-gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
+# Navigate to your environment directory
+cd terragrunt/dev
 
-# View recent logs for Google Sheets pipeline
-export FUNCTION_NAME=$(terragrunt output -raw google_sheets_pipeline_function_name)
-gcloud functions logs read $FUNCTION_NAME --project=$PROJECT_ID --limit=50
+# Run a local pipeline (e.g., Notion)
+# Run `chmod +x ../../opentofu/scripts/run_local.sh`the first time
+../../opentofu/scripts/run_local.sh notion_pipeline
+
+# In another terminal, trigger the local function
+curl localhost:8080
 ```
+
+The `run_local.sh` script handles service account impersonation and automatically resets your credentials after testing. It works with any pipeline in the system.
 
 ## Cost Management
 
@@ -205,6 +211,16 @@ This solution uses GCP's [free tier](https://cloud.google.com/free) resources:
 | Cloud Functions | 2M invocations | ~1,440 invocations/month (hourly) |
 | Cloud Run | 2M requests, 360K GB-seconds | Well below with periodic usage |
 | Cloud Scheduler | 3 jobs | 2 jobs used (Notion + Google Sheets) |
+
+## Architecture
+
+This project uses a modular architecture:
+
+- **Base Pipeline Module**: Core infrastructure for all data pipelines
+- **Specific Pipeline Modules**: Implementations for Notion and Google Sheets
+- **Data Explorer**: Dashboard for viewing and analyzing expense data
+
+All pipelines follow the same pattern of extracting data from the source, transforming it with the DLT framework, and loading it into the data bucket.
 
 ## Troubleshooting
 
@@ -244,6 +260,7 @@ gcloud projects delete $PROJECT_ID
 - **Adding expense categories**: Add new categories in both Notion and Google Sheets. **Important**: Ensure category names match exactly between Notion and Google Sheets for proper mapping in the dashboard.
 - **Budget periods**: If you want to modify the budget period structure in Google Sheets (columns or periods), you will need to update the Streamlit app code as well to ensure proper data handling and visualization.
 - **Custom visualizations**: Modify the Streamlit app in `opentofu/modules/data_explorer/app/`
+- **Adding new pipelines**: Create a new module that uses the base_pipeline module and add its specific configuration to `env_vars.yaml`
 
 ## License
 

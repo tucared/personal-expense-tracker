@@ -18,6 +18,12 @@ variable "data_bucket_writer_service_account_email" {
   type        = string
 }
 
+variable "data_bucket_writer_private_key" {
+  description = "Private key for the service account (for Google Sheets authentication)"
+  type        = string
+  sensitive   = true
+}
+
 variable "cloud_scheduler_parameters" {
   description = "Configuration for cloud scheduler"
   type = object({
@@ -27,13 +33,7 @@ variable "cloud_scheduler_parameters" {
   })
 }
 
-variable "notion_api_key" {
-  description = "API key for Notion"
-  type        = string
-  sensitive   = true
-}
-
-variable "notion_database_id" {
-  description = "Notion database ID to extract data from"
+variable "spreadsheet_url_or_id" {
+  description = "Google Sheets spreadsheet URL or ID"
   type        = string
 }

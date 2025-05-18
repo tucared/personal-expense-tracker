@@ -48,12 +48,10 @@ Then apply the changes:
 
 ```shell
 cd terragrunt/dev
-terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
+terragrunt apply -target=module.notion_pipeline.base_pipeline.google_cloud_scheduler_job.this
 ```
 
-### Step 2: Run Local Server with Automated Script
-
-The provided script handles service account impersonation and automatically resets your credentials after testing.
+### Step 2: Use the Common Run Script
 
 1. Navigate to your environment directory:
 
@@ -64,14 +62,12 @@ The provided script handles service account impersonation and automatically rese
 2. Run the script:
 
    ```shell
-   # Make the script executable
-   chmod +x ../../opentofu/modules/notion_pipeline/run_local.sh
+   # Make the script executable (if not already)
+   chmod +x ../../scripts/run_local.sh
 
-   # Run the script
-   ../../opentofu/modules/notion_pipeline/run_local.sh
+   # Run the Notion pipeline locally
+   ../../scripts/run_local.sh notion_pipeline
    ```
-
-   The script will impersonate the service account, start the functions framework server, and automatically reset your credentials when done.
 
 ### Step 3: Trigger the Function
 
@@ -116,7 +112,7 @@ notion_pipeline:
 Then apply the changes:
 
 ```shell
-terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
+terragrunt apply -target=module.notion_pipeline.base_pipeline.google_cloud_scheduler_job.this
 ```
 
 ## Troubleshooting
@@ -125,7 +121,3 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 - **Missing API key**: Verify the Notion API key is correctly set in `env_vars.yaml`
 - **Data not appearing in bucket**: Check function logs for extraction or loading errors
 - **Function timeouts**: For large data extractions, consider increasing function timeout in your terraform configuration
-
-## Related Services
-
-This pipeline populates data for the [Data Explorer](./opentofu/modules/data_explorer/README.md) service, which visualizes the data loaded into Cloud Storage.

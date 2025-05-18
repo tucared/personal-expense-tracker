@@ -43,16 +43,28 @@ module "notion_pipeline" {
   notion_database_id = var.notion_pipeline.notion_database_id
 }
 
-module "google_sheets_pipeline" {
-  source = "./modules/google_sheets_pipeline"
+
+# Create a service account key for Google Sheets authentication
+resource "google_service_account_key" "data_bucket_writer" {
+  service_account_id = google_service_account.data_bucket_writer.id
+}
+
+locals {
+  # Decode the private key from base64
+  data_bucket_writer_private_key = jsondecode(base64decode(google_service_account_key.data_bucket_writer.private_key))["private_key"]
+}
+
+module "gsheets_pipeline" {
+  source = "./modules/gsheets_pipeline"
 
   project_id                               = var.project_id
   region                                   = var.region
   data_bucket_name                         = google_storage_bucket.data_bucket.name
   data_bucket_writer_service_account_email = google_service_account.data_bucket_writer.email
-  cloud_scheduler_parameters               = var.google_sheets_pipeline.cloud_scheduler_parameters
+  data_bucket_writer_private_key           = local.data_bucket_writer_private_key
+  cloud_scheduler_parameters               = var.gsheets_pipeline.cloud_scheduler_parameters
 
-  spreadsheet_url_or_id = var.google_sheets_pipeline.spreadsheet_url_or_id
+  spreadsheet_url_or_id = var.gsheets_pipeline.spreadsheet_url_or_id
 }
 
 #################################

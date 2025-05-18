@@ -37,12 +37,12 @@ inputs = {
     }
   }
 
-  google_sheets_pipeline = {
-    spreadsheet_url_or_id = local.env_vars.google_sheets_pipeline.spreadsheet_url_or_id
+  gsheets_pipeline = {
+    spreadsheet_url_or_id = local.env_vars.gsheets_pipeline.spreadsheet_url_or_id
     cloud_scheduler_parameters = {
-      paused   = local.env_vars.google_sheets_pipeline.cloud_scheduler_parameters.paused
-      schedule = local.env_vars.google_sheets_pipeline.cloud_scheduler_parameters.schedule
-      region   = local.env_vars.google_sheets_pipeline.cloud_scheduler_parameters.region
+      paused   = local.env_vars.gsheets_pipeline.cloud_scheduler_parameters.paused
+      schedule = local.env_vars.gsheets_pipeline.cloud_scheduler_parameters.schedule
+      region   = local.env_vars.gsheets_pipeline.cloud_scheduler_parameters.region
     }
   }
 
