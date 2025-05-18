@@ -39,7 +39,8 @@ module "notion_pipeline" {
   data_bucket_writer_service_account_email = google_service_account.data_bucket_writer.email
   cloud_scheduler_parameters               = var.notion_pipeline.cloud_scheduler_parameters
 
-  notion_api_key = var.notion_pipeline.notion_api_key
+  notion_api_key     = var.notion_pipeline.notion_api_key
+  notion_database_id = var.notion_pipeline.notion_database_id
 }
 
 module "google_sheets_pipeline" {

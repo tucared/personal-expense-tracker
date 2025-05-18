@@ -19,7 +19,8 @@ variable "zone" {
 
 variable "notion_pipeline" {
   type = object({
-    notion_api_key = string
+    notion_api_key     = string
+    notion_database_id = string
     cloud_scheduler_parameters = object({
       paused   = bool
       schedule = string

@@ -36,3 +36,8 @@ variable "notion_api_key" {
   description = "Notion integration token with read access to database"
   type        = string
 }
+
+variable "notion_database_id" {
+  description = "Notion database ID"
+  type        = string
+}

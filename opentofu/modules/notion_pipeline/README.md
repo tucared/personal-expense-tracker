@@ -85,6 +85,7 @@ terragrunt apply -target=module.notion_pipeline.google_cloud_scheduler_job.this
 
    # Start local functions framework server
    SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml) \
+   SOURCES__NOTION__DATABASE_ID=$(yq -r '.notion_pipeline.notion_database_id' env_vars.yaml) \
    DESTINATION__FILESYSTEM__BUCKET_URL=gs://$DATA_BUCKET_NAME \
    NORMALIZE__LOADER_FILE_FORMAT="parquet" \
    RUNTIME__LOG_LEVEL="DEBUG" \

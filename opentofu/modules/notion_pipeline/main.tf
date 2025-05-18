@@ -101,6 +101,7 @@ resource "google_cloudfunctions2_function" "this" {
     service_account_email = var.data_bucket_writer_service_account_email
 
     environment_variables = {
+      SOURCES__NOTION__DATABASE_ID                     = var.notion_database_id
       DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.data_bucket_name}"
       DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID = var.project_id
       NORMALIZE__LOADER_FILE_FORMAT                    = "parquet"

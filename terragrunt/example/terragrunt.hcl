@@ -29,6 +29,7 @@ inputs = {
 
   notion_pipeline = {
     notion_api_key = local.env_vars.notion_pipeline.notion_api_key
+    notion_database_id = local.env_vars.notion_pipeline.notion_database_id
     cloud_scheduler_parameters = {
       paused   = local.env_vars.notion_pipeline.cloud_scheduler_parameters.paused
       schedule = local.env_vars.notion_pipeline.cloud_scheduler_parameters.schedule

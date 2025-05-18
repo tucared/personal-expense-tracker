@@ -10,6 +10,7 @@ zone: europe-west9-a
 # --------------------
 notion_pipeline:
   notion_api_key: secret_XXXX
+  notion_database_id: 1e81ed43cd7081609485d8f73c0d5e36
   cloud_scheduler_parameters:
     paused: true
     schedule: "0 * * * *" # every hour
