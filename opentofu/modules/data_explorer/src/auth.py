@@ -22,6 +22,11 @@ def setup_authentication():
     with open("config.yaml") as file:
         config = yaml.load(file, SafeLoader)
     
+    # Override with secure cookie key from environment if available
+    cookie_key = os.getenv("COOKIE_KEY")
+    if cookie_key:
+        config["cookie"]["key"] = cookie_key
+    
     # Override credentials with environment variables
     config["credentials"] = {
         "usernames": {

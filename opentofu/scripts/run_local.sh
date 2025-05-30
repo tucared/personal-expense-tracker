@@ -60,6 +60,8 @@ case $SERVICE_NAME in
     export HMAC_SECRET=$(terragrunt output -raw data_explorer_hmac_secret)
     export AUTH_USERNAME=$AUTH_USERNAME
     export AUTH_PASSWORD=$AUTH_PASSWORD
+    # For local development, generate a random cookie key
+    export COOKIE_KEY=$(openssl rand -base64 32)
     
     echo "Using service account: $SERVICE_ACCOUNT"
     echo "Using bucket: $GCS_BUCKET_NAME"

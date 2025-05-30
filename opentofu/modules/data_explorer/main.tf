@@ -55,6 +55,32 @@ resource "google_secret_manager_secret_version" "auth_password" {
   secret_data = var.auth_password
 }
 
+resource "random_password" "cookie_key" {
+  length  = 32
+  special = true
+}
+
+resource "google_secret_manager_secret" "cookie_key" {
+  secret_id = "data-explorer-cookie-key"
+
+  labels = {
+    application = "data-explorer"
+  }
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "cookie_key" {
+  secret      = google_secret_manager_secret.cookie_key.id
+  secret_data = random_password.cookie_key.result
+}
+
 # Cloud build trigger
 
 resource "google_service_account" "cloudbuild_trigger" {
@@ -224,6 +250,12 @@ resource "google_secret_manager_secret_iam_member" "data_explorer_auth_password"
   member    = "serviceAccount:${google_service_account.data_explorer.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "data_explorer_cookie_key" {
+  secret_id = google_secret_manager_secret.cookie_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.data_explorer.email}"
+}
+
 resource "google_cloud_run_v2_service" "data_explorer" {
   name                = "data-explorer-app"
   location            = var.region
@@ -255,6 +287,12 @@ resource "google_cloud_run_v2_service" "data_explorer" {
         key        = "AUTH_PASSWORD"
         project_id = var.project_id
         secret     = google_secret_manager_secret.auth_password.secret_id
+        version    = "latest"
+      }
+      secret_environment_variables {
+        key        = "COOKIE_KEY"
+        project_id = var.project_id
+        secret     = google_secret_manager_secret.cookie_key.secret_id
         version    = "latest"
       }
       resources {
