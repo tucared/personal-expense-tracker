@@ -1,9 +1,9 @@
-PIPELINE_NAME=$1
+SERVICE_NAME=$1
 
-if [ -z "$PIPELINE_NAME" ]; then
-  echo "Error: Pipeline name required"
-  echo "Usage: ./run_local.sh <pipeline_name>"
-  echo "Available pipelines: notion_pipeline, gsheets_pipeline"
+if [ -z "$SERVICE_NAME" ]; then
+  echo "Error: Service name required"
+  echo "Usage: ./run_local.sh <service_name>"
+  echo "Available services: notion_pipeline, gsheets_pipeline, data_explorer"
   exit 1
 fi
 
@@ -14,7 +14,7 @@ PREVIOUS_ACCOUNT=$(gcloud config get-value account)
 SERVICE_ACCOUNT=$(terragrunt output -raw data_bucket_writer_service_account_email)
 DATA_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
 
-# Set impersonation
+# Set impersonation for all services
 gcloud config set auth/impersonate_service_account $SERVICE_ACCOUNT
 
 # Set common environment variables
@@ -23,8 +23,8 @@ export NORMALIZE__LOADER_FILE_FORMAT="parquet"
 export RUNTIME__LOG_LEVEL="DEBUG"
 export RUNTIME__DLTHUB_TELEMETRY=false
 
-# Set pipeline-specific environment variables
-case $PIPELINE_NAME in
+# Set service-specific environment variables
+case $SERVICE_NAME in
   "notion_pipeline")
     export SOURCES__NOTION__API_KEY=$(yq -r '.notion_pipeline.notion_api_key' env_vars.yaml)
     export SOURCES__NOTION__DATABASE_ID=$(yq -r '.notion_pipeline.notion_database_id' env_vars.yaml)
@@ -42,19 +42,42 @@ case $PIPELINE_NAME in
     TARGET="gsheets_pipeline"
     SRC_DIR="../../opentofu/modules/gsheets_pipeline/src/"
     ;;
+  "data_explorer")
+    # Set up cloud-connected mode environment variables
+    echo "Starting Data Explorer in cloud-connected mode..."
+    echo "Access the application at: http://localhost:8501/"
+    echo "Default credentials - Username: rbriggs, Password: abc"
+    
+    # Set environment variables for cloud access
+    export SERVICE_ACCOUNT=$(terragrunt output -raw data_explorer_service_account_email)
+    export GCS_BUCKET_NAME=$DATA_BUCKET_NAME
+    export HMAC_ACCESS_ID=$(terragrunt output -raw data_explorer_hmac_access_id)
+    export HMAC_SECRET=$(terragrunt output -raw data_explorer_hmac_secret)
+    
+    echo "Using service account: $SERVICE_ACCOUNT"
+    echo "Using bucket: $GCS_BUCKET_NAME"
+    
+    SRC_DIR="../../opentofu/modules/data_explorer/src/"
+    ;;
   *)
-    echo "Error: Unknown pipeline $PIPELINE_NAME"
-    echo "Available pipelines: notion_pipeline, gsheets_pipeline"
+    echo "Error: Unknown service $SERVICE_NAME"
+    echo "Available services: notion_pipeline, gsheets_pipeline, data_explorer"
     gcloud config set account $PREVIOUS_ACCOUNT
     exit 1
     ;;
 esac
 
-# Run the function
-uv run --directory=$SRC_DIR \
-    functions-framework \
-    --target=$TARGET \
-    --debug
+# Run the service
+if [ "$SERVICE_NAME" = "data_explorer" ]; then
+  # Run Streamlit app
+  uv run --directory="$SRC_DIR" streamlit run app.py
+else
+  # Run pipeline function
+  uv run --directory=$SRC_DIR \
+      functions-framework \
+      --target=$TARGET \
+      --debug
+fi
 
 # Reset to original account
 if [ -z "$PREVIOUS_ACCOUNT" ]; then
