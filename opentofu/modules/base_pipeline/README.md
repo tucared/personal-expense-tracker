@@ -37,7 +37,7 @@ module "base_pipeline" {
   environment_variables = {
     MY_CONFIG_OPTION = "value"
   }
-  
+
   # Secret values that should be stored in Secret Manager
   secrets = [
     {

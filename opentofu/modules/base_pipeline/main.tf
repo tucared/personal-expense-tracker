@@ -6,19 +6,19 @@ locals {
 
   # Used to name resources or prefix them - avoid underscores
   module_name = replace(var.pipeline_name, "_", "-")
-  
+
   # For service account IDs that need to be shorter
   # This creates a shortened name using the first part of the pipeline name
   # plus a hash of the full name to ensure uniqueness
-  short_name = "${substr(replace(var.pipeline_name, "_", "-"), 0, 
-                 min(10, length(replace(var.pipeline_name, "_", "-"))))}-${substr(md5(var.pipeline_name), 0, 8)}"
+  short_name = "${substr(replace(var.pipeline_name, "_", "-"), 0,
+  min(10, length(replace(var.pipeline_name, "_", "-"))))}-${substr(md5(var.pipeline_name), 0, 8)}"
 }
 
 # Source API keys and credentials management
 
 resource "google_secret_manager_secret" "secrets" {
   count = length(var.secrets)
-  
+
   secret_id = "${upper(var.pipeline_name)}_${upper(replace(var.secrets[count.index].name, "__", "_"))}"
 
   labels = {
@@ -36,14 +36,14 @@ resource "google_secret_manager_secret" "secrets" {
 
 resource "google_secret_manager_secret_version" "secrets" {
   count = length(var.secrets)
-  
+
   secret      = google_secret_manager_secret.secrets[count.index].id
   secret_data = var.secrets[count.index].value
 }
 
 resource "google_secret_manager_secret_iam_member" "secrets" {
   count = length(var.secrets)
-  
+
   project   = var.project_id
   secret_id = google_secret_manager_secret.secrets[count.index].secret_id
   role      = "roles/secretmanager.secretAccessor"
@@ -71,7 +71,7 @@ data "archive_file" "cloud_function_source" {
   type        = "zip"
   output_path = "${path.module}/../${var.pipeline_name}/function-source.zip"
   source_dir  = "${path.module}/../${var.pipeline_name}/src"
-  excludes    = ["__pycache__", ".venv", "uv.lock", "pyproject.toml"] 
+  excludes    = ["__pycache__", ".venv", "uv.lock", "pyproject.toml"]
 }
 
 resource "google_storage_bucket_object" "cloud_function_source" {

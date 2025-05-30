@@ -13,7 +13,7 @@ def render_data_navigator():
         # Initialize refresh state
         if "refresh_state" not in st.session_state:
             st.session_state.refresh_state = "idle"  # idle, loading, success
-        
+
         # Determine button text and state based on refresh state
         if st.session_state.refresh_state == "idle":
             button_text = "Refresh Data"
@@ -24,11 +24,11 @@ def render_data_navigator():
         elif st.session_state.refresh_state == "success":
             button_text = "✅ Done"
             button_disabled = True
-        
+
         if st.button(button_text, key="refresh_tables", disabled=button_disabled):
             st.session_state.refresh_state = "loading"
             st.rerun()
-        
+
         # Handle the actual refresh process
         if st.session_state.refresh_state == "loading":
             refresh_data()
@@ -79,7 +79,7 @@ def render_query_editor():
     """Render the query editor and results area."""
     # Data Navigator
     render_data_navigator()
-        
+
     # Query Section
     st.subheader("SQL Query")
 
@@ -97,13 +97,15 @@ def render_query_editor():
         value=st.session_state["current_query"],
         height=200,
         key="sql_query_input",
-        placeholder="SELECT * FROM schema.table_name LIMIT 10;"
+        placeholder="SELECT * FROM schema.table_name LIMIT 10;",
     )
 
     # Execute query button and quick actions
     col1, col2, col3 = st.columns([2, 2, 2])
     with col1:
-        execute_pressed = st.button("Execute Query", type="primary", use_container_width=True)
+        execute_pressed = st.button(
+            "Execute Query", type="primary", use_container_width=True
+        )
     with col2:
         if st.button("Show Tables", use_container_width=True):
             st.session_state["current_query"] = "SHOW ALL TABLES;"
@@ -135,9 +137,9 @@ def render_query_editor():
                     with col2:
                         if len(df) > 1000:
                             st.warning("Large result set - showing first 1000 rows")
-                    
+
                     st.dataframe(
-                        df.head(1000) if len(df) > 1000 else df, 
+                        df.head(1000) if len(df) > 1000 else df,
                         use_container_width=True,
-                        height=400
+                        height=400,
                     )

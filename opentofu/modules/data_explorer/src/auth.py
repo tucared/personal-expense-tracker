@@ -10,23 +10,25 @@ def setup_authentication():
     """Set up the authentication system and handle login/logout."""
     # Get username from environment variable
     username = os.getenv("AUTH_USERNAME")
-    
+
     # Get password from secret environment variable
     password = os.getenv("AUTH_PASSWORD")
-    
+
     if not username or not password:
-        st.error("Authentication configuration missing. Please check environment variables.")
+        st.error(
+            "Authentication configuration missing. Please check environment variables."
+        )
         st.stop()
-    
+
     # Load base configuration file for cookie settings
     with open("config.yaml") as file:
         config = yaml.load(file, SafeLoader)
-    
+
     # Override with secure cookie key from environment if available
     cookie_key = os.getenv("COOKIE_KEY")
     if cookie_key:
         config["cookie"]["key"] = cookie_key
-    
+
     # Override credentials with environment variables
     config["credentials"] = {
         "usernames": {
@@ -34,7 +36,7 @@ def setup_authentication():
                 "email": f"{username}@example.com",
                 "first_name": username.capitalize(),
                 "last_name": "User",
-                "password": password
+                "password": password,
             }
         }
     }

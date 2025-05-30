@@ -18,6 +18,7 @@ def main():
         # Run refresh_data on app startup if not already loaded
         if "tables_loaded" not in st.session_state:
             from database import refresh_data
+
             st.session_state["tables_loaded"] = True
             refresh_data()
 
@@ -27,13 +28,13 @@ def main():
             st.title("📊 DuckDB Data Explorer")
         with col2:
             authenticator.logout("Logout", key="logout_button")
-                
+
         # Create tabs
         tab1, tab2 = st.tabs(["Query Editor", "Expense Analysis"])
-        
+
         with tab1:
             render_query_editor()
-        
+
         with tab2:
             render_expense_analysis()
 

@@ -39,11 +39,11 @@ variable "environment_variables" {
 variable "secrets" {
   description = "Mapping of environment variable names to their secret values"
   type = list(object({
-    name  = string  # Environment variable name
-    value = string  # Secret value
+    name  = string # Environment variable name
+    value = string # Secret value
   }))
-  default     = []
-  sensitive   = true
+  default   = []
+  sensitive = true
 }
 
 variable "cloud_scheduler_parameters" {

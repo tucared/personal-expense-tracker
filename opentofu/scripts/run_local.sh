@@ -35,10 +35,10 @@ case $SERVICE_NAME in
     export SOURCES__GOOGLE_SHEETS__CREDENTIALS__CLIENT_EMAIL=$SERVICE_ACCOUNT
     export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PROJECT_ID=$(yq -r '.project_id' env_vars.yaml)
     export SOURCES__GOOGLE_SHEETS__SPREADSHEET_URL_OR_ID=$(yq -r '.gsheets_pipeline.spreadsheet_url_or_id' env_vars.yaml)
-    
+
     # Get the private key from terragrunt output
     export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PRIVATE_KEY=$(terragrunt output -raw data_bucket_writer_private_key)
-    
+
     TARGET="gsheets_pipeline"
     SRC_DIR="../../opentofu/modules/gsheets_pipeline/src/"
     ;;
@@ -46,13 +46,13 @@ case $SERVICE_NAME in
     # Set up cloud-connected mode environment variables
     echo "Starting Data Explorer in cloud-connected mode..."
     echo "Access the application at: http://localhost:8501/"
-    
+
     # Get auth credentials from YAML
     AUTH_USERNAME=$(yq -r '.data_explorer.auth_username' env_vars.yaml)
     AUTH_PASSWORD=$(yq -r '.data_explorer.auth_password' env_vars.yaml)
-    
+
     echo "Credentials - Username: $AUTH_USERNAME, Password: $AUTH_PASSWORD"
-    
+
     # Set environment variables for cloud access
     export SERVICE_ACCOUNT=$(terragrunt output -raw data_explorer_service_account_email)
     export GCS_BUCKET_NAME=$DATA_BUCKET_NAME
@@ -62,10 +62,10 @@ case $SERVICE_NAME in
     export AUTH_PASSWORD=$AUTH_PASSWORD
     # For local development, generate a random cookie key
     export COOKIE_KEY=$(openssl rand -base64 32)
-    
+
     echo "Using service account: $SERVICE_ACCOUNT"
     echo "Using bucket: $GCS_BUCKET_NAME"
-    
+
     SRC_DIR="../../opentofu/modules/data_explorer/src/"
     ;;
   *)

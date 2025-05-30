@@ -273,27 +273,21 @@ resource "google_cloud_run_v2_service" "data_explorer" {
         name  = "HMAC_ACCESS_ID"
         value = google_storage_hmac_key.data_bucket_reader.access_id
       }
-      secret_environment_variables {
-        key        = "HMAC_SECRET"
-        project_id = var.project_id
-        secret     = google_secret_manager_secret.hmac.secret_id
-        version    = "latest"
+      env {
+        name  = "HMAC_SECRET"
+        value = google_secret_manager_secret_version.hmac.secret_data
       }
       env {
         name  = "AUTH_USERNAME"
         value = var.auth_username
       }
-      secret_environment_variables {
-        key        = "AUTH_PASSWORD"
-        project_id = var.project_id
-        secret     = google_secret_manager_secret.auth_password.secret_id
-        version    = "latest"
+      env {
+        name  = "AUTH_PASSWORD"
+        value = google_secret_manager_secret_version.auth_password.secret_data
       }
-      secret_environment_variables {
-        key        = "COOKIE_KEY"
-        project_id = var.project_id
-        secret     = google_secret_manager_secret.cookie_key.secret_id
-        version    = "latest"
+      env {
+        name  = "COOKIE_KEY"
+        value = google_secret_manager_secret_version.cookie_key.secret_data
       }
       resources {
         limits = {
