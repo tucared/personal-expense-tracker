@@ -29,3 +29,19 @@ output "data_explorer_service_url" {
   description = "URL of the deployed Data Explorer"
   value       = module.data_explorer.service_url
 }
+
+output "data_explorer_service_account_email" {
+  description = "Email of the service account used by Data Explorer"
+  value       = module.data_explorer.service_account_email
+}
+
+output "data_explorer_hmac_access_id" {
+  description = "HMAC access ID for the data bucket"
+  value       = module.data_explorer.hmac_access_id
+}
+
+output "data_explorer_hmac_secret" {
+  description = "HMAC secret for the data bucket"
+  value       = module.data_explorer.hmac_secret
+  sensitive   = true
+}
