@@ -31,3 +31,14 @@ variable "cloudrun_limits" {
     cpu    = "2"
   }
 }
+
+variable "auth_username" {
+  description = "Username for data explorer authentication"
+  type        = string
+}
+
+variable "auth_password" {
+  description = "Password for data explorer authentication"
+  type        = string
+  sensitive   = true
+}

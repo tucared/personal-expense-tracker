@@ -46,13 +46,20 @@ case $SERVICE_NAME in
     # Set up cloud-connected mode environment variables
     echo "Starting Data Explorer in cloud-connected mode..."
     echo "Access the application at: http://localhost:8501/"
-    echo "Default credentials - Username: rbriggs, Password: abc"
+    
+    # Get auth credentials from YAML
+    AUTH_USERNAME=$(yq -r '.data_explorer.auth_username' env_vars.yaml)
+    AUTH_PASSWORD=$(yq -r '.data_explorer.auth_password' env_vars.yaml)
+    
+    echo "Credentials - Username: $AUTH_USERNAME, Password: $AUTH_PASSWORD"
     
     # Set environment variables for cloud access
     export SERVICE_ACCOUNT=$(terragrunt output -raw data_explorer_service_account_email)
     export GCS_BUCKET_NAME=$DATA_BUCKET_NAME
     export HMAC_ACCESS_ID=$(terragrunt output -raw data_explorer_hmac_access_id)
     export HMAC_SECRET=$(terragrunt output -raw data_explorer_hmac_secret)
+    export AUTH_USERNAME=$AUTH_USERNAME
+    export AUTH_PASSWORD=$AUTH_PASSWORD
     
     echo "Using service account: $SERVICE_ACCOUNT"
     echo "Using bucket: $GCS_BUCKET_NAME"

@@ -52,5 +52,7 @@ inputs = {
       memory = local.env_vars.data_explorer.cloudrun_limits.memory
       cpu    = local.env_vars.data_explorer.cloudrun_limits.cpu
     }
+    auth_username = local.env_vars.data_explorer.auth_username
+    auth_password = local.env_vars.data_explorer.auth_password
   }
 }

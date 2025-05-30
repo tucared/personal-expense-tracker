@@ -79,4 +79,6 @@ module "data_explorer" {
   data_bucket_name = google_storage_bucket.data_bucket.name
   build_region     = var.data_explorer.build_region
   cloudrun_limits  = var.data_explorer.cloudrun_limits
+  auth_username    = var.data_explorer.auth_username
+  auth_password    = var.data_explorer.auth_password
 }

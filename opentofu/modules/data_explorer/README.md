@@ -59,9 +59,8 @@ The recommended way to run the data explorer locally is using the common run scr
 3. Access the application:
 
    - URL: <http://localhost:8501/>
-   - Default credentials:
-     - Username: `rbriggs`
-     - Password: `abc` (hashed in `config.yaml`)
+   - Authentication credentials are read from your `env_vars.yaml` file:
+     - Username and password from `data_explorer.auth_username` and `data_explorer.auth_password`
 
 ### Using Docker (Alternative)
 
@@ -102,9 +101,18 @@ When making code changes that require new dependencies:
 
 ## Security Notes
 
-- Service account impersonation credentials are temporary but powerful
-- Never commit or share HMAC credentials
-- For production usage, consider using Workload Identity Federation instead of impersonation
+- **Authentication**: Uses username/password authentication with passwords stored in Google Secret Manager
+- **Public Access**: The Cloud Run service is publicly accessible - consider IP restrictions for production
+- **Cookie Security**: Uses a static cookie signing key - consider generating a unique key per deployment
+- **Session Management**: Sessions are managed via encrypted cookies with configurable expiry
+- **Service Account**: Uses least-privilege service account with read-only access to data bucket
+- **Local Development**: Service account impersonation credentials are temporary but powerful
+- **HMAC Credentials**: Never commit or share HMAC credentials
+- **Production Considerations**:
+  - Consider using Identity-Aware Proxy (IAP) for additional security layers
+  - Implement rate limiting with Cloud Armor for brute force protection
+  - Generate unique cookie signing keys per environment
+  - Consider IP allowlisting if access should be restricted geographically
 
 ## Related Services
 

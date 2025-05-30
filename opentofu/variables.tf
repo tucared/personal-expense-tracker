@@ -52,6 +52,8 @@ variable "data_explorer" {
       memory = string
       cpu    = string
     })
+    auth_username = string
+    auth_password = string
   })
   default = {
     build_region = "europe-west1"
@@ -59,5 +61,7 @@ variable "data_explorer" {
       memory = "1024Mi"
       cpu    = "2"
     }
+    auth_username = "admin"
+    auth_password = "change-me"
   }
 }

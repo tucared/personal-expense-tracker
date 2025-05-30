@@ -68,6 +68,8 @@ Update `env_vars.yaml` with:
 - `notion_pipeline.notion_api_key`: Your Notion integration secret
 - `notion_pipeline.notion_database_id`: Your expense database ID
 - `gsheets_pipeline.sheet_id`: Your budget sheet ID
+- `data_explorer.auth_username`: Username for dashboard access
+- `data_explorer.auth_password`: Secure password for dashboard access
 - Optional: Adjust scheduler timing, region, etc.
 
 #### 4. Provision Google Cloud Environment
@@ -154,7 +156,7 @@ The Streamlit dashboard provides:
 3. **Category Breakdown**: Filter expenses by category
 4. **Trend Analysis**: View spending patterns over time
 
-> **Authentication**: The dashboard uses [Streamlit-Authenticator](https://github.com/mkhorasani/Streamlit-Authenticator) for password protection. Edit credentials in `/opentofu/modules/data_explorer/src/config.yaml` before deployment. **Note**: This configuration file is currently committed to the repository.
+> **Authentication**: The dashboard uses secure username/password authentication with credentials configured via Terragrunt variables. Passwords are stored securely in Google Secret Manager and never committed to the repository.
 
 ### Data Flow Process
 

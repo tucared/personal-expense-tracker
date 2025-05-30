@@ -34,6 +34,27 @@ resource "google_secret_manager_secret_version" "hmac" {
   secret_data = google_storage_hmac_key.data_bucket_reader.secret
 }
 
+resource "google_secret_manager_secret" "auth_password" {
+  secret_id = "data-explorer-auth-password"
+
+  labels = {
+    application = "data-explorer"
+  }
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "auth_password" {
+  secret      = google_secret_manager_secret.auth_password.id
+  secret_data = var.auth_password
+}
+
 # Cloud build trigger
 
 resource "google_service_account" "cloudbuild_trigger" {
@@ -197,6 +218,12 @@ resource "google_storage_bucket_iam_member" "data_explorer_object_viewer" {
   member = "serviceAccount:${google_service_account.data_explorer.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "data_explorer_auth_password" {
+  secret_id = google_secret_manager_secret.auth_password.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.data_explorer.email}"
+}
+
 resource "google_cloud_run_v2_service" "data_explorer" {
   name                = "data-explorer-app"
   location            = var.region
@@ -214,9 +241,21 @@ resource "google_cloud_run_v2_service" "data_explorer" {
         name  = "HMAC_ACCESS_ID"
         value = google_storage_hmac_key.data_bucket_reader.access_id
       }
+      secret_environment_variables {
+        key        = "HMAC_SECRET"
+        project_id = var.project_id
+        secret     = google_secret_manager_secret.hmac.secret_id
+        version    = "latest"
+      }
       env {
-        name  = "HMAC_SECRET"
-        value = google_secret_manager_secret_version.hmac.secret_data
+        name  = "AUTH_USERNAME"
+        value = var.auth_username
+      }
+      secret_environment_variables {
+        key        = "AUTH_PASSWORD"
+        project_id = var.project_id
+        secret     = google_secret_manager_secret.auth_password.secret_id
+        version    = "latest"
       }
       resources {
         limits = {
