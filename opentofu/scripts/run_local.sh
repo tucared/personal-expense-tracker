@@ -7,9 +7,6 @@ if [ -z "$SERVICE_NAME" ]; then
   exit 1
 fi
 
-# Save current account
-PREVIOUS_ACCOUNT=$(gcloud config get-value account)
-
 # Get required values from terragrunt
 SERVICE_ACCOUNT=$(terragrunt output -raw data_bucket_writer_service_account_email)
 DATA_BUCKET_NAME=$(terragrunt output -raw data_bucket_name)
@@ -45,7 +42,6 @@ case $SERVICE_NAME in
   "data_explorer")
     # Set up cloud-connected mode environment variables
     echo "Starting Data Explorer in cloud-connected mode..."
-    echo "Access the application at: http://localhost:8501/"
 
     # Get auth credentials from YAML
     AUTH_USERNAME=$(yq -r '.data_explorer.auth_username' env_vars.yaml)
@@ -71,7 +67,7 @@ case $SERVICE_NAME in
   *)
     echo "Error: Unknown service $SERVICE_NAME"
     echo "Available services: notion_pipeline, gsheets_pipeline, data_explorer"
-    gcloud config set account $PREVIOUS_ACCOUNT
+    gcloud config unset auth/impersonate_service_account
     exit 1
     ;;
 esac
@@ -89,8 +85,4 @@ else
 fi
 
 # Reset to original account
-if [ -z "$PREVIOUS_ACCOUNT" ]; then
-    gcloud config unset auth/impersonate_service_account
-else
-    gcloud config set account $PREVIOUS_ACCOUNT
-fi
+gcloud config unset auth/impersonate_service_account
