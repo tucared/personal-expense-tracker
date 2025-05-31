@@ -15,15 +15,25 @@ HMAC_SECRET = os.getenv("HMAC_SECRET")
 
 # --- DATABASE CONNECTION ---
 @st.cache_resource
-def get_duckdb_connection():
-    """Create and configure a cached DuckDB connection."""
+def get_duckdb_connection_with_views():
+    """Create and configure a cached DuckDB connection with all views loaded."""
     con = duckdb.connect()
     con.execute("INSTALL httpfs;")
     con.execute("LOAD httpfs;")
     con.execute(
         f"CREATE SECRET (TYPE GCS, KEY_ID '{HMAC_ACCESS_ID}', SECRET '{HMAC_SECRET}');"
     )
+    
+    # Load all tables/views on connection creation
+    parquet_files = scan_gcs_for_parquet_files()
+    _create_views_in_connection(con, parquet_files)
+    
     return con
+
+
+def get_duckdb_connection():
+    """Get the cached connection with views."""
+    return get_duckdb_connection_with_views()
 
 
 # --- GCS DATA FUNCTIONS ---
@@ -150,15 +160,10 @@ def get_in_memory_tables() -> List[Tuple[str, str]]:
 
 
 # --- TABLE MANAGEMENT FUNCTIONS ---
-def load_all_tables(parquet_files: List[Dict]):
-    """Create views for external parquet files in DuckDB based on their path structure."""
-    # Clear cache to ensure fresh data
-    st.cache_data.clear()
-
+def _create_views_in_connection(con, parquet_files: List[Dict]):
+    """Internal function to create views in a given connection."""
     successful_loads = []
     failed_loads = []
-
-    con = get_duckdb_connection()
 
     for file in parquet_files:
         try:
@@ -178,8 +183,24 @@ def load_all_tables(parquet_files: List[Dict]):
             except Exception as e:
                 failed_loads.append((file, str(e)))
         except Exception as e:
-            st.error(f"Error processing file {file['display_name']}: {str(e)}")
+            print(f"Error processing file {file['display_name']}: {str(e)}")
 
+    if failed_loads:
+        print(f"Failed to create {len(failed_loads)} views")
+        for file, error in failed_loads:
+            print(f"**{file['display_name']}**: {error}")
+    
+    return successful_loads, failed_loads
+
+
+def load_all_tables(parquet_files: List[Dict]):
+    """Create views for external parquet files in DuckDB based on their path structure."""
+    # Clear cache to ensure fresh data
+    st.cache_data.clear()
+    
+    con = get_duckdb_connection()
+    successful_loads, failed_loads = _create_views_in_connection(con, parquet_files)
+    
     if failed_loads:
         st.error(f"Failed to create {len(failed_loads)} views")
         for file, error in failed_loads:
@@ -187,33 +208,19 @@ def load_all_tables(parquet_files: List[Dict]):
 
 
 def refresh_data():
-    """Delete all views, scan GCS again, and create views accordingly."""
+    """Refresh the cached DuckDB connection and recreate all views."""
     try:
-        con = get_duckdb_connection()
-
-        # Get list of all schemas and tables
-        result = execute_query("""
-            SELECT table_schema, table_name
-            FROM information_schema.tables
-            WHERE table_schema NOT IN ('pg_catalog', 'information_schema', 'main');
-        """)
-
-        if result is not None:
-            tables = result.fetchall()
-
-            # Drop each table
-            for schema_name, table_name in tables:
-                try:
-                    con.execute(f"DROP TABLE {schema_name}.{table_name};")
-                except Exception:
-                    pass
-
-            # Get parquet files and load them
-            parquet_files = scan_gcs_for_parquet_files()
-            load_all_tables(parquet_files)
-
-        # Force refresh cache
+        # Clear the cached connection resource to force recreation
+        get_duckdb_connection_with_views.clear()
+        
+        # Clear cached data
         st.cache_data.clear()
-
+        scan_gcs_for_parquet_files.clear()
+        
+        # This will recreate the connection with fresh views
+        get_duckdb_connection()
+        
+        st.success("Data refreshed successfully!")
+        
     except Exception as e:
         st.error(f"Error refreshing data: {str(e)}")

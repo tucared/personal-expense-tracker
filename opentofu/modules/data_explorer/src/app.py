@@ -1,10 +1,8 @@
 import streamlit as st
 from auth import setup_authentication
-from expense_analysis import render_expense_analysis
-from query_editor import render_query_editor
 
 # --- CONFIGURATION ---
-st.set_page_config(page_title="DuckDB Data Explorer", page_icon="📊")
+st.set_page_config(page_title="Personal Expense Tracker", page_icon="📊")
 
 
 # --- MAIN APP FUNCTION ---
@@ -22,22 +20,25 @@ def main():
             st.session_state["tables_loaded"] = True
             refresh_data()
 
-        # Simple header
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.title("📊 DuckDB Data Explorer")
-        with col2:
+        # Define the pages
+        query_page = st.Page("reports/query_editor.py", title="Query Editor", icon="📝")
+        expense_page = st.Page("reports/expense_analysis.py", title="Expense Analysis", icon="📊")
+
+        # Set up navigation
+        pg = st.navigation([query_page, expense_page])
+
+        # Run the selected page
+        pg.run()
+
+        # Add logout button and refresh functionality in the sidebar
+        with st.sidebar:
+            # Simple refresh button
+            if st.button("🔄 Refresh Data"):
+                from database import refresh_data
+                refresh_data()
+            
             authenticator.logout("Logout", key="logout_button")
-
-        # Create tabs
-        tab1, tab2 = st.tabs(["Query Editor", "Expense Analysis"])
-
-        with tab1:
-            render_query_editor()
-
-        with tab2:
-            render_expense_analysis()
-
+                
     elif st.session_state["authentication_status"] is False:
         st.error("Username/password is incorrect")
     elif st.session_state["authentication_status"] is None:
