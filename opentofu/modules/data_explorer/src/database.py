@@ -1,7 +1,8 @@
-import hashlib
+import datetime
+import logging
 import os
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import duckdb
 import streamlit as st
@@ -14,213 +15,139 @@ HMAC_SECRET = os.getenv("HMAC_SECRET")
 
 
 # --- DATABASE CONNECTION ---
-@st.cache_resource
-def get_duckdb_connection_with_views():
-    """Create and configure a cached DuckDB connection with all views loaded."""
-    con = duckdb.connect()
-    con.execute("INSTALL httpfs;")
-    con.execute("LOAD httpfs;")
-    con.execute(
-        f"CREATE SECRET (TYPE GCS, KEY_ID '{HMAC_ACCESS_ID}', SECRET '{HMAC_SECRET}');"
+@st.cache_resource(ttl=datetime.timedelta(hours=1), max_entries=2)
+def get_duckdb_memory(session_id: Optional[str] = None) -> duckdb.DuckDBPyConnection:
+    """
+    Set a caching resource which will be refreshed
+     - either at each hour
+     - either at each third call
+     - either when the connection is established for a new session_id
+    """
+
+    duckdb_conn = duckdb.connect()
+    prepare_duckdb(duckdb_conn=duckdb_conn)
+
+    return duckdb_conn
+
+
+def prepare_duckdb(duckdb_conn: duckdb.DuckDBPyConnection) -> duckdb.DuckDBPyConnection:
+    duckdb_conn.sql("INSTALL httpfs;")
+    duckdb_conn.sql("LOAD httpfs;")
+
+    # Prepared statements fail for creating secrets
+    # https://github.com/duckdb/duckdb/issues/13459
+    duckdb_conn.execute(
+        f"CREATE SECRET (TYPE GCS, KEY_ID '{HMAC_ACCESS_ID}', SECRET '{HMAC_SECRET}')"
     )
-    
+
     # Load all tables/views on connection creation
-    parquet_files = scan_gcs_for_parquet_files()
-    _create_views_in_connection(con, parquet_files)
-    
-    return con
+    create_gcs_views(duckdb_conn)
+
+    return duckdb_conn
 
 
-def get_duckdb_connection():
-    """Get the cached connection with views."""
-    return get_duckdb_connection_with_views()
+def create_gcs_views(duckdb_conn: duckdb.DuckDBPyConnection) -> None:
+    """
+    Create DuckDB views for each parquet file in the GCS bucket.
+    Uses ADC for authentication and fails fast on any error.
+    Auto-detects prefixes by scanning the bucket structure.
 
+    Args:
+        duckdb_conn: DuckDB connection with GCS access configured
+    """
 
-# --- GCS DATA FUNCTIONS ---
-@st.cache_data(ttl=3600)  # Cache parquet file list for 1 hour
-def scan_gcs_for_parquet_files() -> List[Dict]:
-    """Scan the GCS bucket for all parquet files with metadata."""
+    # Initialize GCS client (uses ADC)
     client = storage.Client()
-    bucket = client.get_bucket(GCS_BUCKET_NAME)
-    blobs = bucket.list_blobs()
+    bucket = client.bucket(GCS_BUCKET_NAME)
 
-    parquet_files = []
-    for blob in blobs:
+    # Get all parquet files and detect valid ones
+    valid_files = []
+    ambiguous_files = []
+
+    for blob in bucket.list_blobs():
         if blob.name.endswith(".parquet"):
-            # Extract meaningful parts from the path
-            path_parts = blob.name.split("/")
-            filename = path_parts[-1]
+            if _is_valid_structure(blob.name):
+                valid_files.append(blob.name)
+            else:
+                ambiguous_files.append(blob.name)
 
-            # Extract folder structure for categorization
-            folder_path = "/".join(path_parts[:-1]) if len(path_parts) > 1 else ""
+    # Log warnings for ambiguous files
+    for file_path in ambiguous_files:
+        logging.warning(f"Ambiguous file structure, skipping: {file_path}")
 
-            # Calculate a unique ID based on path
-            file_id = hashlib.md5(blob.name.encode()).hexdigest()[:8]
+    if not valid_files:
+        raise ValueError(f"No valid parquet files found in bucket '{GCS_BUCKET_NAME}'")
 
-            # Get basic metadata
-            size_kb = round(blob.size / 1024, 1)
-            last_modified = (
-                blob.updated.strftime("%Y-%m-%d") if blob.updated else "Unknown"
-            )
+    # Extract all unique schemas from view names and create them
+    schemas = set()
+    for file_path in valid_files:
+        view_name = _extract_view_name(file_path)
+        if "." in view_name:
+            schema_name = view_name.split(".")[0]
+            schemas.add(schema_name)
 
-            # Create a clean display name for the file
-            display_name = re.sub(r"\d{10,}\.\d+\.\w+\.parquet$", ".parquet", filename)
-            display_name = re.sub(r"\d{8,}[\.-_]", "", display_name)
+    # Create all schemas first
+    for schema in schemas:
+        duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
 
-            # If display name is too simplified, use original filename
-            if display_name == ".parquet" or not display_name:
-                display_name = filename
+    # Create views for valid files
+    for file_path in valid_files:
+        view_name = _extract_view_name(file_path)
+        gcs_path = f"gcs://{GCS_BUCKET_NAME}/{file_path}"
 
-            parquet_files.append(
-                {
-                    "path": f"gs://{GCS_BUCKET_NAME}/{blob.name}",
-                    "name": blob.name,
-                    "display_name": display_name,
-                    "folder": folder_path,
-                    "size_kb": size_kb,
-                    "last_modified": last_modified,
-                    "file_id": file_id,
-                }
-            )
+        # Create the view
+        create_view_sql = f"""
+        CREATE OR REPLACE VIEW {view_name} AS
+        SELECT * FROM read_parquet('{gcs_path}')
+        """
 
-    # Sort files by folder, then by name
-    return sorted(parquet_files, key=lambda x: (x["folder"], x["name"]))
-
-
-def generate_table_name(file_info: Dict) -> Tuple[str, str]:
-    """Generate schema and table name from file path."""
-    # Extract path parts from the file path
-    path = file_info["name"]
-    path_parts = path.split("/")
-
-    # Default schema and table if we can't extract from path
-    schema_name = "main"
-    table_name = "data"
-
-    # Need at least 2 parts (schema/table) to have a proper structure
-    if len(path_parts) >= 2:
-        # Schema is the first directory
-        schema_name = path_parts[0]
-
-        # Table is the second directory
-        if len(path_parts) >= 3:
-            table_name = path_parts[1]
-
-        # Clean the names - replace non-alphanumeric chars with underscores
-        schema_name = re.sub(r"[^a-zA-Z0-9_]", "_", schema_name)
-        table_name = re.sub(r"[^a-zA-Z0-9_]", "_", table_name)
-
-        # Ensure names start with a letter (not a number)
-        if schema_name and schema_name[0].isdigit():
-            schema_name = "s_" + schema_name
-        if table_name and table_name[0].isdigit():
-            table_name = "t_" + table_name
-
-        # Remove consecutive underscores and trim
-        schema_name = re.sub(r"_+", "_", schema_name).strip("_")
-        table_name = re.sub(r"_+", "_", table_name).strip("_")
-
-    # If any name is empty or too short, use defaults
-    if not schema_name or len(schema_name) < 2:
-        schema_name = "main"
-    if not table_name or len(table_name) < 2:
-        table_name = "data_" + file_info["file_id"]
-
-    return schema_name, table_name
+        # Fail fast - let any exception bubble up
+        duckdb_conn.execute(create_view_sql)
 
 
-# --- DATABASE QUERY FUNCTIONS ---
-def execute_query(query: str) -> Optional[duckdb.DuckDBPyRelation]:
-    """Execute a SQL query using the cached connection."""
-    con = get_duckdb_connection()
-    try:
-        return con.execute(query)
-    except Exception as e:
-        st.error(f"Error executing query: {str(e)}")
-        return None
+def _is_valid_structure(file_path: str) -> bool:
+    """
+    Check if file path follows expected structure: prefix/table_name/timestamp.hash.parquet
+
+    Returns True if valid, False if ambiguous.
+    """
+    parts = file_path.split("/")
+
+    # Need at least 3 parts: prefix/table/filename
+    if len(parts) < 3:
+        return False
+
+    # Check if filename matches timestamp.hash pattern
+    filename = parts[-1]
+    filename_without_ext = filename.rsplit(".parquet", 1)[0]
+
+    # Pattern: numbers.numbers.alphanumeric (timestamp.hash)
+    pattern = r"^\d+\.\d+\.[a-zA-Z0-9]+$"
+
+    return bool(re.match(pattern, filename_without_ext))
 
 
-@st.cache_data
-def get_query_dataframe(query: str):
-    """Execute a query and return a cached DataFrame result."""
-    result = execute_query(query)
-    if result is not None:
-        return result.df()
-    return None
+def _extract_view_name(file_path: str) -> str:
+    """
+    Extract view name from file path by removing timestamp and hash suffix.
 
+    Examples:
+        raw/expenses/1748614244.989846.6b6faba454.parquet -> raw.expenses
+        raw/expenses__properties__name__title/1748614244.989846.2690c0b4b6.parquet -> raw.expenses__properties__name__title
+    """
+    # Remove the .parquet extension
+    path_without_extension = file_path.rsplit(".parquet", 1)[0]
 
-def get_in_memory_tables() -> List[Tuple[str, str]]:
-    """Get all tables currently loaded in memory."""
-    result = execute_query("SHOW ALL TABLES;")
-    if result is not None:
-        df = result.df()
-        # Return list of (schema, table_name) tuples
-        return list(zip(df["schema"].tolist(), df["name"].tolist()))
-    return []
+    # Split by '/' to separate directory structure from filename
+    parts = path_without_extension.split("/")
 
+    # The filename contains timestamp.hash pattern - remove it
+    if len(parts) >= 2:
+        directory_parts = parts[:-1]  # Everything except the filename
 
-# --- TABLE MANAGEMENT FUNCTIONS ---
-def _create_views_in_connection(con, parquet_files: List[Dict]):
-    """Internal function to create views in a given connection."""
-    successful_loads = []
-    failed_loads = []
+        # Join directory parts with dots instead of slashes for view name
+        view_name = ".".join(directory_parts)
+        return view_name
 
-    for file in parquet_files:
-        try:
-            # Generate schema and table names from file path
-            schema_name, table_name = generate_table_name(file)
-
-            # Create schema if needed
-            con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name};")
-
-            # Create view instead of loading data into table
-            qualified_view_name = f"{schema_name}.{table_name}"
-            view_sql = f"CREATE OR REPLACE VIEW {qualified_view_name} AS SELECT * FROM parquet_scan('{file['path']}');"
-
-            try:
-                con.execute(view_sql)
-                successful_loads.append((qualified_view_name, file))
-            except Exception as e:
-                failed_loads.append((file, str(e)))
-        except Exception as e:
-            print(f"Error processing file {file['display_name']}: {str(e)}")
-
-    if failed_loads:
-        print(f"Failed to create {len(failed_loads)} views")
-        for file, error in failed_loads:
-            print(f"**{file['display_name']}**: {error}")
-    
-    return successful_loads, failed_loads
-
-
-def load_all_tables(parquet_files: List[Dict]):
-    """Create views for external parquet files in DuckDB based on their path structure."""
-    # Clear cache to ensure fresh data
-    st.cache_data.clear()
-    
-    con = get_duckdb_connection()
-    successful_loads, failed_loads = _create_views_in_connection(con, parquet_files)
-    
-    if failed_loads:
-        st.error(f"Failed to create {len(failed_loads)} views")
-        for file, error in failed_loads:
-            st.error(f"**{file['display_name']}**: {error}")
-
-
-def refresh_data():
-    """Refresh the cached DuckDB connection and recreate all views."""
-    try:
-        # Clear the cached connection resource to force recreation
-        get_duckdb_connection_with_views.clear()
-        
-        # Clear cached data
-        st.cache_data.clear()
-        scan_gcs_for_parquet_files.clear()
-        
-        # This will recreate the connection with fresh views
-        get_duckdb_connection()
-        
-        st.success("Data refreshed successfully!")
-        
-    except Exception as e:
-        st.error(f"Error refreshing data: {str(e)}")
+    # This should not happen with valid files, but be explicit
+    raise ValueError(f"Cannot extract view name from file path: {file_path}")
