@@ -36,27 +36,21 @@ terragrunt output data_explorer_service_account_email
 
 ## Running Locally
 
-### Using the Common Run Script
+### Using Makefile Targets
 
-The recommended way to run the data explorer locally is using the common run script:
+The recommended way to run the data explorer locally is using the Makefile targets:
 
-1. Navigate to your environment directory:
-
-   ```shell
-   cd terragrunt/dev
-   ```
-
-2. Run the script:
+1. From the project root directory, run:
 
    ```shell
-   # Make the script executable (if not already)
-   chmod +x ../../opentofu/scripts/run_local.sh
+   # For development environment
+   make run-data-explorer-dev
 
-   # Run the data explorer locally
-   ../../opentofu/scripts/run_local.sh data_explorer
+   # For production environment
+   make run-data-explorer-prod
    ```
 
-3. Access the application:
+2. Access the application:
 
    - URL: <http://localhost:8501/>
    - Authentication credentials are read from your `env_vars.yaml` file:

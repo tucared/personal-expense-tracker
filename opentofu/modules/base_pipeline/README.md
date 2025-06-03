@@ -106,7 +106,7 @@ The module uses standardized resource naming conventions:
 
 ## Local Development
 
-The project includes a `run_local.sh` script for running pipelines locally. The script:
+The project includes Makefile targets for running pipelines locally. The Makefile:
 
 1. Sets up service account impersonation
 2. Configures the required environment variables for the specified pipeline
@@ -114,12 +114,14 @@ The project includes a `run_local.sh` script for running pipelines locally. The 
 4. Resets credentials after execution
 
 ```bash
-# From terragrunt/dev directory
-../../scripts/run_local.sh <pipeline_name>
+# From project root directory
+make run-<service>-dev     # Run in development environment
+make run-<service>-prod    # Run in production environment
 
 # Examples:
-../../scripts/run_local.sh notion_pipeline
-../../scripts/run_local.sh gsheets_pipeline
+make run-notion-dev        # Run Notion pipeline locally (dev)
+make run-gsheets-prod      # Run Google Sheets pipeline locally (prod)
+make run-data-explorer-dev # Run data explorer locally (dev)
 ```
 
-**Note:** When adding a new pipeline, update the script's case statement to include your pipeline's specific environment variables.
+**Note:** When adding a new pipeline, update the Makefile's case statement to include your pipeline's specific environment variables.

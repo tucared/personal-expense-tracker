@@ -26,8 +26,7 @@ uv --version
 gcloud config list account
 
 # Verify terragrunt deployment
-cd terragrunt/dev
-terragrunt output data_bucket_writer_service_account_email
+make output-dev | grep data_bucket_writer_service_account_email | awk '{print $3}'
 # Should return a valid service account email
 ```
 
@@ -51,22 +50,16 @@ cd terragrunt/dev
 terragrunt apply -target=module.notion_pipeline.base_pipeline.google_cloud_scheduler_job.this
 ```
 
-### Step 2: Use the Common Run Script
+### Step 2: Use Makefile Targets
 
-1. Navigate to your environment directory:
-
-   ```shell
-   cd terragrunt/dev
-   ```
-
-2. Run the script:
+1. From the project root directory, run:
 
    ```shell
-   # Make the script executable (if not already)
-   chmod +x ../../scripts/run_local.sh
+   # For development environment
+   make run-notion-dev
 
-   # Run the Notion pipeline locally
-   ../../scripts/run_local.sh notion_pipeline
+   # For production environment
+   make run-notion-prod
    ```
 
 ### Step 3: Trigger the Function

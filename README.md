@@ -194,18 +194,27 @@ For developers who want to test pipelines locally before deploying to the cloud:
 cp terragrunt/dev/env_vars.example.yaml terragrunt/dev/env_vars.yaml
 nano terragrunt/dev/env_vars.yaml  # Configure with dev settings
 
-# Navigate to your environment directory
-cd terragrunt/dev
+# Run local pipelines using Makefile targets
+make run-notion-dev        # Run Notion pipeline locally
+make run-gsheets-dev       # Run Google Sheets pipeline locally  
+make run-data-explorer-dev # Run data explorer dashboard locally
 
-# Run a local pipeline (e.g., Notion)
-# Run `chmod +x ../../opentofu/scripts/run_local.sh` the first time
-../../opentofu/scripts/run_local.sh notion_pipeline
-
-# In another terminal, trigger the local function
+# In another terminal, trigger the local function (for pipelines)
 curl localhost:8080
 ```
 
-The `run_local.sh` script handles service account impersonation and automatically resets your credentials after testing. It works with any pipeline in the system.
+The Makefile targets handle service account impersonation and automatically reset your credentials after testing. They work with any pipeline in the system.
+
+### Available Makefile Commands
+
+The project includes a comprehensive Makefile with commands for local development and infrastructure management. Run `make` or `make help` to see all available commands and their descriptions.
+
+Key patterns:
+
+- `make run-<service>-<env>` - Run services locally
+- `make <command>-<env>` - Infrastructure management
+- Available services: `notion`, `gsheets`, `data-explorer`
+- Available environments: `dev`, `prod`
 
 ## Cost Management
 
