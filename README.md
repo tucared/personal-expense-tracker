@@ -173,48 +173,11 @@ flowchart LR
 
 ### Managing Data Refresh
 
-**Manual Data Refresh:**
+Data syncs automatically every hour. For manual refresh commands, see [CLAUDE.md](CLAUDE.md).
 
-```shell
-# Refresh Notion expense data
-export FUNCTION_URI=$(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}')
-curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
+## Development
 
-# Refresh Google Sheets budget data
-export FUNCTION_URI=$(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}')
-curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
-```
-
-## Local Development
-
-For developers who want to test pipelines locally before deploying to the cloud:
-
-```shell
-# Set up development environment
-cp terragrunt/dev/env_vars.example.yaml terragrunt/dev/env_vars.yaml
-nano terragrunt/dev/env_vars.yaml  # Configure with dev settings
-
-# Run local pipelines using Makefile targets
-make run-notion-dev        # Run Notion pipeline locally
-make run-gsheets-dev       # Run Google Sheets pipeline locally  
-make run-data-explorer-dev # Run data explorer dashboard locally
-
-# In another terminal, trigger the local function (for pipelines)
-curl localhost:8080
-```
-
-The Makefile targets handle service account impersonation and automatically reset your credentials after testing. They work with any pipeline in the system.
-
-### Available Makefile Commands
-
-The project includes a comprehensive Makefile with commands for local development and infrastructure management. Run `make` or `make help` to see all available commands and their descriptions.
-
-Key patterns:
-
-- `make run-<service>-<env>` - Run services locally
-- `make <command>-<env>` - Infrastructure management
-- Available services: `notion`, `gsheets`, `data-explorer`
-- Available environments: `dev`, `prod`
+For local development and detailed development commands, see [CLAUDE.md](CLAUDE.md).
 
 ## Cost Management
 
@@ -229,13 +192,7 @@ This solution uses GCP's [free tier](https://cloud.google.com/free) resources:
 
 ## Architecture
 
-This project uses a modular architecture:
-
-- **Base Pipeline Module**: Core infrastructure for all data pipelines
-- **Specific Pipeline Modules**: Implementations for Notion and Google Sheets
-- **Data Explorer**: Dashboard for viewing and analyzing expense data
-
-All pipelines follow the same pattern of extracting data from the source, transforming it with the DLT framework, and loading it into the data bucket.
+For detailed architecture information and development patterns, see [CLAUDE.md](CLAUDE.md).
 
 ## Troubleshooting
 
