@@ -104,14 +104,14 @@ gcloud services enable \
 
 ```shell
 # Deploy all infrastructure components
-terragrunt apply
+make apply-prod
 ```
 
 #### 6. Share Google Sheet with Service Account
 
 ```shell
 # Get the service account email to share your Google Sheet with
-echo "Google Sheets Service Account: $(terragrunt output -raw data_bucket_writer_service_account_email)"
+make output-prod | grep data_bucket_writer_service_account_email
 ```
 
 Share your budget Google Sheet with this service account email (Editor access).
@@ -122,12 +122,12 @@ After deployment completes:
 
 ```shell
 # Get expense dashboard URL
-echo "Expense Dashboard URL: $(terragrunt output -raw data_explorer_service_url)"
+echo "Expense Dashboard URL: $(make output-prod | grep data_explorer_service_url | awk '{print $3}')"
 
 # Trigger initial data load
-curl -i -X POST $(terragrunt output -raw notion_pipeline_function_uri) \
+curl -i -X POST $(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}') \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
-curl -i -X POST $(terragrunt output -raw gsheets_pipeline_function_uri) \
+curl -i -X POST $(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}') \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
@@ -177,11 +177,11 @@ flowchart LR
 
 ```shell
 # Refresh Notion expense data
-export FUNCTION_URI=$(terragrunt output -raw notion_pipeline_function_uri)
+export FUNCTION_URI=$(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}')
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 
 # Refresh Google Sheets budget data
-export FUNCTION_URI=$(terragrunt output -raw gsheets_pipeline_function_uri)
+export FUNCTION_URI=$(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}')
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
@@ -194,7 +194,7 @@ For developers who want to test pipelines locally before deploying to the cloud:
 cd terragrunt/dev
 
 # Run a local pipeline (e.g., Notion)
-# Run `chmod +x ../../opentofu/scripts/run_local.sh`the first time
+# Run `chmod +x ../../opentofu/scripts/run_local.sh` the first time
 ../../opentofu/scripts/run_local.sh notion_pipeline
 
 # In another terminal, trigger the local function
@@ -240,18 +240,18 @@ All pipelines follow the same pattern of extracting data from the source, transf
 git pull
 
 # Apply infrastructure changes
-terragrunt apply
+make apply-prod
 
 # Rebuild dashboard app if needed
-gcloud builds triggers run $(terragrunt output -raw data_explorer_build_trigger_name) \
-    --region=$(terragrunt output -raw data_explorer_build_trigger_region)
+gcloud builds triggers run $(make output-prod | grep data_explorer_build_trigger_name | awk '{print $3}') \
+    --region=$(make output-prod | grep data_explorer_build_trigger_region | awk '{print $3}')
 ```
 
 ## Cleanup
 
 ```shell
 # Remove all resources
-terragrunt destroy
+make destroy-prod
 
 # For complete removal, delete the project
 gcloud projects delete $PROJECT_ID
