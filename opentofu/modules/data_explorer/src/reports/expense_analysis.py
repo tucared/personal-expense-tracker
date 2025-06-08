@@ -11,41 +11,37 @@ DATE_FIELD = "properties__date__date__start"
 # Get database connection
 duckdb_conn = get_duckdb_memory()
 
-# Get available months
-months_data = duckdb_conn.sql(f"""
-    SELECT DISTINCT
-        EXTRACT(YEAR FROM CAST({DATE_FIELD} AS DATE)) as year,
-        EXTRACT(MONTH FROM CAST({DATE_FIELD} AS DATE)) as month
-    FROM {EXPENSES_TABLE}
-    ORDER BY year DESC, month DESC
-""").fetchall()
+expenses = duckdb_conn.sql("""
+    FROM raw.expenses
+    SELECT
+        date:properties__date__date__start::DATE,
+        date_month:strftime(properties__date__date__start::DATE, '%Y-%m'),
+        amount: properties__amount__number::FLOAT
+""").set_alias("expenses")
 
-if not months_data:
-    st.error("No expense data found")
-    st.stop()
+# Get available months
+months_data = expenses.select("date_month").distinct().set_alias("months_data")
 
 # Month selector
-month_options = [f"{int(row[0])}-{int(row[1]):02d}" for row in months_data]
+month_options = [row[0] for row in months_data.fetchall()]
 selected_month = st.selectbox("Select Month:", month_options)
 
 if selected_month:
-    year, month = selected_month.split("-")
-
     # Get daily cumulative expenses
-    daily_data = duckdb_conn.sql(f"""
-        SELECT
-            EXTRACT(DAY FROM CAST({DATE_FIELD} AS DATE)) as day,
-            SUM(properties__amount__number) OVER (ORDER BY CAST({DATE_FIELD} AS DATE)) as cumulative_amount
-        FROM {EXPENSES_TABLE}
-        WHERE EXTRACT(YEAR FROM CAST({DATE_FIELD} AS DATE)) = {year}
-        AND EXTRACT(MONTH FROM CAST({DATE_FIELD} AS DATE)) = {month}
-        ORDER BY CAST({DATE_FIELD} AS DATE)
-    """).fetchall()
+    daily_data = (
+        expenses.select("""
+                        date, 
+                        date_month,
+                        cumulative_amount: SUM(amount) OVER (ORDER BY date)""")
+        .filter(f"date_month = '{selected_month}'")
+        .order("date")
+        .fetchall()
+    )
 
     if daily_data:
         # Create plotly chart
-        days = [int(row[0]) for row in daily_data]
-        amounts = [float(row[1]) for row in daily_data]
+        days = [row[0] for row in daily_data]
+        amounts = [float(row[2]) for row in daily_data]
 
         fig = px.line(
             x=days,
