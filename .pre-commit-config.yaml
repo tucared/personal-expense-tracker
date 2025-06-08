@@ -32,13 +32,13 @@ repos:
         files: opentofu/modules/data_explorer/src/pyproject.toml
         args: [--project, opentofu/modules/data_explorer/src/]
       - id: uv-lock
-        name: uv-lock (google_sheets_pipeline)
-        files: opentofu/modules/google_sheets_pipeline/src/pyproject.toml
-        args: [--project, opentofu/modules/google_sheets_pipeline/src/]
+        name: uv-lock (gsheets_pipeline)
+        files: opentofu/modules/gsheets_pipeline/src/pyproject.toml
+        args: [--project, opentofu/modules/gsheets_pipeline/src/]
       - id: uv-export
-        name: uv-export (google_sheets_pipeline)
-        files: opentofu/modules/google_sheets_pipeline/src/pyproject.toml
-        args: [--project, opentofu/modules/google_sheets_pipeline/src/, "--frozen", "--output-file=opentofu/modules/google_sheets_pipeline/src/requirements.txt"]
+        name: uv-export (gsheets_pipeline)
+        files: opentofu/modules/gsheets_pipeline/src/pyproject.toml
+        args: [--project, opentofu/modules/gsheets_pipeline/src/, "--frozen", "--output-file=opentofu/modules/gsheets_pipeline/src/requirements.txt"]
       - id: uv-lock
         name: uv-lock (notion_pipeline)
         files: opentofu/modules/notion_pipeline/src/pyproject.toml

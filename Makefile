@@ -80,5 +80,13 @@ _run-local:
 	esac; \
 	gcloud config unset auth/impersonate_service_account
 
+ # Generate requirements.txt from pyproject.toml for Cloud Functions
+ generate-requirements:
+ 	@echo "Generating requirements.txt for notion_pipeline..."
+	@cd opentofu/modules/notion_pipeline/src && uv export --frozen --output-file=requirements.txt
+ 	@echo "Generating requirements.txt for gsheets_pipeline..."
+	@cd opentofu/modules/gsheets_pipeline/src && uv export --frozen --output-file=requirements.txt
+ 	@echo "Done! requirements.txt files generated from pyproject.toml"
+
 # Make all -dev and -prod targets phony
 .PHONY: %-dev %-prod run-%-dev run-%-prod _run-local
