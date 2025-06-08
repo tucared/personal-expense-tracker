@@ -15,3 +15,6 @@ env_vars.yaml
 
 # Draw.io
 *.drawio
+
+# Claude
+.claude/
