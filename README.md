@@ -55,8 +55,8 @@ This system combines the ease of logging expenses in Notion with the flexibility
 #### 3. Configure Local Environment
 
 ```shell
-# Create your environment configuration from example
-cp -a terragrunt/example terragrunt/prod
+# Copy example configuration to create your environment variables
+cp terragrunt/prod/env_vars.example.yaml terragrunt/prod/env_vars.yaml
 
 # Edit configuration files
 nano terragrunt/prod/env_vars.yaml
@@ -190,6 +190,10 @@ curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-iden
 For developers who want to test pipelines locally before deploying to the cloud:
 
 ```shell
+# Set up development environment
+cp terragrunt/dev/env_vars.example.yaml terragrunt/dev/env_vars.yaml
+nano terragrunt/dev/env_vars.yaml  # Configure with dev settings
+
 # Navigate to your environment directory
 cd terragrunt/dev
 

@@ -15,6 +15,7 @@ This module serves as a foundation for creating data pipelines in the Personal E
 This module is designed to be used as a base for specific data source pipelines. It's not intended to be used directly, but rather imported by specific pipeline modules like `notion_pipeline` or `gsheets_pipeline`.
 
 **Important Notes:**
+
 - The base pipeline module references the `src/` directory from the specific pipeline module that imports it
 - Each pipeline module must maintain its own source code in its `src/` directory
 - For service account names that might exceed GCP's 30-character limit, the module creates shortened unique names
@@ -70,6 +71,7 @@ module "base_pipeline" {
 The module creates Secret Manager secrets for each item in the `secrets` list. These are then made available to the Cloud Function as environment variables with the specified names.
 
 For example, if you specify:
+
 ```hcl
 secrets = [
   {
@@ -80,6 +82,7 @@ secrets = [
 ```
 
 The module will:
+
 1. Create a secret in Secret Manager named `PIPELINE_NAME_API_KEY`
 2. Store the value `my-secret-key` in the secret
 3. Make it available to the Cloud Function as an environment variable named `API_KEY`
@@ -96,6 +99,7 @@ The module will:
 ## Resource Naming
 
 The module uses standardized resource naming conventions:
+
 - Cloud Function: `pipeline-name` (hyphens instead of underscores)
 - Service Accounts: Shortened version of pipeline name to stay within 30-character limit
 - Secret Manager Secrets: `PIPELINE_NAME_SECRET_NAME` (uppercase with underscores)

@@ -8,8 +8,7 @@ __pycache__
 # Terragrun/OpenTofu files
 .terragrunt-cache/
 .terraform.lock.hcl
-terragrunt/*/
-!terragrunt/example
+env_vars.yaml
 
 # Precommit
 .terraform
