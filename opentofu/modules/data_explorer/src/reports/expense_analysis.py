@@ -30,7 +30,7 @@ if selected_month:
     # Get daily cumulative expenses
     daily_data = (
         expenses.select("""
-                        date, 
+                        date,
                         date_month,
                         cumulative_amount: SUM(amount) OVER (ORDER BY date)""")
         .filter(f"date_month = '{selected_month}'")

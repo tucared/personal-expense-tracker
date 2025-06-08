@@ -47,3 +47,12 @@ repos:
         name: uv-export (notion_pipeline)
         files: opentofu/modules/notion_pipeline/src/pyproject.toml
         args: [--project, opentofu/modules/notion_pipeline/src/, "--frozen", "--output-file=opentofu/modules/notion_pipeline/src/requirements.txt"]
+  - repo: local
+    hooks:
+      - id: check-dev-prod-files-sync
+        name: Check dev and prod files are identical
+        entry: sh
+        args: ['-c', 'cmp -s terragrunt/dev/env_vars.example.yaml terragrunt/prod/env_vars.example.yaml && cmp -s terragrunt/dev/terragrunt.hcl terragrunt/prod/terragrunt.hcl || (echo "Files differ between dev and prod directories" && exit 1)']
+        language: system
+        files: 'terragrunt/(dev|prod)/(env_vars\.example\.yaml|terragrunt\.hcl)$'
+        pass_filenames: false
