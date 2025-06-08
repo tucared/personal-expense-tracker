@@ -1,13 +1,13 @@
 module "base_pipeline" {
   source = "../base_pipeline"
 
-  project_id                 = var.project_id
-  region                     = var.region
-  data_bucket_name           = var.data_bucket_name
-  service_account_email      = var.data_bucket_writer_service_account_email
-  pipeline_name              = "gsheets_pipeline"
-  entry_point                = "gsheets_pipeline"
-  cloud_scheduler_parameters = var.cloud_scheduler_parameters
+  project_id                               = var.project_id
+  region                                   = var.region
+  data_bucket_name                         = var.data_bucket_name
+  data_bucket_writer_service_account_email = var.data_bucket_writer_service_account_email
+  pipeline_name                            = "gsheets_pipeline"
+  entry_point                              = "gsheets_pipeline"
+  cloud_scheduler_parameters               = var.cloud_scheduler_parameters
 
   environment_variables = {
     SOURCES__GOOGLE_SHEETS__CREDENTIALS__CLIENT_EMAIL = var.data_bucket_writer_service_account_email

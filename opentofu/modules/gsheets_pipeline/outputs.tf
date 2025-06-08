@@ -17,9 +17,3 @@ output "scheduler_service_account_email" {
   description = "Service account email used by the cloud scheduler"
   value       = module.base_pipeline.scheduler_service_account_email
 }
-
-output "data_bucket_writer_private_key_value" {
-  description = "Private key value used for Google Sheets authentication (for local development)"
-  value       = var.data_bucket_writer_private_key
-  sensitive   = true
-}

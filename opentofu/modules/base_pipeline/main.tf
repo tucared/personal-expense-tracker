@@ -47,7 +47,7 @@ resource "google_secret_manager_secret_iam_member" "secrets" {
   project   = var.project_id
   secret_id = google_secret_manager_secret.secrets[count.index].secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${var.service_account_email}"
+  member    = "serviceAccount:${var.data_bucket_writer_service_account_email}"
 }
 
 # Deployment of Cloud Function
@@ -111,7 +111,7 @@ resource "google_cloudfunctions2_function" "this" {
     max_instance_count    = var.function_config.max_instance_count
     available_memory      = var.function_config.available_memory
     timeout_seconds       = var.function_config.timeout_seconds
-    service_account_email = var.service_account_email
+    service_account_email = var.data_bucket_writer_service_account_email
 
     environment_variables = merge({
       DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.data_bucket_name}"

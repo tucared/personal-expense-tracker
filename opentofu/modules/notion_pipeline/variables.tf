@@ -1,3 +1,4 @@
+# Shared variables - these are passed through to the base_pipeline module
 variable "project_id" {
   description = "The GCP project ID"
   type        = string
@@ -27,6 +28,7 @@ variable "cloud_scheduler_parameters" {
   })
 }
 
+# Pipeline-specific variables
 variable "notion_api_key" {
   description = "API key for Notion"
   type        = string

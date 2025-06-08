@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a Personal Expense Tracker that creates a data lakehouse for tracking expenses logged in Notion against budgets managed in Google Sheets. The system uses a modular cloud-native architecture on GCP with three main components:
 
 1. **Data Pipelines**: Automated ingestion from Notion and Google Sheets using Cloud Functions
-2. **Data Storage**: Parquet files stored in Cloud Storage forming a data lake  
+2. **Data Storage**: Parquet files stored in Cloud Storage forming a data lake
 3. **Analytics Dashboard**: Streamlit app deployed on Cloud Run for expense visualization
 
 ## Architecture
@@ -25,7 +25,7 @@ All pipelines extract data from sources, transform using the DLT framework, and 
 ### Infrastructure Management
 
 ```bash
-# Deploy to production environment  
+# Deploy to production environment
 make apply-prod
 
 # Deploy to development environment
@@ -49,7 +49,7 @@ make output-dev
 ```bash
 # Run services locally (connects to cloud infrastructure)
 make run-notion-dev          # Run Notion pipeline locally
-make run-gsheets-dev         # Run Google Sheets pipeline locally  
+make run-gsheets-dev         # Run Google Sheets pipeline locally
 make run-data-explorer-dev   # Run Streamlit dashboard locally
 
 # For production environment
@@ -68,7 +68,7 @@ curl localhost:8080
 export FUNCTION_URI=$(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}')
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 
-# Refresh Google Sheets budget data  
+# Refresh Google Sheets budget data
 export FUNCTION_URI=$(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}')
 curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```

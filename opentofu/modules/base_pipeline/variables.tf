@@ -13,7 +13,7 @@ variable "data_bucket_name" {
   type        = string
 }
 
-variable "service_account_email" {
+variable "data_bucket_writer_service_account_email" {
   description = "Service account email for the Cloud Function"
   type        = string
 }
