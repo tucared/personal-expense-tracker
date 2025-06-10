@@ -13,7 +13,7 @@ notion_pipeline:
   notion_database_id: 1e81ed43cd7081609485d8f73c0d5e36
   cloud_scheduler_parameters:
     paused: true
-    schedule: "0 * * * *" # every hour
+    schedule: 0 * * * *    # every hour
     region: europe-west6
 
 # Google Sheets variables
@@ -22,7 +22,7 @@ gsheets_pipeline:
   spreadsheet_url_or_id: 1VTtCiYgxjAwcIw7UM1_BSaxC3rzIpr0HwXZwd2OlPD4
   cloud_scheduler_parameters:
     paused: true
-    schedule: "0 * * * *" # every hour
+    schedule: 0 * * * *    # every hour
     region: europe-west6
 
 # Data explorer variables
@@ -32,5 +32,5 @@ data_explorer:
   cloudrun_limits:
     memory: 1024Mi
     cpu: 2
-  auth_username: "admin"
-  auth_password: "your-secure-password-here"
+  auth_username: admin
+  auth_password: your-secure-password-here

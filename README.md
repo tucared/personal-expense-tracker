@@ -59,7 +59,7 @@ This system combines the ease of logging expenses in Notion with the flexibility
 cp terragrunt/prod/env_vars.example.yaml terragrunt/prod/env_vars.yaml
 
 # Edit configuration files
-nano terragrunt/prod/env_vars.yaml
+open terragrunt/prod/env_vars.yaml
 ```
 
 Update `env_vars.yaml` with:
@@ -80,8 +80,7 @@ gcloud auth application-default login
 
 # Set environment variables
 export BILLING_ACCOUNT_ID=$(gcloud billing accounts list --format="value(ACCOUNT_ID)" --limit=1)
-cd terragrunt/prod
-export PROJECT_ID=$(grep "project_id" env_vars.yaml | awk '{print $2}' | tr -d '"')
+export PROJECT_ID=$(grep "project_id" terragrunt/prod/env_vars.yaml | awk '{print $2}' | tr -d '"')
 
 # Create and configure project
 gcloud projects create $PROJECT_ID
