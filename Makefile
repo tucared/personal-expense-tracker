@@ -21,12 +21,12 @@ run-%-dev:
 run-%-prod:
 	@$(MAKE) _run-local SERVICE=$* ENV=prod
 
-# Pattern rule for any command and environment
+# Pattern rule for terragrunt commands
 %-dev:
-	cd terragrunt/dev && terragrunt $* --terragrunt-non-interactive
+	cd terragrunt/dev && terragrunt $* --non-interactive
 
 %-prod:
-	cd terragrunt/prod && terragrunt $* --terragrunt-non-interactive
+	cd terragrunt/prod && terragrunt $* --non-interactive
 
 # Internal target for running local services
 _run-local:
