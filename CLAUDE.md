@@ -42,6 +42,10 @@ make destroy-dev
 # Get infrastructure outputs
 make output-prod
 make output-dev
+
+# Get specific infrastructure outputs
+make output-data_explorer_build_trigger_region-prod
+make output-data_explorer_build_trigger_region-dev
 ```
 
 ### Local Development

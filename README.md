@@ -111,7 +111,7 @@ make apply-prod
 
 ```shell
 # Get the service account email to share your Google Sheet with
-make output-prod | grep data_bucket_writer_service_account_email
+make output-data_bucket_writer_service_account_email-prod
 ```
 
 Share your budget Google Sheet with this service account email (Editor access).
@@ -125,9 +125,9 @@ After deployment completes:
 echo "Expense Dashboard URL: $(make output-prod | grep data_explorer_service_url | awk '{print $3}')"
 
 # Trigger initial data load
-curl -i -X POST $(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}') \
+curl -i -X POST $(make output-notion_pipeline_function_uri-prod) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
-curl -i -X POST $(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}') \
+curl -i -X POST $(make output-gsheets_pipeline_function_uri-prod) \
     -H "Authorization: bearer $(gcloud auth print-identity-token)"
 ```
 
@@ -213,8 +213,8 @@ git pull
 make apply-prod
 
 # Rebuild dashboard app if needed
-gcloud builds triggers run $(make output-prod | grep data_explorer_build_trigger_name | awk '{print $3}') \
-    --region=$(make output-prod | grep data_explorer_build_trigger_region | awk '{print $3}')
+gcloud builds triggers run $(make output-data_explorer_build_trigger_name-prod) \
+    --region=$(make output-data_explorer_build_trigger_region-prod)
 ```
 
 ## Cleanup

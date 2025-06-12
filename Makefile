@@ -1,10 +1,12 @@
 # Help target
 help:
 	@echo "Available commands:"
-	@echo "  run-<service>-dev   - Run a service locally in dev environment"
-	@echo "  run-<service>-prod  - Run a service locally in prod environment"
-	@echo "  <command>-dev       - Run terragrunt command in dev environment"
-	@echo "  <command>-prod      - Run terragrunt command in prod environment"
+	@echo "  run-<service>-dev         - Run a service locally in dev environment"
+	@echo "  run-<service>-prod        - Run a service locally in prod environment"
+	@echo "  <command>-dev             - Run terragrunt command in dev environment"
+	@echo "  <command>-prod            - Run terragrunt command in prod environment"
+	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
+	@echo "  output-<outputd>-prod     - Get terragrunt output in prod environment"
 	@echo ""
 	@echo "Available services: notion, gsheets, data-explorer"
 	@echo ""
@@ -13,6 +15,7 @@ help:
 	@echo "  make run-data-explorer-prod"
 	@echo "  make plan-dev"
 	@echo "  make apply-prod"
+	@echo "  make output-data_explorer_build_trigger_region-dev"
 
 # Pattern rule for running local services (must come before general pattern)
 run-%-dev:
@@ -20,6 +23,13 @@ run-%-dev:
 
 run-%-prod:
 	@$(MAKE) _run-local SERVICE=$* ENV=prod
+
+# Output raw variable from terragrunt
+output-%-dev:
+	@cd terragrunt/dev && terragrunt output -raw $*
+
+output-%-prod:
+	@cd terragrunt/prod && terragrunt output -raw $*
 
 # Pattern rule for terragrunt commands
 %-dev:
