@@ -120,14 +120,12 @@ Share your budget Google Sheet with this service account email (Editor access).
 After deployment completes:
 
 ```shell
-# Get expense dashboard URL
-echo "Expense Dashboard URL: $(make output-prod | grep data_explorer_service_url | awk '{print $3}')"
-
 # Trigger initial data load
-curl -i -X POST $(make output-notion_pipeline_function_uri-prod) \
-    -H "Authorization: bearer $(gcloud auth print-identity-token)"
-curl -i -X POST $(make output-gsheets_pipeline_function_uri-prod) \
-    -H "Authorization: bearer $(gcloud auth print-identity-token)"
+make trigger-gsheets-prod
+make trigger-notion-prod
+
+# Open dashboard
+make open-dashboard-prod
 ```
 
 ## Using Your Expense Tracker

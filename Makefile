@@ -5,6 +5,8 @@ help:
 	@echo "  run-<service>-prod        - Run a service locally in prod environment"
 	@echo "  trigger-<service>-dev     - Trigger a pipeline remotely in dev environment"
 	@echo "  trigger-<service>-prod    - Trigger a pipeline remotely in prod environment"
+	@echo "  open-dashboard-dev        - Open the data explorer dashboard in dev environment"
+	@echo "  open-dashboard-prod       - Open the data explorer dashboard in prod environment"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
@@ -17,6 +19,7 @@ help:
 	@echo "  make run-data-explorer-prod"
 	@echo "  make trigger-notion-prod"
 	@echo "  make trigger-gsheets-dev"
+	@echo "  make open-dashboard-prod"
 	@echo "  make plan-dev"
 	@echo "  make apply-prod"
 	@echo "  make output-data_explorer_build_trigger_region-dev"
@@ -47,6 +50,17 @@ trigger-%-prod:
 	@URI=$$($(MAKE) output-$*_pipeline_function_uri-prod) && \
 	TOKEN=$$(gcloud auth print-identity-token) && \
 	curl -i -X POST $$URI -H "Authorization: bearer $$TOKEN"
+
+# Open dashboard in browser
+open-dashboard-dev:
+	@URL=$$($(MAKE) output-data_explorer_service_url-dev) && \
+	echo "Opening dashboard at $$URL" && \
+	open $$URL
+
+open-dashboard-prod:
+	@URL=$$($(MAKE) output-data_explorer_service_url-prod) && \
+	echo "Opening dashboard at $$URL" && \
+	open $$URL
 
 # Pattern rule for terragrunt commands
 %-dev:

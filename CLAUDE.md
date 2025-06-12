@@ -73,6 +73,13 @@ make trigger-notion-prod
 make trigger-gsheets-dev
 make trigger-gsheets-prod
 ```
+
+### Dashboard Access
+
+```bash
+# Open the data explorer dashboard in browser
+make open-dashboard-dev
+make open-dashboard-prod
 ```
 
 ## Configuration
