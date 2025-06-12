@@ -33,6 +33,8 @@ _run-local:
 	@cd terragrunt/$(ENV) && \
 	SERVICE_ACCOUNT=$$(terragrunt output -raw data_bucket_writer_service_account_email) && \
 	DATA_BUCKET_NAME=$$(terragrunt output -raw data_bucket_name) && \
+	PROJECT_ID=$$(yq -r '.project_id' env_vars.yaml) && \
+	gcloud config set project $$PROJECT_ID && \
 	gcloud config set auth/impersonate_service_account $$SERVICE_ACCOUNT && \
 	export DESTINATION__FILESYSTEM__BUCKET_URL=gs://$$DATA_BUCKET_NAME && \
 	export NORMALIZE__LOADER_FILE_FORMAT="parquet" && \
@@ -48,7 +50,7 @@ _run-local:
 			;; \
 		"gsheets") \
 			export SOURCES__GOOGLE_SHEETS__CREDENTIALS__CLIENT_EMAIL=$$SERVICE_ACCOUNT && \
-			export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PROJECT_ID=$$(yq -r '.project_id' env_vars.yaml) && \
+			export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PROJECT_ID=$$PROJECT_ID && \
 			export SOURCES__GOOGLE_SHEETS__SPREADSHEET_URL_OR_ID=$$(yq -r '.gsheets_pipeline.spreadsheet_url_or_id' env_vars.yaml) && \
 			export SOURCES__GOOGLE_SHEETS__CREDENTIALS__PRIVATE_KEY=$$(terragrunt output -raw data_bucket_writer_private_key) && \
 			TARGET="gsheets_pipeline" && \
@@ -78,7 +80,8 @@ _run-local:
 			exit 1; \
 			;; \
 	esac; \
-	gcloud config unset auth/impersonate_service_account
+	gcloud config unset auth/impersonate_service_account; \
+	gcloud config unset project
 
 generate-requirements:
 	uvx pre-commit run uv-lock
