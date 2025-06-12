@@ -115,6 +115,7 @@ resource "google_cloudfunctions2_function" "this" {
 
     environment_variables = merge({
       DESTINATION__FILESYSTEM__BUCKET_URL              = "gs://${var.data_bucket_name}"
+      DESTINATION__FILESYSTEM__LAYOUT                  = var.filesystem_layout
       DESTINATION__FILESYSTEM__CREDENTIALS__PROJECT_ID = var.project_id
       NORMALIZE__LOADER_FILE_FORMAT                    = var.loader_file_format
       RUNTIME__LOG_LEVEL                               = var.log_level

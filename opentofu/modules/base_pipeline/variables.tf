@@ -28,8 +28,6 @@ variable "entry_point" {
   type        = string
 }
 
-
-
 variable "environment_variables" {
   description = "Environment variables to set for the cloud function"
   type        = map(string)
@@ -79,4 +77,10 @@ variable "log_level" {
   description = "Log level for the runtime"
   type        = string
   default     = "WARNING"
+}
+
+variable "filesystem_layout" {
+  description = "Layout pattern for filesystem destination"
+  type        = string
+  default     = "{table_name}/data.{ext}"
 }

@@ -41,12 +41,16 @@ output-%-prod:
 # Internal target for running local services
 _run-local:
 	@cd terragrunt/$(ENV) && \
+	gcloud config unset auth/impersonate_service_account; \
+	gcloud config unset project; \
 	SERVICE_ACCOUNT=$$(terragrunt output -raw data_bucket_writer_service_account_email) && \
 	DATA_BUCKET_NAME=$$(terragrunt output -raw data_bucket_name) && \
 	PROJECT_ID=$$(yq -r '.project_id' env_vars.yaml) && \
+	LAYOUT=$$(echo "{table_name}/data.{ext}") && \
 	gcloud config set project $$PROJECT_ID && \
 	gcloud config set auth/impersonate_service_account $$SERVICE_ACCOUNT && \
 	export DESTINATION__FILESYSTEM__BUCKET_URL=gs://$$DATA_BUCKET_NAME && \
+	export DESTINATION__FILESYSTEM__LAYOUT=$$LAYOUT && \
 	export NORMALIZE__LOADER_FILE_FORMAT="parquet" && \
 	export RUNTIME__LOG_LEVEL="DEBUG" && \
 	export RUNTIME__DLTHUB_TELEMETRY=false && \
