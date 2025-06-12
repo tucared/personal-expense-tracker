@@ -8,6 +8,11 @@ module "base_pipeline" {
   pipeline_name                            = "gsheets_pipeline"
   entry_point                              = "gsheets_pipeline"
   cloud_scheduler_parameters               = var.cloud_scheduler_parameters
+  function_config = {
+    max_instance_count = 1
+    available_memory   = "512Mi"
+    timeout_seconds    = 600
+  }
 
   environment_variables = {
     SOURCES__GOOGLE_SHEETS__CREDENTIALS__CLIENT_EMAIL = var.data_bucket_writer_service_account_email
