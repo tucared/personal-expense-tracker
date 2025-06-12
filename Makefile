@@ -3,6 +3,8 @@ help:
 	@echo "Available commands:"
 	@echo "  run-<service>-dev         - Run a service locally in dev environment"
 	@echo "  run-<service>-prod        - Run a service locally in prod environment"
+	@echo "  trigger-<service>-dev     - Trigger a pipeline remotely in dev environment"
+	@echo "  trigger-<service>-prod    - Trigger a pipeline remotely in prod environment"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
@@ -13,6 +15,8 @@ help:
 	@echo "Examples:"
 	@echo "  make run-notion-dev"
 	@echo "  make run-data-explorer-prod"
+	@echo "  make trigger-notion-prod"
+	@echo "  make trigger-gsheets-dev"
 	@echo "  make plan-dev"
 	@echo "  make apply-prod"
 	@echo "  make output-data_explorer_build_trigger_region-dev"
@@ -30,6 +34,19 @@ output-%-dev:
 
 output-%-prod:
 	@cd terragrunt/prod && terragrunt output -raw $*
+
+# Pattern rule for triggering individual pipelines
+trigger-%-dev:
+	@echo "Triggering $* pipeline for dev environment..."
+	@URI=$$($(MAKE) output-$*_pipeline_function_uri-dev) && \
+	TOKEN=$$(gcloud auth print-identity-token) && \
+	curl -i -X POST $$URI -H "Authorization: bearer $$TOKEN"
+
+trigger-%-prod:
+	@echo "Triggering $* pipeline for prod environment..."
+	@URI=$$($(MAKE) output-$*_pipeline_function_uri-prod) && \
+	TOKEN=$$(gcloud auth print-identity-token) && \
+	curl -i -X POST $$URI -H "Authorization: bearer $$TOKEN"
 
 # Pattern rule for terragrunt commands
 %-dev:

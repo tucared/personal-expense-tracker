@@ -65,16 +65,14 @@ make run-data-explorer-prod
 curl localhost:8080
 ```
 
-### Manual Data Refresh
+### Trigger Cloud Functions to Refresh Data
 
 ```bash
-# Refresh Notion expense data
-export FUNCTION_URI=$(make output-prod | grep notion_pipeline_function_uri | awk '{print $3}')
-curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
-
-# Refresh Google Sheets budget data
-export FUNCTION_URI=$(make output-prod | grep gsheets_pipeline_function_uri | awk '{print $3}')
-curl -i -X POST $FUNCTION_URI -H "Authorization: bearer $(gcloud auth print-identity-token)"
+make trigger-notion-dev
+make trigger-notion-prod
+make trigger-gsheets-dev
+make trigger-gsheets-prod
+```
 ```
 
 ## Configuration
