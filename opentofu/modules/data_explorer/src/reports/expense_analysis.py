@@ -43,12 +43,16 @@ if selected_month:
             x=days,
             y=amounts,
             title=f"Cumulative Expenses - {selected_month}",
-            labels={"x": "Day", "y": "Cumulative Amount"},
+            labels={"x": "Day", "y": "Cumulative Amount (EUR)"},
         )
+        
+        # Format y-axis to show EUR
+        fig.update_layout(yaxis_tickformat="€,.0f")
+        fig.update_traces(hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>")
 
         st.plotly_chart(fig, use_container_width=True)
 
         # Show total
-        st.metric("Total Expenses", f"${amounts[-1]:,.2f}")
+        st.metric("Total Expenses", f"€{amounts[-1]:,.2f}")
     else:
         st.info(f"No expenses found for {selected_month}")
