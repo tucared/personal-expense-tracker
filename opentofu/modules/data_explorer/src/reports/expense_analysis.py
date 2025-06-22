@@ -4,10 +4,6 @@ from database import get_duckdb_memory
 
 st.title("💰 Daily Expenses")
 
-# Configuration
-EXPENSES_TABLE = "raw.expenses"
-DATE_FIELD = "properties__date__date__start"
-
 # Get database connection
 duckdb_conn = get_duckdb_memory()
 
