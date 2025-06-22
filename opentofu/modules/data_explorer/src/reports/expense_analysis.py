@@ -20,7 +20,7 @@ expenses = duckdb_conn.sql("""
 """).set_alias("expenses")
 
 # Get available months
-months_data = expenses.select("date_month").distinct().set_alias("months_data")
+months_data = expenses.select("date_month").distinct().order("date_month DESC").set_alias("months_data")
 
 # Month selector
 month_options = [row[0] for row in months_data.fetchall()]
