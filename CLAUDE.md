@@ -65,6 +65,37 @@ make run-data-explorer-prod
 curl localhost:8080
 ```
 
+### Data Analysis with DuckDB
+
+```bash
+# Run DuckDB CLI with cloud data access (interactive SQL queries)
+make duckdb-dev              # Connect to development environment data
+make duckdb-prod             # Connect to production environment data
+```
+
+The DuckDB commands will:
+
+- Automatically configure GCS access using HMAC credentials
+- Create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`)
+- Drop you into an interactive DuckDB SQL session
+- Allow you to query your data with standard SQL
+
+Example queries once in DuckDB:
+
+```sql
+-- View all tables
+SHOW ALL TABLES;
+
+-- View recent expenses
+SELECT * FROM raw.expenses ORDER BY created_time DESC LIMIT 10;
+
+-- Analyze spending by category
+SELECT properties__category__select__name, SUM(properties__amount__number) as total FROM raw.expenses GROUP BY properties__category__select__name;
+
+-- Check monthly budgets
+SELECT * FROM raw.monthly_category_amounts;
+```
+
 ### Trigger Cloud Functions to Refresh Data
 
 ```bash
@@ -114,12 +145,22 @@ The Makefile handles service account impersonation for local development. Local 
 - Pipeline-specific implementations only need to define their source configuration and secrets
 - DLT framework handles data extraction, transformation, and loading to Parquet format
 
+### Data Analysis Workflow
+
+For ad-hoc data analysis and debugging:
+
+1. Use `make duckdb-dev` or `make duckdb-prod` to access your data lake directly
+2. Query parquet files using standard SQL without needing to run the dashboard
+3. Ideal for data exploration, debugging pipeline outputs, and creating new analytics queries
+4. Exit DuckDB with `.exit` or Ctrl+D
+
 ### Data Flow
 
 1. Cloud Scheduler triggers Cloud Functions hourly (configurable)
 2. Functions extract data from Notion/Google Sheets using DLT
 3. Data is stored as Parquet files in Cloud Storage
 4. Streamlit dashboard queries data using DuckDB for analytics
+5. Direct data access available via DuckDB CLI for analysis and debugging
 
 ### Authentication & Security
 
@@ -127,3 +168,4 @@ The Makefile handles service account impersonation for local development. Local 
 - Service account authentication for all GCP services
 - Local development uses service account impersonation
 - API keys and secrets managed through Google Secret Manager
+- DuckDB commands automatically configure GCS access using HMAC credentials from infrastructure

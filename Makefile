@@ -7,6 +7,8 @@ help:
 	@echo "  trigger-<service>-prod    - Trigger a pipeline remotely in prod environment"
 	@echo "  open-dashboard-dev        - Open the data explorer dashboard in dev environment"
 	@echo "  open-dashboard-prod       - Open the data explorer dashboard in prod environment"
+	@echo "  duckdb-dev                - Run DuckDB CLI with initialization script in dev environment"
+	@echo "  duckdb-prod               - Run DuckDB CLI with initialization script in prod environment"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
@@ -20,6 +22,7 @@ help:
 	@echo "  make trigger-notion-prod"
 	@echo "  make trigger-gsheets-dev"
 	@echo "  make open-dashboard-prod"
+	@echo "  make duckdb-dev"
 	@echo "  make plan-dev"
 	@echo "  make apply-prod"
 	@echo "  make output-data_explorer_build_trigger_region-dev"
@@ -61,6 +64,47 @@ open-dashboard-prod:
 	@URL=$$($(MAKE) output-data_explorer_service_url-prod) && \
 	echo "Opening dashboard at $$URL" && \
 	open $$URL
+
+# Run DuckDB CLI with initialization script
+duckdb-dev:
+	@echo "Starting DuckDB CLI with dev environment configuration..."
+	@cd terragrunt/dev && \
+	DATA_BUCKET_NAME=$$(terragrunt output -raw data_bucket_name) && \
+	HMAC_ACCESS_ID=$$(terragrunt output -raw data_explorer_hmac_access_id) && \
+	HMAC_SECRET=$$(terragrunt output -raw data_explorer_hmac_secret) && \
+	export GCS_BUCKET_NAME=$$DATA_BUCKET_NAME && \
+	export HMAC_ACCESS_ID=$$HMAC_ACCESS_ID && \
+	export HMAC_SECRET=$$HMAC_SECRET && \
+	echo "Environment variables set:" && \
+	echo "  GCS_BUCKET_NAME=$$GCS_BUCKET_NAME" && \
+	echo "  HMAC_ACCESS_ID=$$HMAC_ACCESS_ID" && \
+	echo "  HMAC_SECRET=[REDACTED]" && \
+	echo "Initializing DuckDB with script..." && \
+	INIT_FILE=$$(mktemp /tmp/duckdb_init_dev.XXXXXX.sql) && \
+	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
+	echo "Generated init file: $$INIT_FILE" && \
+	duckdb -init $$INIT_FILE && \
+	rm -f $$INIT_FILE
+
+duckdb-prod:
+	@echo "Starting DuckDB CLI with prod environment configuration..."
+	@cd terragrunt/prod && \
+	DATA_BUCKET_NAME=$$(terragrunt output -raw data_bucket_name) && \
+	HMAC_ACCESS_ID=$$(terragrunt output -raw data_explorer_hmac_access_id) && \
+	HMAC_SECRET=$$(terragrunt output -raw data_explorer_hmac_secret) && \
+	export GCS_BUCKET_NAME=$$DATA_BUCKET_NAME && \
+	export HMAC_ACCESS_ID=$$HMAC_ACCESS_ID && \
+	export HMAC_SECRET=$$HMAC_SECRET && \
+	echo "Environment variables set:" && \
+	echo "  GCS_BUCKET_NAME=$$GCS_BUCKET_NAME" && \
+	echo "  HMAC_ACCESS_ID=$$HMAC_ACCESS_ID" && \
+	echo "  HMAC_SECRET=[REDACTED]" && \
+	echo "Initializing DuckDB with script..." && \
+	INIT_FILE=$$(mktemp /tmp/duckdb_init_prod.XXXXXX.sql) && \
+	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
+	echo "Generated init file: $$INIT_FILE" && \
+	duckdb -init $$INIT_FILE && \
+	rm -f $$INIT_FILE
 
 # Pattern rule for terragrunt commands
 %-dev:
@@ -133,4 +177,4 @@ generate-requirements:
 	uvx pre-commit run uv-export
 
 # Make all -dev and -prod targets phony
-.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local
+.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local duckdb-dev duckdb-prod
