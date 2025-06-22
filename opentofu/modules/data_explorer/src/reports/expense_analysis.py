@@ -32,7 +32,7 @@ if selected_month:
         expenses.select("""
                         date,
                         date_month,
-                        cumulative_amount: SUM(amount) OVER (ORDER BY date)""")
+                        cumulative_amount: SUM(amount) OVER (PARTITION BY date_month ORDER BY date)""")
         .filter(f"date_month = '{selected_month}'")
         .order("date")
         .fetchall()
