@@ -8,11 +8,12 @@ st.title("💰 Daily Expenses")
 duckdb_conn = get_duckdb_memory()
 
 expenses = duckdb_conn.sql("""
-    FROM raw.expenses
     SELECT
         date:properties__date__date__start::DATE,
         date_month:strftime(properties__date__date__start::DATE, '%Y-%m'),
-        amount: properties__amount__number::FLOAT
+        amount: COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
+    FROM raw.expenses
+    ASOF JOIN raw.rate ON properties__date__date__start::DATE >= date::DATE
 """).set_alias("expenses")
 
 # Get available months
