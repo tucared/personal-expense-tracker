@@ -20,97 +20,33 @@ The system follows a modular pipeline pattern:
 
 All pipelines extract data from sources, transform using the DLT framework, and load into the shared data bucket as Parquet files.
 
-## Common Development Commands
+## Development Commands
 
-### Infrastructure Management
+Use `make help` to see all available commands. Key workflows:
 
-```bash
-# Deploy to production environment
-make apply-prod
+- **Local development**: `make run-<service>-<env>` (connects to cloud infrastructure)
+- **Infrastructure**: `make apply-<env>`, `make plan-<env>`, `make destroy-<env>`
+- **Data access**: `make duckdb-<env>` (interactive SQL queries)
+- **Pipeline triggers**: `make trigger-<service>-<env>`
+- **Dashboard**: `make open-dashboard-<env>`
 
-# Deploy to development environment
-make apply-dev
+Available services: `notion`, `gsheets`, `data-explorer`
+Available environments: `dev`, `prod`
 
-# Plan infrastructure changes
-make plan-prod
-make plan-dev
+### DuckDB Data Analysis
 
-# Destroy infrastructure
-make destroy-prod
-make destroy-dev
-
-# Get infrastructure outputs
-make output-prod
-make output-dev
-
-# Get specific infrastructure outputs
-make output-data_explorer_build_trigger_region-prod
-make output-data_explorer_build_trigger_region-dev
-```
-
-### Local Development
-
-```bash
-# Run services locally (connects to cloud infrastructure)
-make run-notion-dev          # Run Notion pipeline locally
-make run-gsheets-dev         # Run Google Sheets pipeline locally
-make run-data-explorer-dev   # Run Streamlit dashboard locally
-
-# For production environment
-make run-notion-prod
-make run-gsheets-prod
-make run-data-explorer-prod
-
-# Trigger local functions (in separate terminal)
-curl localhost:8080
-```
-
-### Data Analysis with DuckDB
-
-```bash
-# Run DuckDB CLI with cloud data access (interactive SQL queries)
-make duckdb-dev              # Connect to development environment data
-make duckdb-prod             # Connect to production environment data
-```
-
-The DuckDB commands will:
-
-- Automatically configure GCS access using HMAC credentials
-- Create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`)
-- Drop you into an interactive DuckDB SQL session
-- Allow you to query your data with standard SQL
-
-Example queries once in DuckDB:
+The `make duckdb-<env>` commands automatically configure GCS access and create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`). Example queries:
 
 ```sql
 -- View all tables
 SHOW ALL TABLES;
 
--- View recent expenses
+-- View recent expenses  
 SELECT * FROM raw.expenses ORDER BY created_time DESC LIMIT 10;
 
 -- Analyze spending by category
-SELECT properties__category__select__name, SUM(properties__amount__number) as total FROM raw.expenses GROUP BY properties__category__select__name;
-
--- Check monthly budgets
-SELECT * FROM raw.monthly_category_amounts;
-```
-
-### Trigger Cloud Functions to Refresh Data
-
-```bash
-make trigger-notion-dev
-make trigger-notion-prod
-make trigger-gsheets-dev
-make trigger-gsheets-prod
-```
-
-### Dashboard Access
-
-```bash
-# Open the data explorer dashboard in browser
-make open-dashboard-dev
-make open-dashboard-prod
+SELECT properties__category__select__name, SUM(properties__amount__number) as total 
+FROM raw.expenses GROUP BY properties__category__select__name;
 ```
 
 ## Configuration
