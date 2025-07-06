@@ -15,11 +15,11 @@ CREATE SECRET (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET');
 CREATE SCHEMA IF NOT EXISTS raw;
 
 -- Create views using bucket name placeholder
-CREATE OR REPLACE VIEW raw.expenses AS 
+CREATE OR REPLACE VIEW raw.expenses AS
 SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/expenses/data.parquet');
 
-CREATE OR REPLACE VIEW raw.monthly_category_amounts AS 
+CREATE OR REPLACE VIEW raw.monthly_category_amounts AS
 SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/monthly_category_amounts/data.parquet');
 
-CREATE OR REPLACE VIEW raw.rate AS 
+CREATE OR REPLACE VIEW raw.rate AS
 SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/rate/data.parquet');

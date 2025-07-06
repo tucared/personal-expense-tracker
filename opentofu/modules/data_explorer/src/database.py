@@ -29,14 +29,14 @@ def get_duckdb_memory(session_id: Optional[str] = None) -> duckdb.DuckDBPyConnec
 
 def prepare_duckdb(duckdb_conn: duckdb.DuckDBPyConnection) -> duckdb.DuckDBPyConnection:
     # Read the SQL script
-    with open('duckdb_init.sql', 'r') as f:
+    with open("duckdb_init.sql", "r") as f:
         sql_script = f.read()
-    
+
     # Substitute placeholders with environment variables
-    sql_script = sql_script.replace('$HMAC_ACCESS_ID', HMAC_ACCESS_ID)
-    sql_script = sql_script.replace('$HMAC_SECRET', HMAC_SECRET)
-    sql_script = sql_script.replace('$GCS_BUCKET_NAME', GCS_BUCKET_NAME)
-    
+    sql_script = sql_script.replace("$HMAC_ACCESS_ID", HMAC_ACCESS_ID)
+    sql_script = sql_script.replace("$HMAC_SECRET", HMAC_SECRET)
+    sql_script = sql_script.replace("$GCS_BUCKET_NAME", GCS_BUCKET_NAME)
+
     # Execute the script
     duckdb_conn.execute(sql_script)
     return duckdb_conn

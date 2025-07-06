@@ -41,11 +41,11 @@ The `make duckdb-<env>` commands automatically configure GCS access and create v
 -- View all tables
 SHOW ALL TABLES;
 
--- View recent expenses  
+-- View recent expenses
 SELECT * FROM raw.expenses ORDER BY created_time DESC LIMIT 10;
 
 -- Analyze spending by category
-SELECT properties__category__select__name, SUM(properties__amount__number) as total 
+SELECT properties__category__select__name, SUM(properties__amount__number) as total
 FROM raw.expenses GROUP BY properties__category__select__name;
 ```
 
