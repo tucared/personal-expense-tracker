@@ -10,20 +10,50 @@ duckdb_conn = get_duckdb_memory()
 expenses = duckdb_conn.sql("""
     SELECT
         date:properties__date__date__start::DATE,
+        category:properties__category__select__name,
         date_month:strftime(properties__date__date__start::DATE, '%Y-%m'),
         amount: COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
     FROM raw.expenses
-    ASOF JOIN raw.rate ON properties__date__date__start::DATE >= date::DATE
-""").set_alias("expenses")
+    ASOF JOIN raw.rate ON properties__date__date__start::DATE >= raw.rate.date::DATE
+""")
 
-# Get available months
-months_data = expenses.select("date_month").distinct().order("date_month DESC").set_alias("months_data")
+monthly_expenses = expenses.aggregate(
+    "date_month, category, amount: SUM(amount)"
+).select("""
+    date_month,
+    category,
+    amount""")
+
+monthly_budget = duckdb_conn.sql("""
+    SELECT
+        date_month:strftime(month::DATE, '%Y-%m'),
+        category,
+        budget:budget_eur
+    FROM raw.monthly_category_amounts""")
+
+monthly_category_budget_and_expenses = (
+    monthly_budget.join(monthly_expenses, condition="date_month, category", how="left")
+    .select("""
+    category,
+    budget,
+    expenses: COALESCE(amount, 0),
+    remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0)""")
+    .order("remaining_budget DESC")
+)
 
 # Month selector
+months_data = expenses.select("date_month").distinct().order("date_month DESC")
 month_options = [row[0] for row in months_data.fetchall()]
 selected_month = st.selectbox("Select Month:", month_options)
 
 if selected_month:
+    # Show budget and remaining budget
+    st.dataframe(
+        monthly_category_budget_and_expenses.filter(
+            f"date_month = '{selected_month}'"
+        ).df()
+    )
+
     # Get daily cumulative expenses
     daily_data = (
         expenses.select("""
@@ -46,10 +76,12 @@ if selected_month:
             title=f"Cumulative Expenses - {selected_month}",
             labels={"x": "Day", "y": "Cumulative Amount (EUR)"},
         )
-        
+
         # Format y-axis to show EUR
         fig.update_layout(yaxis_tickformat="€,.0f")
-        fig.update_traces(hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>")
+        fig.update_traces(
+            hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>"
+        )
 
         st.plotly_chart(fig, use_container_width=True)
 
