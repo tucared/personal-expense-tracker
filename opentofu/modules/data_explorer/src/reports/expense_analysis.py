@@ -31,15 +31,15 @@ monthly_budget = duckdb_conn.sql("""
         budget:budget_eur
     FROM raw.monthly_category_amounts""")
 
-monthly_category_budget_and_expenses = (
-    monthly_budget.join(monthly_expenses, condition="date_month, category", how="left")
-    .select("""
+monthly_category_budget_and_expenses = monthly_budget.join(
+    monthly_expenses, condition="date_month, category", how="left"
+).select("""
+    date_month,
     category,
     budget,
     expenses: COALESCE(amount, 0),
-    remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0)""")
-    .order("remaining_budget DESC")
-)
+    remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0),
+    budget_consumed_ratio: COALESCE(amount, 0) / COALESCE(budget, 1)""")
 
 # Month selector
 months_data = expenses.select("date_month").distinct().order("date_month DESC")
@@ -48,10 +48,31 @@ selected_month = st.selectbox("Select Month:", month_options)
 
 if selected_month:
     # Show budget and remaining budget
+    category_budget_and_expenses = monthly_category_budget_and_expenses.filter(
+        f"date_month = '{selected_month}'"
+    ).order("remaining_budget DESC")
     st.dataframe(
-        monthly_category_budget_and_expenses.filter(
-            f"date_month = '{selected_month}'"
-        ).df()
+        category_budget_and_expenses.select(
+            "category, budget, expenses, remaining_budget, budget_consumed_ratio"
+        ).df(),
+        column_config={
+            "_index": st.column_config.TextColumn("Category"),
+            "budget": st.column_config.NumberColumn("Budget (EUR)", format="€ %.2f"),
+            "expenses": st.column_config.NumberColumn(
+                "Expenses (EUR)", format="€ %.2f"
+            ),
+            "remaining_budget": st.column_config.NumberColumn(
+                "Remaining Budget (EUR)", format="€ %.2f"
+            ),
+            "budget_consumed_ratio": st.column_config.ProgressColumn(
+                "Remaining Ratio",
+                format="percent",
+                min_value=0,
+                max_value=1,
+            ),
+        },
+        use_container_width=True,
+        hide_index=True,
     )
 
     # Get daily cumulative expenses
