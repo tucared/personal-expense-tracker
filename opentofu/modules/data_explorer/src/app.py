@@ -14,20 +14,18 @@ def main():
     # Check authentication status
     if st.session_state["authentication_status"]:
         # Define the pages
-        query_page = st.Page("reports/query_editor.py", title="Query Editor", icon="📝")
-        expense_page = st.Page(
+        expense_analysis_page = st.Page(
             "reports/expense_analysis.py", title="Expense Analysis", icon="📊"
         )
 
         # Set up navigation
-        pg = st.navigation([query_page, expense_page])
+        pg = st.navigation([expense_analysis_page])
 
         # Run the selected page
         pg.run()
 
-        # Add logout button
-        with st.sidebar:
-            authenticator.logout("Logout", key="logout_button")
+        # Logout button
+        authenticator.logout("Logout", key="logout_button")
 
     elif st.session_state["authentication_status"] is False:
         st.error("Username/password is incorrect")
