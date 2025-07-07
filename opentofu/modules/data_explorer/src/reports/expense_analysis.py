@@ -41,6 +41,17 @@ monthly_category_budget_and_expenses = monthly_budget.join(
     remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0),
     budget_consumed_ratio: COALESCE(amount, 0) / COALESCE(budget, 1)""")
 
+allowances = monthly_category_budget_and_expenses.filter("category LIKE 'Allowance%'").aggregate(
+    "category, allowance_left: SUM(budget) - SUM(expenses)"
+).select("category, allowance_left")
+
+# Show allowances
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Allowance Max", f"€{allowances.filter("category = 'Allowance - Max'").fetchall()[0][1]:,.2f}")
+with col2:
+    st.metric("Allowance Cla", f"€{allowances.filter("category = 'Allowance - Cla'").fetchall()[0][1]:,.2f}")
+
 # Month selector
 months_data = expenses.select("date_month").distinct().order("date_month DESC")
 month_options = [row[0] for row in months_data.fetchall()]
