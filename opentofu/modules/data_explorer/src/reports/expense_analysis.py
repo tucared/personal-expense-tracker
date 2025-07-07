@@ -46,9 +46,12 @@ months_data = expenses.select("date_month").distinct().order("date_month DESC")
 month_options = [row[0] for row in months_data.fetchall()]
 selected_month = st.selectbox("Select Month:", month_options)
 
+monthly_category_budget_and_expenses_without_allowances = monthly_category_budget_and_expenses.filter(
+    "category NOT LIKE 'Allowance%'")
+
 if selected_month:
     # Show budget and remaining budget
-    category_budget_and_expenses = monthly_category_budget_and_expenses.filter(
+    category_budget_and_expenses = monthly_category_budget_and_expenses_without_allowances.filter(
         f"date_month = '{selected_month}'"
     ).order("remaining_budget DESC")
     st.dataframe(
