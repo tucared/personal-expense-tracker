@@ -17,6 +17,8 @@ expenses = duckdb_conn.sql("""
     ASOF JOIN raw.rate ON properties__date__date__start::DATE >= raw.rate.date::DATE
 """)
 
+expenses_without_alllowances = expenses.filter("category NOT LIKE 'Allowance%'")
+
 monthly_expenses = expenses.aggregate(
     "date_month, category, amount: SUM(amount)"
 ).select("""
@@ -91,7 +93,7 @@ if selected_month:
 
     # Get daily cumulative expenses
     daily_data = (
-        expenses.select("""
+        expenses_without_alllowances.select("""
                         date,
                         date_month,
                         cumulative_amount: SUM(amount) OVER (PARTITION BY date_month ORDER BY date)""")
