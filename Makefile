@@ -80,6 +80,7 @@ duckdb-dev:
 	echo "  HMAC_ACCESS_ID=$$HMAC_ACCESS_ID" && \
 	echo "  HMAC_SECRET=[REDACTED]" && \
 	echo "Initializing DuckDB with script..." && \
+	rm -f /tmp/duckdb_init_dev.*.sql && \
 	INIT_FILE=$$(mktemp /tmp/duckdb_init_dev.XXXXXX.sql) && \
 	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
 	echo "Generated init file: $$INIT_FILE" && \
@@ -100,6 +101,7 @@ duckdb-prod:
 	echo "  HMAC_ACCESS_ID=$$HMAC_ACCESS_ID" && \
 	echo "  HMAC_SECRET=[REDACTED]" && \
 	echo "Initializing DuckDB with script..." && \
+	rm -f /tmp/duckdb_init_prod.*.sql && \
 	INIT_FILE=$$(mktemp /tmp/duckdb_init_prod.XXXXXX.sql) && \
 	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
 	echo "Generated init file: $$INIT_FILE" && \
