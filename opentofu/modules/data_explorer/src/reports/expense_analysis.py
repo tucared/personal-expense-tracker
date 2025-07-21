@@ -12,7 +12,7 @@ expenses = duckdb_conn.sql("""
         date:properties__date__date__start::DATE,
         category:properties__category__select__name,
         date_month:strftime(properties__date__date__start::DATE, '%Y-%m'),
-        amount: COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
+        amount: IF(properties__credit__checkbox, -1, 1) * COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
     FROM raw.expenses
     ASOF JOIN raw.rate ON properties__date__date__start::DATE >= raw.rate.date::DATE
 """)
