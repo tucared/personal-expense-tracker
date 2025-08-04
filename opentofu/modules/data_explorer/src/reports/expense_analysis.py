@@ -86,10 +86,23 @@ def monthly_expenses():
                 f"date_month = '{selected_month}'"
             ).order("remaining_budget DESC")
         )
+
+        def color_left_column(val):
+            if val < 0:
+                return "color: red"
+            elif val > 0:
+                return "color: green"
+            else:
+                return ""
+
+        df = category_budget_and_expenses.select(
+            "category, budget, expenses, remaining_budget"
+        ).df()
+
+        styled_df = df.style.map(color_left_column, subset=["remaining_budget"])
+
         st.dataframe(
-            category_budget_and_expenses.select(
-                "category, budget, expenses, remaining_budget"
-            ).df(),
+            styled_df,
             column_config={
                 "category": st.column_config.TextColumn("Category"),
                 "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
