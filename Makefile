@@ -9,6 +9,8 @@ help:
 	@echo "  open-dashboard-prod       - Open the data explorer dashboard in prod environment"
 	@echo "  init-duckdb-dev           - Initialize DuckDB database for dev environment"
 	@echo "  init-duckdb-prod          - Initialize DuckDB database for prod environment"
+	@echo "  generate-schema-dev       - Generate database schema CSV from dev.duckdb"
+	@echo "  generate-schema-prod      - Generate database schema CSV from prod.duckdb"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
@@ -170,6 +172,17 @@ _run-local:
 generate-requirements:
 	uvx pre-commit run uv-lock
 	uvx pre-commit run uv-export
+
+# Generate database schema CSV from DuckDB
+generate-schema-dev: dev.duckdb
+	@echo "Generating database schema from dev.duckdb..."
+	@duckdb dev.duckdb -csv -c "SHOW ALL TABLES" > docs/database_schema.csv
+	@echo "Schema generated: docs/database_schema.csv"
+
+generate-schema-prod: prod.duckdb
+	@echo "Generating database schema from prod.duckdb..."
+	@duckdb prod.duckdb -csv -c "SHOW ALL TABLES" > docs/database_schema.csv
+	@echo "Schema generated: docs/database_schema.csv"
 
 # Make all -dev and -prod targets phony
 .PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod
