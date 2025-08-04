@@ -1,4 +1,3 @@
-import plotly.express as px
 import streamlit as st
 from database import get_duckdb_memory
 
@@ -115,6 +114,15 @@ def monthly_expenses():
             hide_index=True,
         )
 
+        # Get total monthly budget for selected month
+        total_monthly_budget = (
+            monthly_category_budget_and_expenses_without_allowances.filter(
+                f"date_month = '{selected_month}'"
+            )
+            .aggregate("total_budget: SUM(budget)")
+            .fetchall()[0][0]
+        )
+
         # Get daily cumulative expenses
         daily_data = (
             expenses_without_alllowances.select("""
@@ -127,27 +135,88 @@ def monthly_expenses():
         )
 
         if daily_data:
-            # Create plotly chart
-            days = [row[0] for row in daily_data]
-            amounts = [float(row[2]) for row in daily_data]
+            import plotly.graph_objects as go
+            from datetime import datetime, timedelta
+            import calendar
 
-            fig = px.line(
-                x=days,
-                y=amounts,
-                title=f"Cumulative Expenses - {selected_month}",
-                labels={"x": "Day", "y": "Cumulative Amount (EUR)"},
+            # Create data for the chart
+            days = [row[0] for row in daily_data]
+            cumulative_expenses = [float(row[2]) for row in daily_data]
+
+            # Calculate actual budget remaining (total budget - cumulative expenses)
+            actual_budget_remaining = [
+                total_monthly_budget - expense for expense in cumulative_expenses
+            ]
+
+            # Create projected budget line (straight line from total budget to 0)
+            first_day = datetime.strptime(f"{selected_month}-01", "%Y-%m-%d")
+            year, month = first_day.year, first_day.month
+            days_in_month = calendar.monthrange(year, month)[1]
+            last_day = datetime.strptime(
+                f"{selected_month}-{days_in_month:02d}", "%Y-%m-%d"
             )
 
-            # Format y-axis to show EUR
-            fig.update_layout(yaxis_tickformat="€,.0f")
-            fig.update_traces(
-                hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>"
+            # Create daily projection points
+            projected_days = []
+            projected_budget = []
+            current_day = first_day
+            while current_day <= last_day:
+                projected_days.append(current_day.strftime("%Y-%m-%d"))
+                days_passed = (current_day - first_day).days
+                daily_budget_decrease = total_monthly_budget / days_in_month
+                remaining_projection = total_monthly_budget - (
+                    daily_budget_decrease * days_passed
+                )
+                projected_budget.append(max(0, remaining_projection))
+                current_day += timedelta(days=1)
+
+            # Create figure with plotly graph objects
+            fig = go.Figure()
+
+            # Add actual budget remaining line
+            fig.add_trace(
+                go.Scatter(
+                    x=days,
+                    y=actual_budget_remaining,
+                    mode="lines",
+                    name="Actual budget remaining",
+                    line=dict(color="#1f77b4", width=3),
+                    hovertemplate="<b>%{x}</b><br>Budget left: €%{y:,.2f}<extra></extra>",
+                )
+            )
+
+            # Add projected budget line
+            fig.add_trace(
+                go.Scatter(
+                    x=projected_days,
+                    y=projected_budget,
+                    mode="lines",
+                    name="Projected budget rundown",
+                    line=dict(color="#17becf", width=2),
+                    hovertemplate="<b>%{x}</b><br>Projected budget: €%{y:,.2f}<extra></extra>",
+                )
+            )
+
+            # Update layout
+            fig.update_layout(
+                title=f"Monthly Budget Tracking - {selected_month}",
+                xaxis_title="Date",
+                yaxis_title="Amount (EUR)",
+                yaxis_tickformat="€,.0f",
+                hovermode="x unified",
+                legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
             )
 
             st.plotly_chart(fig, use_container_width=True)
 
-            # Show total
-            st.metric("Total Expenses", f"€{amounts[-1]:,.2f}")
+            # Show metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Budget", f"€{total_monthly_budget:,.2f}")
+            with col2:
+                st.metric("Total Spent", f"€{cumulative_expenses[-1]:,.2f}")
+            with col3:
+                st.metric("Budget Remaining", f"€{actual_budget_remaining[-1]:,.2f}")
         else:
             st.info(f"No expenses found for {selected_month}")
 
