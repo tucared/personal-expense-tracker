@@ -40,8 +40,7 @@ monthly_category_budget_and_expenses = monthly_budget.join(
     category,
     budget,
     expenses: COALESCE(amount, 0),
-    remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0),
-    budget_consumed_ratio: COALESCE(amount, 0) / COALESCE(budget, 1)""")
+    remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0)""")
 
 allowances = (
     monthly_category_budget_and_expenses.filter("category LIKE 'Allowance%'")
@@ -80,23 +79,13 @@ if selected_month:
     )
     st.dataframe(
         category_budget_and_expenses.select(
-            "category, budget, expenses, remaining_budget, budget_consumed_ratio"
+            "category, budget, expenses, remaining_budget"
         ).df(),
         column_config={
             "_index": st.column_config.TextColumn("Category"),
-            "budget": st.column_config.NumberColumn("Budget (EUR)", format="€ %.2f"),
-            "expenses": st.column_config.NumberColumn(
-                "Expenses (EUR)", format="€ %.2f"
-            ),
-            "remaining_budget": st.column_config.NumberColumn(
-                "Remaining Budget (EUR)", format="€ %.2f"
-            ),
-            "budget_consumed_ratio": st.column_config.ProgressColumn(
-                "Remaining Ratio",
-                format="percent",
-                min_value=0,
-                max_value=1,
-            ),
+            "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
+            "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
+            "remaining_budget": st.column_config.NumberColumn("Left", format="€ %.2f"),
         },
         use_container_width=True,
         hide_index=True,
