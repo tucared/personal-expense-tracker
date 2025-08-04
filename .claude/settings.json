@@ -4,7 +4,10 @@
       "Bash(make:*)"
     ],
     "deny": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(make run:*)",
+      "Bash(make open-dashboard-prod)",
+      "Bash(make apply-prod)"
     ]
   },
   "env": {
