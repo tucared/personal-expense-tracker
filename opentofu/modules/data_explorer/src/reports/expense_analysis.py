@@ -56,11 +56,13 @@ def show_allowances():
         st.metric(
             "Allowance Max",
             f"€{allowances.filter("category = 'Allowance - Max'").fetchall()[0][1]:,.2f}",
+            border=True,
         )
     with col2:
         st.metric(
             "Allowance Cla",
             f"€{allowances.filter("category = 'Allowance - Cla'").fetchall()[0][1]:,.2f}",
+            border=True,
         )
 
 
@@ -113,11 +115,15 @@ def monthly_expenses():
 
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Total Budget", f"€{total_monthly_budget:,.2f}")
+                st.metric("Total Budget", f"€{total_monthly_budget:,.2f}", border=True)
             with col2:
-                st.metric("Total Spent", f"€{cumulative_expenses[-1]:,.2f}")
+                st.metric(
+                    "Total Spent", f"€{cumulative_expenses[-1]:,.2f}", border=True
+                )
             with col3:
-                st.metric("Budget Remaining", f"€{actual_budget_remaining:,.2f}")
+                st.metric(
+                    "Budget Remaining", f"€{actual_budget_remaining:,.2f}", border=True
+                )
             # Show the graph second
             import plotly.graph_objects as go
             from datetime import datetime, timedelta
