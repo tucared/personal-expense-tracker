@@ -200,20 +200,6 @@ For detailed architecture information and development patterns, see [CLAUDE.md](
 - **Categories not matching?** Ensure category names in Notion exactly match those in your budget sheet
 - **Dashboard not loading?** Ensure Cloud Build trigger has completed successfully
 
-### Updating the System
-
-```shell
-# Pull latest code
-git pull
-
-# Apply infrastructure changes
-make apply-prod
-
-# Rebuild dashboard app if needed
-gcloud builds triggers run $(make output-data_explorer_build_trigger_name-prod) \
-    --region=$(make output-data_explorer_build_trigger_region-prod)
-```
-
 ## Cleanup
 
 ```shell
