@@ -86,34 +86,6 @@ def monthly_expenses():
             ).order("remaining_budget DESC")
         )
 
-        def color_left_column(val):
-            if val < 0:
-                return "color: red"
-            elif val > 0:
-                return "color: green"
-            else:
-                return ""
-
-        df = category_budget_and_expenses.select(
-            "category, budget, expenses, remaining_budget"
-        ).df()
-
-        styled_df = df.style.map(color_left_column, subset=["remaining_budget"])
-
-        st.dataframe(
-            styled_df,
-            column_config={
-                "category": st.column_config.TextColumn("Category"),
-                "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
-                "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
-                "remaining_budget": st.column_config.NumberColumn(
-                    "Left", format="€ %.2f"
-                ),
-            },
-            use_container_width=True,
-            hide_index=True,
-        )
-
         # Get total monthly budget for selected month
         total_monthly_budget = (
             monthly_category_budget_and_expenses_without_allowances.filter(
@@ -123,7 +95,7 @@ def monthly_expenses():
             .fetchall()[0][0]
         )
 
-        # Get daily cumulative expenses
+        # Get daily cumulative expenses for metrics calculation
         daily_data = (
             expenses_without_alllowances.select("""
                             date,
@@ -135,17 +107,29 @@ def monthly_expenses():
         )
 
         if daily_data:
+            # Show top 3 metrics first
+            cumulative_expenses = [float(row[2]) for row in daily_data]
+            actual_budget_remaining = total_monthly_budget - cumulative_expenses[-1]
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Budget", f"€{total_monthly_budget:,.2f}")
+            with col2:
+                st.metric("Total Spent", f"€{cumulative_expenses[-1]:,.2f}")
+            with col3:
+                st.metric("Budget Remaining", f"€{actual_budget_remaining:,.2f}")
+            # Show the graph second
             import plotly.graph_objects as go
             from datetime import datetime, timedelta
             import calendar
 
             # Create data for the chart
             days = [row[0] for row in daily_data]
-            cumulative_expenses = [float(row[2]) for row in daily_data]
+            cumulative_expenses_daily = [float(row[2]) for row in daily_data]
 
             # Calculate actual budget remaining (total budget - cumulative expenses)
-            actual_budget_remaining = [
-                total_monthly_budget - expense for expense in cumulative_expenses
+            actual_budget_remaining_daily = [
+                total_monthly_budget - expense for expense in cumulative_expenses_daily
             ]
 
             # Create projected budget line (straight line from total budget to 0)
@@ -177,7 +161,7 @@ def monthly_expenses():
             fig.add_trace(
                 go.Scatter(
                     x=days,
-                    y=actual_budget_remaining,
+                    y=actual_budget_remaining_daily,
                     mode="lines",
                     name="Actual budget remaining",
                     line=dict(color="#1f77b4", width=3),
@@ -209,14 +193,34 @@ def monthly_expenses():
 
             st.plotly_chart(fig, use_container_width=True)
 
-            # Show metrics
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Total Budget", f"€{total_monthly_budget:,.2f}")
-            with col2:
-                st.metric("Total Spent", f"€{cumulative_expenses[-1]:,.2f}")
-            with col3:
-                st.metric("Budget Remaining", f"€{actual_budget_remaining[-1]:,.2f}")
+            # Show the table third
+            def color_left_column(val):
+                if val < 0:
+                    return "color: red"
+                elif val > 0:
+                    return "color: green"
+                else:
+                    return ""
+
+            df = category_budget_and_expenses.select(
+                "category, budget, expenses, remaining_budget"
+            ).df()
+
+            styled_df = df.style.map(color_left_column, subset=["remaining_budget"])
+
+            st.dataframe(
+                styled_df,
+                column_config={
+                    "category": st.column_config.TextColumn("Category"),
+                    "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
+                    "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
+                    "remaining_budget": st.column_config.NumberColumn(
+                        "Left", format="€ %.2f"
+                    ),
+                },
+                use_container_width=True,
+                hide_index=True,
+            )
         else:
             st.info(f"No expenses found for {selected_month}")
 
