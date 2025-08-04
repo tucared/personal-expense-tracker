@@ -18,7 +18,17 @@ def notion_pipeline(request):
         dataset_name="raw",
     )
     expenses = notion_databases(database_ids=[{"id": database_id}])
-    expenses_info = pipeline.run(expenses, table_name="expenses")
+
+    expenses_info = pipeline.run(
+        expenses,
+        table_name="expenses",
+        columns={
+            "properties__amount__number": {"data_type": "double"},
+            "properties__amount_brl__number": {"data_type": "double"},
+            "properties__date__date__start": {"data_type": "date"},
+            "properties__debit_credit__formula__number": {"data_type": "double"},
+        },
+    )
     print(expenses_info)
 
     return "Pipeline run successfully!"
