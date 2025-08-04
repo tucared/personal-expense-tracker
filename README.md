@@ -48,7 +48,7 @@ This system combines the ease of logging expenses in Notion with the flexibility
 
 #### 2. Configure Google Sheets Access
 
-1. Create a copy of the [budget template](https://example.com/sheets-budget-template)
+1. Create a copy of the [budget template](https://docs.google.com/spreadsheets/d/1mf3u9zqNAhXSNc7v2GYphqUjYIN6PHYEgjTAHuvD50M/edit?gid=0#gid=0)
 2. Note the Sheet ID from the URL (the long string between `/d/` and `/edit`)
 3. You'll need to share this sheet with the service account later
 
@@ -67,7 +67,7 @@ Update `env_vars.yaml` with:
 - `project_id`: A unique GCP project identifier (create a new one)
 - `notion_pipeline.notion_api_key`: Your Notion integration secret
 - `notion_pipeline.notion_database_id`: Your expense database ID
-- `gsheets_pipeline.sheet_id`: Your budget sheet ID
+- `gsheets_pipeline.spreadsheet_url_or_id`: Your budget sheet ID
 - `data_explorer.auth_username`: Username for dashboard access
 - `data_explorer.auth_password`: Secure password for dashboard access
 - Optional: Adjust scheduler timing, region, etc.
@@ -228,7 +228,7 @@ gcloud projects delete $PROJECT_ID
 
 - **Adding expense categories**: Add new categories in both Notion and Google Sheets. **Important**: Ensure category names match exactly between Notion and Google Sheets for proper mapping in the dashboard.
 - **Budget periods**: If you want to modify the budget period structure in Google Sheets (columns or periods), you will need to update the Streamlit app code as well to ensure proper data handling and visualization.
-- **Custom visualizations**: Modify the Streamlit app in `opentofu/modules/data_explorer/app/`
+- **Custom visualizations**: Modify the Streamlit app in `opentofu/modules/data_explorer/src/`
 - **Adding new pipelines**: Create a new module that uses the base_pipeline module and add its specific configuration to `env_vars.yaml`
 
 ## License
