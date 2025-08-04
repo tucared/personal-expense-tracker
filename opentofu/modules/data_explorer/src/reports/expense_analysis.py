@@ -48,6 +48,7 @@ allowances = (
     .select("category, allowance_left")
 )
 
+
 # Show allowances
 @st.fragment
 def show_allowances():
@@ -62,7 +63,10 @@ def show_allowances():
             "Allowance Cla",
             f"€{allowances.filter("category = 'Allowance - Cla'").fetchall()[0][1]:,.2f}",
         )
+
+
 show_allowances()
+
 
 # Month selector
 @st.fragment
@@ -87,10 +91,12 @@ def monthly_expenses():
                 "category, budget, expenses, remaining_budget"
             ).df(),
             column_config={
-                "_index": st.column_config.TextColumn("Category"),
+                "category": st.column_config.TextColumn("Category"),
                 "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
                 "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
-                "remaining_budget": st.column_config.NumberColumn("Left", format="€ %.2f"),
+                "remaining_budget": st.column_config.NumberColumn(
+                    "Left", format="€ %.2f"
+                ),
             },
             use_container_width=True,
             hide_index=True,
@@ -131,4 +137,6 @@ def monthly_expenses():
             st.metric("Total Expenses", f"€{amounts[-1]:,.2f}")
         else:
             st.info(f"No expenses found for {selected_month}")
+
+
 monthly_expenses()
