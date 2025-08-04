@@ -9,12 +9,12 @@ duckdb_conn = get_duckdb_memory()
 
 expenses = duckdb_conn.sql("""
     SELECT
-        date:properties__date__date__start::DATE,
+        date:properties__date__date__start,
         category:properties__category__select__name,
-        date_month:strftime(properties__date__date__start::DATE, '%Y-%m'),
+        date_month:strftime(properties__date__date__start, '%Y-%m'),
         amount: IF(properties__credit__checkbox, -1, 1) * COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
     FROM raw.expenses
-    ASOF JOIN raw.rate ON properties__date__date__start::DATE >= raw.rate.date::DATE
+    ASOF JOIN raw.rate ON properties__date__date__start >= raw.rate.date
 """)
 
 expenses_without_alllowances = expenses.filter("category NOT LIKE 'Allowance%'")
@@ -28,7 +28,7 @@ monthly_expenses = expenses.aggregate(
 
 monthly_budget = duckdb_conn.sql("""
     SELECT
-        date_month:strftime(month::DATE, '%Y-%m'),
+        date_month:strftime(month, '%Y-%m'),
         category,
         budget:budget_eur
     FROM raw.monthly_category_amounts""")
