@@ -17,7 +17,11 @@ env_vars.yaml
 *.drawio
 
 # Claude
-.claude/
+.claude/settings.local.json
 
 # VS Code
 .vscode/
+
+# DuckDB database files
+*.duckdb
+*.duckdb.wal

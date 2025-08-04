@@ -26,7 +26,7 @@ Use `make help` to see all available commands. Key workflows:
 
 - **Local development**: `make run-<service>-<env>` (connects to cloud infrastructure)
 - **Infrastructure**: `make apply-<env>`, `make plan-<env>`, `make destroy-<env>`
-- **Data access**: `make duckdb-<env>` (interactive SQL queries)
+- **Data access**: `make init-duckdb-<env>` then `duckdb <env>.duckdb` (interactive SQL queries)
 - **Pipeline triggers**: `make trigger-<service>-<env>`
 - **Dashboard**: `make open-dashboard-<env>`
 
@@ -35,7 +35,7 @@ Available environments: `dev`, `prod`
 
 ### DuckDB Data Analysis
 
-The `make duckdb-<env>` commands automatically configure GCS access and create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`). Example queries:
+The `make init-duckdb-<env>` commands automatically configure GCS access and create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`). Example queries:
 
 ```sql
 -- View all tables
@@ -85,10 +85,11 @@ The Makefile handles service account impersonation for local development. Local 
 
 For ad-hoc data analysis and debugging:
 
-1. Use `make duckdb-dev` or `make duckdb-prod` to access your data lake directly
-2. Query parquet files using standard SQL without needing to run the dashboard
-3. Ideal for data exploration, debugging pipeline outputs, and creating new analytics queries
-4. Exit DuckDB with `.exit` or Ctrl+D
+1. Initialize database: `make init-duckdb-dev` or `make init-duckdb-prod`
+2. Access data lake: Use DuckDB MCP tool for SQL queries (preferred) or `duckdb dev.duckdb`/`duckdb prod.duckdb` CLI
+3. Query parquet files using standard SQL without needing to run the dashboard
+4. Ideal for data exploration, debugging pipeline outputs, and creating new analytics queries
+5. When using CLI, exit DuckDB with `.exit` or Ctrl+D
 
 ### Data Flow
 

@@ -9,7 +9,7 @@ LOAD httpfs;
 -- Create GCS secret using environment variable placeholders
 -- For envsubst (CLI): uses $VARIABLE syntax
 -- For Python: can be replaced with {VARIABLE} or use this as template
-CREATE SECRET (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET');
+CREATE PERSISTENT SECRET (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET');
 
 -- Create raw schema
 CREATE SCHEMA IF NOT EXISTS raw;
