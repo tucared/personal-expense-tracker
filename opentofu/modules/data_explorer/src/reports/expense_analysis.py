@@ -49,80 +49,86 @@ allowances = (
 )
 
 # Show allowances
-col1, col2 = st.columns(2)
-with col1:
-    st.metric(
-        "Allowance Max",
-        f"€{allowances.filter("category = 'Allowance - Max'").fetchall()[0][1]:,.2f}",
-    )
-with col2:
-    st.metric(
-        "Allowance Cla",
-        f"€{allowances.filter("category = 'Allowance - Cla'").fetchall()[0][1]:,.2f}",
-    )
+@st.fragment
+def show_allowances():
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            "Allowance Max",
+            f"€{allowances.filter("category = 'Allowance - Max'").fetchall()[0][1]:,.2f}",
+        )
+    with col2:
+        st.metric(
+            "Allowance Cla",
+            f"€{allowances.filter("category = 'Allowance - Cla'").fetchall()[0][1]:,.2f}",
+        )
+show_allowances()
 
 # Month selector
-months_data = expenses.select("date_month").distinct().order("date_month DESC")
-month_options = [row[0] for row in months_data.fetchall()]
-selected_month = st.selectbox("Select Month:", month_options)
+@st.fragment
+def monthly_expenses():
+    months_data = expenses.select("date_month").distinct().order("date_month DESC")
+    month_options = [row[0] for row in months_data.fetchall()]
+    selected_month = st.selectbox("Select Month:", month_options)
 
-monthly_category_budget_and_expenses_without_allowances = (
-    monthly_category_budget_and_expenses.filter("category NOT LIKE 'Allowance%'")
-)
-
-if selected_month:
-    # Show budget and remaining budget
-    category_budget_and_expenses = (
-        monthly_category_budget_and_expenses_without_allowances.filter(
-            f"date_month = '{selected_month}'"
-        ).order("remaining_budget DESC")
-    )
-    st.dataframe(
-        category_budget_and_expenses.select(
-            "category, budget, expenses, remaining_budget"
-        ).df(),
-        column_config={
-            "_index": st.column_config.TextColumn("Category"),
-            "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
-            "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
-            "remaining_budget": st.column_config.NumberColumn("Left", format="€ %.2f"),
-        },
-        use_container_width=True,
-        hide_index=True,
+    monthly_category_budget_and_expenses_without_allowances = (
+        monthly_category_budget_and_expenses.filter("category NOT LIKE 'Allowance%'")
     )
 
-    # Get daily cumulative expenses
-    daily_data = (
-        expenses_without_alllowances.select("""
-                        date,
-                        date_month,
-                        cumulative_amount: SUM(amount) OVER (PARTITION BY date_month ORDER BY date)""")
-        .filter(f"date_month = '{selected_month}'")
-        .order("date")
-        .fetchall()
-    )
-
-    if daily_data:
-        # Create plotly chart
-        days = [row[0] for row in daily_data]
-        amounts = [float(row[2]) for row in daily_data]
-
-        fig = px.line(
-            x=days,
-            y=amounts,
-            title=f"Cumulative Expenses - {selected_month}",
-            labels={"x": "Day", "y": "Cumulative Amount (EUR)"},
+    if selected_month:
+        # Show budget and remaining budget
+        category_budget_and_expenses = (
+            monthly_category_budget_and_expenses_without_allowances.filter(
+                f"date_month = '{selected_month}'"
+            ).order("remaining_budget DESC")
+        )
+        st.dataframe(
+            category_budget_and_expenses.select(
+                "category, budget, expenses, remaining_budget"
+            ).df(),
+            column_config={
+                "_index": st.column_config.TextColumn("Category"),
+                "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
+                "expenses": st.column_config.NumberColumn("Spent", format="€ %.2f"),
+                "remaining_budget": st.column_config.NumberColumn("Left", format="€ %.2f"),
+            },
+            use_container_width=True,
+            hide_index=True,
         )
 
-        # Format y-axis to show EUR
-        fig.update_layout(yaxis_tickformat="€,.0f")
-        fig.update_traces(
-            hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>"
+        # Get daily cumulative expenses
+        daily_data = (
+            expenses_without_alllowances.select("""
+                            date,
+                            date_month,
+                            cumulative_amount: SUM(amount) OVER (PARTITION BY date_month ORDER BY date)""")
+            .filter(f"date_month = '{selected_month}'")
+            .order("date")
+            .fetchall()
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        if daily_data:
+            # Create plotly chart
+            days = [row[0] for row in daily_data]
+            amounts = [float(row[2]) for row in daily_data]
 
-        # Show total
-        st.metric("Total Expenses", f"€{amounts[-1]:,.2f}")
-    else:
-        st.info(f"No expenses found for {selected_month}")
+            fig = px.line(
+                x=days,
+                y=amounts,
+                title=f"Cumulative Expenses - {selected_month}",
+                labels={"x": "Day", "y": "Cumulative Amount (EUR)"},
+            )
+
+            # Format y-axis to show EUR
+            fig.update_layout(yaxis_tickformat="€,.0f")
+            fig.update_traces(
+                hovertemplate="<b>%{x}</b><br>Amount: €%{y:,.2f}<extra></extra>"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Show total
+            st.metric("Total Expenses", f"€{amounts[-1]:,.2f}")
+        else:
+            st.info(f"No expenses found for {selected_month}")
+monthly_expenses()
