@@ -33,6 +33,9 @@ def prepare_duckdb(duckdb_conn: duckdb.DuckDBPyConnection) -> duckdb.DuckDBPyCon
         sql_script = f.read()
 
     # Substitute placeholders with environment variables
+    sql_script = sql_script.replace(
+        "$SECRET_TYPE", "SECRET"
+    )  # Use temporary secret for in-memory DB
     sql_script = sql_script.replace("$HMAC_ACCESS_ID", HMAC_ACCESS_ID)
     sql_script = sql_script.replace("$HMAC_SECRET", HMAC_SECRET)
     sql_script = sql_script.replace("$GCS_BUCKET_NAME", GCS_BUCKET_NAME)

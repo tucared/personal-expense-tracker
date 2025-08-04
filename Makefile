@@ -75,6 +75,7 @@ init-duckdb-dev:
 	export GCS_BUCKET_NAME=$$DATA_BUCKET_NAME && \
 	export HMAC_ACCESS_ID=$$HMAC_ACCESS_ID && \
 	export HMAC_SECRET=$$HMAC_SECRET && \
+	export SECRET_TYPE="PERSISTENT SECRET" && \
 	rm -f /tmp/duckdb_init_dev.*.sql && \
 	INIT_FILE=$$(mktemp /tmp/duckdb_init_dev.XXXXXX.sql) && \
 	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
@@ -92,6 +93,7 @@ init-duckdb-prod:
 	export GCS_BUCKET_NAME=$$DATA_BUCKET_NAME && \
 	export HMAC_ACCESS_ID=$$HMAC_ACCESS_ID && \
 	export HMAC_SECRET=$$HMAC_SECRET && \
+	export SECRET_TYPE="PERSISTENT SECRET" && \
 	rm -f /tmp/duckdb_init_prod.*.sql && \
 	INIT_FILE=$$(mktemp /tmp/duckdb_init_prod.XXXXXX.sql) && \
 	envsubst < ../../opentofu/modules/data_explorer/src/duckdb_init.sql > $$INIT_FILE && \
