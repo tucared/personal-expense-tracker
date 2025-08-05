@@ -1,3 +1,7 @@
+import calendar
+from datetime import datetime, timedelta
+
+import plotly.graph_objects as go
 import streamlit as st
 from database import get_duckdb_memory
 
@@ -128,11 +132,6 @@ if selected_month:
             st.metric(
                 "Budget Remaining", f"€{actual_budget_remaining:,.2f}", border=True
             )
-        # Show the graph second
-        import calendar
-        from datetime import datetime, timedelta
-
-        import plotly.graph_objects as go
 
         # Create data for the chart
         days = [row[0] for row in daily_data]
