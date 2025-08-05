@@ -6,7 +6,7 @@ import streamlit as st
 from database import get_duckdb_memory
 
 st.set_page_config(initial_sidebar_state="collapsed")
-st.title("💰 Daily Expenses")
+st.title("💰 Expense Tracker")
 
 # Get database connection
 duckdb_conn = get_duckdb_memory()
