@@ -164,53 +164,59 @@ def get_monthly_totals(selected_month: str):
 @st.cache_data
 def get_daily_chart_data(selected_month: str, total_monthly_budget: float):
     """
-    Calculate daily expense tracking data for charts.
+    Calculate daily expense tracking data for charts using relational API.
     Cached per month as it involves complex window functions and date generation.
-
-    Uses SQL for complex window functions and date generation that aren't
-    available in relational API.
     """
-    return duckdb_conn.sql(f"""
-        WITH month_dates AS (
-            -- Generate all days in the month
+
+    # Generate all days in month (SQL needed for generate_series)
+    month_dates_rel = duckdb_conn.sql(f"""
+        SELECT
+            date,
+            DAY(date) as day_num,
+            DAY(LAST_DAY(DATE '{selected_month}-01')) as total_days
+        FROM (
             SELECT UNNEST(generate_series(
                 DATE '{selected_month}-01',
                 LAST_DAY(DATE '{selected_month}-01'),
                 INTERVAL 1 DAY
             )) AS date
-        ),
-        daily_expenses AS (
-            -- Calculate cumulative expenses for days with transactions
-            SELECT
-                date,
-                SUM(amount) OVER (ORDER BY date) AS cumulative_expenses
-            FROM expenses_without_allowances
-            WHERE date_month = '{selected_month}'
-        ),
-        days_in_month AS (
-            -- Get total days for projection calculation
-            SELECT DAY(LAST_DAY(DATE '{selected_month}-01')) AS total_days
-        ),
-        daily_projection AS (
-            -- Calculate projected budget rundown
-            SELECT
-                md.date,
-                {total_monthly_budget} -
-                ({total_monthly_budget} / dim.total_days * (DAY(md.date) - 1))
-                AS projected_budget_remaining
-            FROM month_dates md
-            CROSS JOIN days_in_month dim
         )
+    """)
+
+    # Add projected budget to dates using relational API
+    dates_with_projection = month_dates_rel.select(f"""
+        date,
+        day_num,
+        total_days,
+        projected_budget_remaining: {total_monthly_budget} -
+            ({total_monthly_budget} / total_days * (day_num - 1))
+    """)
+
+    # Step 2: Get expenses with cumulative sum (SQL needed for window function)
+    daily_expenses_cumulative = duckdb_conn.sql(f"""
         SELECT
-            dp.date,
-            COALESCE(de.cumulative_expenses, 0) AS cumulative_expenses,
-            {total_monthly_budget} - COALESCE(de.cumulative_expenses, 0) AS actual_budget_remaining,
-            dp.projected_budget_remaining,
-            CASE WHEN de.date IS NOT NULL THEN TRUE ELSE FALSE END AS has_expenses
-        FROM daily_projection dp
-        LEFT JOIN daily_expenses de ON dp.date = de.date
-        ORDER BY dp.date
-    """).fetchall()  # Materialize for caching
+            date,
+            SUM(amount) OVER (ORDER BY date) AS cumulative_expenses
+        FROM expenses_without_allowances
+        WHERE date_month = '{selected_month}'
+    """)
+
+    # Step 3: Join dates with expenses using relational API
+    result = (
+        dates_with_projection.join(
+            daily_expenses_cumulative, condition="date", how="left"
+        )
+        .select(f"""
+        date,
+        cumulative_expenses: COALESCE(cumulative_expenses, 0),
+        actual_budget_remaining: {total_monthly_budget} - COALESCE(cumulative_expenses, 0),
+        projected_budget_remaining,
+        has_expenses: cumulative_expenses IS NOT NULL
+    """)
+        .order("date")
+    )
+
+    return result.fetchall()  # Only materialize at the end
 
 
 # ============================================================================
