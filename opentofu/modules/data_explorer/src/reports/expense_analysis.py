@@ -129,9 +129,10 @@ if selected_month:
                 "Budget Remaining", f"€{actual_budget_remaining:,.2f}", border=True
             )
         # Show the graph second
-        import plotly.graph_objects as go
-        from datetime import datetime, timedelta
         import calendar
+        from datetime import datetime, timedelta
+
+        import plotly.graph_objects as go
 
         # Create data for the chart
         days = [row[0] for row in daily_data]
@@ -203,23 +204,20 @@ if selected_month:
 
         st.plotly_chart(fig, use_container_width=True)
 
-        # Show the table third
-        def color_left_column(val):
+        def color_cell_background(val):
             if val < 0:
-                return "color: red"
+                return "background-color: #ffebee"  # Light red background
             elif val > 0:
-                return "color: green"
+                return "background-color: #e8f5e8"  # Light green background
             else:
                 return ""
 
-        df = category_budget_and_expenses.select(
-            "category, budget, expenses, remaining_budget"
-        ).df()
-
-        styled_df = df.style.map(color_left_column, subset=["remaining_budget"])
-
         st.dataframe(
-            styled_df,
+            category_budget_and_expenses.select(
+                "category, budget, expenses, remaining_budget"
+            )
+            .df()
+            .style.map(color_cell_background, subset=["remaining_budget"]),
             column_config={
                 "category": st.column_config.TextColumn("Category"),
                 "budget": st.column_config.NumberColumn("Budget", format="€ %.2f"),
