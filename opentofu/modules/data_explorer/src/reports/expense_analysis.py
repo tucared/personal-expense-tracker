@@ -1,6 +1,3 @@
-import calendar
-from datetime import datetime, timedelta
-
 import plotly.graph_objects as go
 import streamlit as st
 from database import get_duckdb_memory
@@ -92,71 +89,84 @@ if selected_month:
         ).order("remaining_budget DESC")
     )
 
-    # Get total monthly budget for selected month
-    total_monthly_budget = (
+    # Get total monthly budget for selected month using DuckDB
+    total_monthly_budget_result = (
         monthly_category_budget_and_expenses_without_allowances.filter(
             f"date_month = '{selected_month}'"
         )
         .aggregate("total_budget: SUM(budget)")
-        .fetchall()[0][0]
+        .fetchone()
+    )
+    total_monthly_budget = (
+        total_monthly_budget_result[0] if total_monthly_budget_result else 0
     )
 
-    # Get daily cumulative expenses for metrics calculation
-    daily_data = (
-        expenses_without_alllowances.select("""
-                        date,
-                        date_month,
-                        cumulative_amount: SUM(amount) OVER (PARTITION BY date_month ORDER BY date)""")
-        .filter(f"date_month = '{selected_month}'")
-        .order("date")
-        .fetchall()
-    )
+    # Get comprehensive daily data with all calculations in DuckDB
+    daily_chart_data = duckdb_conn.sql(f"""
+        WITH month_dates AS (
+            SELECT UNNEST(generate_series(
+                DATE '{selected_month}-01',
+                LAST_DAY(DATE '{selected_month}-01'),
+                INTERVAL 1 DAY
+            )) AS date
+        ),
+        daily_expenses AS (
+            SELECT
+                date,
+                SUM(amount) OVER (ORDER BY date) AS cumulative_expenses
+            FROM expenses_without_alllowances
+            WHERE date_month = '{selected_month}'
+        ),
+        days_in_month AS (
+            SELECT DAY(LAST_DAY(DATE '{selected_month}-01')) AS total_days
+        ),
+        daily_projection AS (
+            SELECT
+                md.date,
+                {total_monthly_budget} - ({total_monthly_budget} / dim.total_days * (DAY(md.date) - 1)) AS projected_budget_remaining
+            FROM month_dates md
+            CROSS JOIN days_in_month dim
+        )
+        SELECT
+            dp.date,
+            COALESCE(de.cumulative_expenses, 0) AS cumulative_expenses,
+            {total_monthly_budget} - COALESCE(de.cumulative_expenses, 0) AS actual_budget_remaining,
+            dp.projected_budget_remaining,
+            CASE WHEN de.date IS NOT NULL THEN TRUE ELSE FALSE END AS has_expenses
+        FROM daily_projection dp
+        LEFT JOIN daily_expenses de ON dp.date = de.date
+        ORDER BY dp.date
+    """).fetchall()
 
-    if daily_data:
-        # Show top 3 metrics first
-        cumulative_expenses = [float(row[2]) for row in daily_data]
-        actual_budget_remaining = total_monthly_budget - cumulative_expenses[-1]
+    if daily_chart_data:
+        # Extract the last day's cumulative expenses for metrics
+        last_day_data = [
+            row for row in daily_chart_data if row[4]
+        ]  # has_expenses = True
+        total_spent = last_day_data[-1][1] if last_day_data else 0
+        actual_budget_remaining = total_monthly_budget - total_spent
 
+        # Show top 3 metrics
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Budget", f"€{total_monthly_budget:,.2f}", border=True)
         with col2:
-            st.metric("Total Spent", f"€{cumulative_expenses[-1]:,.2f}", border=True)
+            st.metric("Total Spent", f"€{total_spent:,.2f}", border=True)
         with col3:
             st.metric(
                 "Budget Remaining", f"€{actual_budget_remaining:,.2f}", border=True
             )
 
-        # Create data for the chart
-        days = [row[0] for row in daily_data]
-        cumulative_expenses_daily = [float(row[2]) for row in daily_data]
-
-        # Calculate actual budget remaining (total budget - cumulative expenses)
+        # Prepare data for chart - separate actual and projected data
+        actual_days = [
+            row[0] for row in daily_chart_data if row[4]
+        ]  # has_expenses = True
         actual_budget_remaining_daily = [
-            total_monthly_budget - expense for expense in cumulative_expenses_daily
+            float(row[2]) for row in daily_chart_data if row[4]
         ]
 
-        # Create projected budget line (straight line from total budget to 0)
-        first_day = datetime.strptime(f"{selected_month}-01", "%Y-%m-%d")
-        year, month = first_day.year, first_day.month
-        days_in_month = calendar.monthrange(year, month)[1]
-        last_day = datetime.strptime(
-            f"{selected_month}-{days_in_month:02d}", "%Y-%m-%d"
-        )
-
-        # Create daily projection points
-        projected_days = []
-        projected_budget = []
-        current_day = first_day
-        while current_day <= last_day:
-            projected_days.append(current_day.strftime("%Y-%m-%d"))
-            days_passed = (current_day - first_day).days
-            daily_budget_decrease = total_monthly_budget / days_in_month
-            remaining_projection = total_monthly_budget - (
-                daily_budget_decrease * days_passed
-            )
-            projected_budget.append(max(0, remaining_projection))
-            current_day += timedelta(days=1)
+        projected_days = [row[0] for row in daily_chart_data]
+        projected_budget = [float(row[3]) for row in daily_chart_data]
 
         # Create figure with plotly graph objects
         fig = go.Figure()
@@ -164,7 +174,7 @@ if selected_month:
         # Add actual budget remaining line
         fig.add_trace(
             go.Scatter(
-                x=days,
+                x=actual_days,
                 y=actual_budget_remaining_daily,
                 mode="lines",
                 name="Actual budget remaining",
