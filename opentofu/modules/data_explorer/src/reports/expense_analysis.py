@@ -54,7 +54,7 @@ def get_allowances():
         monthly_category_budget_and_expenses.filter("category LIKE 'Allowance%'")
         .aggregate("category, allowance_left: SUM(budget) - SUM(expenses)")
         .select("category, allowance_left")
-        .df()
+        .fetchall()
     )
 
 
@@ -63,21 +63,15 @@ allowances = get_allowances()
 # Show allowances
 col1, col2 = st.columns(2)
 with col1:
-    max_allowance = allowances[allowances["category"] == "Allowance - Max"][
-        "allowance_left"
-    ].iloc[0]
     st.metric(
-        "Allowance Max",
-        f"€{max_allowance:,.2f}",
+        allowances[0][0],
+        f"€{allowances[0][1]:,.2f}",
         border=True,
     )
 with col2:
-    cla_allowance = allowances[allowances["category"] == "Allowance - Cla"][
-        "allowance_left"
-    ].iloc[0]
     st.metric(
-        "Allowance Cla",
-        f"€{cla_allowance:,.2f}",
+        allowances[1][0],
+        f"€{allowances[1][1]:,.2f}",
         border=True,
     )
 
