@@ -12,7 +12,7 @@ expenses = duckdb_conn.sql("""
         date:properties__date__date__start,
         category:properties__category__select__name,
         date_month:strftime(properties__date__date__start, '%Y-%m'),
-        amount: IF(properties__credit__checkbox, -1, 1) * COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl)
+        amount: ROUND(IF(properties__credit__checkbox, -1, 1) * COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl), 2)
     FROM raw.expenses
     ASOF JOIN raw.rate ON properties__date__date__start >= raw.rate.date
 """)
@@ -30,7 +30,7 @@ monthly_budget = duckdb_conn.sql("""
     SELECT
         date_month:strftime(month, '%Y-%m'),
         category,
-        budget:budget_eur
+        budget:ROUND(budget_eur,2)
     FROM raw.monthly_category_amounts""")
 
 monthly_category_budget_and_expenses = monthly_budget.join(
