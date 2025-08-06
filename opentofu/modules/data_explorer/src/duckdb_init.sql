@@ -1,24 +1,25 @@
--- DuckDB Initialization Script
--- This script sets up GCS access and creates views for parquet files
--- Variables will be substituted by envsubst or Python string formatting
+-- DuckDB Initialization Script for Iceberg Tables
+-- This script sets up GCS access and creates views for Iceberg tables
 
--- Install and load httpfs extension
+-- Install required extensions
 INSTALL httpfs;
+INSTALL iceberg;
 LOAD httpfs;
+LOAD iceberg;
 
 -- Create GCS secret using environment variable placeholders
--- $SECRET_TYPE will be substituted with either "SECRET" or "PERSISTENT SECRET"
 CREATE $SECRET_TYPE (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET');
 
 -- Create raw schema
 CREATE SCHEMA IF NOT EXISTS raw;
 
--- Create views using bucket name placeholder
+-- Create views for Iceberg tables
+-- Note: Iceberg tables store metadata files that DuckDB can read directly
 CREATE OR REPLACE VIEW raw.expenses AS
-SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/expenses/data.parquet');
+SELECT * FROM iceberg_scan('gcs://$GCS_BUCKET_NAME/raw/expenses');
 
 CREATE OR REPLACE VIEW raw.monthly_category_amounts AS
-SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/monthly_category_amounts/data.parquet');
+SELECT * FROM iceberg_scan('gcs://$GCS_BUCKET_NAME/raw/monthly_category_amounts');
 
 CREATE OR REPLACE VIEW raw.rate AS
-SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/rate/data.parquet');
+SELECT * FROM iceberg_scan('gcs://$GCS_BUCKET_NAME/raw/rate');
