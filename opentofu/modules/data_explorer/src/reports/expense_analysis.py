@@ -77,7 +77,7 @@ monthly_category_budget_and_expenses = monthly_budget.join(
         category,
         budget,
         expenses: COALESCE(amount, 0),
-        remaining_budget: COALESCE(budget, 0) - COALESCE(amount, 0)
+        remaining_budget: ROUND(COALESCE(budget, 0) - COALESCE(amount, 0),2)
     """)
 
 # Filter out allowances for main budget tracking
