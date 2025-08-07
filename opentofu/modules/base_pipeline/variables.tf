@@ -62,7 +62,7 @@ variable "function_config" {
   })
   default = {
     max_instance_count = 1
-    available_memory   = "256Mi"
+    available_memory   = "512Mi"
     timeout_seconds    = 600
   }
 }
