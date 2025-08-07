@@ -13,9 +13,6 @@ env_vars.yaml
 # Precommit
 .terraform
 
-# Draw.io
-*.drawio
-
 # Claude
 .claude/settings.local.json
 
