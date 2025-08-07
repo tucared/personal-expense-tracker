@@ -8,6 +8,11 @@ module "base_pipeline" {
   pipeline_name                            = "notion_pipeline"
   entry_point                              = "notion_pipeline"
   cloud_scheduler_parameters               = var.cloud_scheduler_parameters
+  function_config = {
+    max_instance_count = 1
+    available_memory   = "512Mi"
+    timeout_seconds    = 600
+  }
 
   environment_variables = {
     SOURCES__NOTION__DATABASE_ID = var.notion_database_id
