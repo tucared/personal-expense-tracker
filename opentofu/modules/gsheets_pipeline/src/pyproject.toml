@@ -5,9 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.8"
 dependencies = [
-    "dlt[parquet]>=1.5.0",
-    "dlt[gs]>=1.5.0",
-    "dlt[filesystem]>=0.3.5",
+    "dlt[filesystem,gcs,pyiceberg]>=1.5.0",
+    "sqlalchemy>=2.0.18",
+    "functions-framework",
     "google-api-python-client>=2.166.0",
 ]
 
