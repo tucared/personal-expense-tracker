@@ -68,6 +68,18 @@ module "gsheets_pipeline" {
 }
 
 #################################
+# BigQuery External Tables Resources
+#################################
+
+module "bigquery_external_tables" {
+  source = "./modules/bigquery_external_tables"
+
+  project_id       = var.project_id
+  region           = var.region
+  data_bucket_name = google_storage_bucket.data_bucket.name
+}
+
+#################################
 # Data Explorer App Resources
 #################################
 

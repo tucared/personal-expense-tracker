@@ -16,6 +16,7 @@ A ready-to-deploy expense tracking system that:
 - **Manages budgets in Google Sheets**: Set and adjust monthly budget allocations by category
 - **Visualizes spending**: Interactive Streamlit dashboard to monitor budget consumption by day and category
 - **Automates data pipelines**: Scheduled syncs between Notion, Google Sheets, and your data lake
+- **BigQuery integration**: SQL access to expense data for advanced analytics and reporting
 - **Runs on GCP free tier**: Cloud-native infrastructure with minimal costs
 
 This system combines the ease of logging expenses in Notion with the flexibility of budget management in Google Sheets, all visualized in an intuitive dashboard.
@@ -28,6 +29,7 @@ This system combines the ease of logging expenses in Notion with the flexibility
   - [Notion account](https://www.notion.so/signup) with [expense template](https://www.notion.so/1e81ed43cd7081609485d8f73c0d5e36?v=1e81ed43cd7081f88063000c38133b27) (**duplicate this template to your workspace**)
   - [Google Sheets budget template](https://docs.google.com/spreadsheets/d/1mf3u9zqNAhXSNc7v2GYphqUjYIN6PHYEgjTAHuvD50M/edit?gid=0#gid=0) (**make a copy** to your Drive)
   - [Google Cloud billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account) (most resources stay within free tier)
+  - Optional: [BigQuery](https://cloud.google.com/bigquery) for SQL-based data analysis
 
 - **CLI Tools**:
   - [gcloud CLI](https://cloud.google.com/sdk/docs/install) with current auth
@@ -96,6 +98,7 @@ gcloud services enable \
   cloudresourcemanager.googleapis.com \
   drive.googleapis.com \
   sheets.googleapis.com \
+  bigquery.googleapis.com \
   --project=$PROJECT_ID
 ```
 
@@ -163,7 +166,9 @@ flowchart LR
     C[Google Sheets Budget] -->|Hourly sync| D[Cloud Function]
     B & D -->|Parquet files| E[Cloud Storage]
     E -->|DuckDB SQL| F[Streamlit Dashboard]
+    E -->|External tables| H[BigQuery]
     F -->|Visualizations| G[End Users]
+    H -->|SQL Analytics| G[End Users]
 ```
 
 > **Note**: Both Notion and Google Sheets data are synced hourly by default. You can customize the sync frequency for each pipeline in the `env_vars.yaml` file before deployment.
@@ -186,6 +191,7 @@ This solution uses GCP's [free tier](https://cloud.google.com/free) resources:
 | Cloud Functions | 2M invocations | ~1,440 invocations/month (hourly) |
 | Cloud Run | 2M requests, 360K GB-seconds | Well below with periodic usage |
 | Cloud Scheduler | 3 jobs | 2 jobs used (Notion + Google Sheets) |
+| BigQuery | 1TB queries/month | Minimal usage with external tables |
 
 ## Architecture
 
