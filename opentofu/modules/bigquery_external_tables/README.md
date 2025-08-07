@@ -8,7 +8,7 @@ This module creates:
 - BigQuery dataset (`raw`) for external tables
 - External tables pointing to parquet files in GCS:
   - `expenses` - Notion expense data
-  - `monthly_category_amounts` - Google Sheets budget data  
+  - `monthly_category_amounts` - Google Sheets budget data
   - `rate` - Currency exchange rates
 
 ## Usage
@@ -16,7 +16,7 @@ This module creates:
 ```hcl
 module "bigquery_external_tables" {
   source = "./modules/bigquery_external_tables"
-  
+
   project_id       = var.project_id
   region          = var.region
   data_bucket_name = module.data_bucket.name
