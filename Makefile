@@ -170,8 +170,8 @@ _run-local:
 	gcloud config unset project
 
 generate-requirements:
-	uvx pre-commit run uv-lock
-	uvx pre-commit run uv-export
+	uvx pre-commit run uv-lock --all-files
+	uvx pre-commit run uv-export --all-files
 
 # Generate database schema CSV from DuckDB
 generate-schema-dev: dev.duckdb
