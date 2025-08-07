@@ -63,7 +63,6 @@ module "base_pipeline" {
 | secrets | List of secret values to store in Secret Manager | `list(object)` | `[]` | no |
 | cloud_scheduler_parameters | Configuration for cloud scheduler | `object` | n/a | yes |
 | function_config | Configuration for cloud function | `object` | Default config | no |
-| loader_file_format | File format for the loader (e.g., 'parquet') | `string` | `"parquet"` | no |
 | log_level | Log level for the runtime | `string` | `"WARNING"` | no |
 
 ### Secret Management

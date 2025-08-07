@@ -19,7 +19,7 @@ def gsheets_pipeline(request):
     )
     monthly_category_amounts.resources["Rate"].apply_hints(table_name="rate")
 
-    monthly_category_amounts_info = pipeline.run(monthly_category_amounts)
+    monthly_category_amounts_info = pipeline.run(monthly_category_amounts, loader_file_format="parquet")
     print(monthly_category_amounts_info)
 
     return "Pipeline run successfully!"

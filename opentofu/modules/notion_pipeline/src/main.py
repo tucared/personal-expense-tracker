@@ -28,6 +28,7 @@ def notion_pipeline(request):
             "properties__date__date__start": {"data_type": "date"},
             "properties__debit_credit__formula__number": {"data_type": "double"},
         },
+        loader_file_format="parquet"
     )
     print(expenses_info)
 

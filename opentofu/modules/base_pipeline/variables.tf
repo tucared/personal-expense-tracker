@@ -67,12 +67,6 @@ variable "function_config" {
   }
 }
 
-variable "loader_file_format" {
-  description = "File format for the loader (e.g., 'parquet')"
-  type        = string
-  default     = "parquet"
-}
-
 variable "log_level" {
   description = "Log level for the runtime"
   type        = string

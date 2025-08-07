@@ -123,7 +123,6 @@ _run-local:
 	gcloud config set auth/impersonate_service_account $$SERVICE_ACCOUNT && \
 	export DESTINATION__FILESYSTEM__BUCKET_URL=gs://$$DATA_BUCKET_NAME && \
 	export DESTINATION__FILESYSTEM__LAYOUT=$$LAYOUT && \
-	export NORMALIZE__LOADER_FILE_FORMAT="parquet" && \
 	export RUNTIME__LOG_LEVEL="DEBUG" && \
 	export RUNTIME__DLTHUB_TELEMETRY=false && \
 	case $(SERVICE) in \
