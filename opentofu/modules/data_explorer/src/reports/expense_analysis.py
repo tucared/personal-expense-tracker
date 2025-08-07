@@ -1,3 +1,5 @@
+import datetime
+
 import plotly.graph_objects as go
 import streamlit as st
 from database import get_duckdb_memory
@@ -92,7 +94,7 @@ monthly_category_budget_and_expenses_without_allowances = (
 # Base data doesn't need caching as DuckDB handles external file caching.
 
 
-@st.cache_data
+@st.cache_resource(ttl=datetime.timedelta(hours=1))
 def get_allowances():
     """
     Calculate total allowances across all months.
@@ -106,7 +108,7 @@ def get_allowances():
     )
 
 
-@st.cache_data
+@st.cache_resource(ttl=datetime.timedelta(hours=1))
 def get_available_months():
     """
     Get list of available months from expenses data.
@@ -121,7 +123,7 @@ def get_available_months():
     )
 
 
-@st.cache_data
+@st.cache_resource(ttl=datetime.timedelta(hours=1))
 def get_monthly_totals(selected_month: str):
     """
     Get total budget and category breakdown for a specific month.
@@ -161,7 +163,7 @@ def get_monthly_totals(selected_month: str):
     return total_budget, total_spent, category_breakdown
 
 
-@st.cache_data
+@st.cache_resource(ttl=datetime.timedelta(hours=1))
 def get_daily_chart_data(selected_month: str, total_monthly_budget: float):
     """
     Calculate daily expense tracking data for charts using relational API.
