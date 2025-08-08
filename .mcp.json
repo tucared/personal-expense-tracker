@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "duckdb-prod": {
+    "duckdb-gcs-prod": {
       "type": "stdio",
       "command": "uvx",
       "args": [
@@ -11,7 +11,7 @@
       ],
       "env": {}
     },
-    "duckdb-dev": {
+    "duckdb-gcs-dev": {
       "type": "stdio",
       "command": "uvx",
       "args": [
@@ -22,5 +22,13 @@
       ],
       "env": {}
     }
-  }
+  },
+    "duckdb-local-dev": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck"
+      ],
+      "env": {}
+    }
 }

@@ -91,6 +91,15 @@ For ad-hoc data analysis and debugging:
 4. Ideal for data exploration, debugging pipeline outputs, and creating new analytics queries
 5. When using CLI, exit DuckDB with `.exit` or Ctrl+D
 
+#### MCP Data Analysis
+
+When working with local dev data, use the MCP DuckDB dev tool to query CSV files directly using `read_csv()`:
+
+- `SELECT * FROM read_csv('docs/dev_data/expenses.csv')` - expense transactions with currency conversion
+- `SELECT * FROM read_csv('docs/dev_data/monthly_category_amounts.csv')` - budget allocations by category  
+- `SELECT * FROM read_csv('docs/dev_data/rate.csv')` - exchange rate data
+- Take inspiration from `opentofu/modules/data_explorer/src/reports/expense_analysis.py` for data transformation patterns
+
 ### Data Flow
 
 1. Cloud Scheduler triggers Cloud Functions hourly (configurable)
