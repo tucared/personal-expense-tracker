@@ -158,7 +158,7 @@ _run-local:
 			echo "Using service account: $$SERVICE_ACCOUNT" && \
 			echo "Using bucket: $$GCS_BUCKET_NAME" && \
 			SRC_DIR="../../opentofu/modules/data_explorer/src/" && \
-			uv run --directory=$$SRC_DIR streamlit run app.py; \
+			uv run --directory=$$SRC_DIR streamlit run app.py  --server.runOnSave true; \
 			;; \
 		*) \
 			echo "Error: Unknown service $(SERVICE)" && \
