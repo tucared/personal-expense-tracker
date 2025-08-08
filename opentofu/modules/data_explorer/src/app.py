@@ -3,7 +3,6 @@ from auth import setup_authentication
 
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Personal Expense Tracker", page_icon="📊")
-st.set_option("theme.base", "light")
 
 
 # --- MAIN APP FUNCTION ---

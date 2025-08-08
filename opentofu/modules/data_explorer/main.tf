@@ -289,6 +289,10 @@ resource "google_cloud_run_v2_service" "data_explorer" {
         name  = "COOKIE_KEY"
         value = google_secret_manager_secret_version.cookie_key.secret_data
       }
+      env {
+        name  = "STREAMLIT_THEME_BASE"
+        value = var.streamlit_theme_base
+      }
       resources {
         limits = {
           cpu    = var.cloudrun_limits.cpu

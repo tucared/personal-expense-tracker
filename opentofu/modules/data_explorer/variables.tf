@@ -42,3 +42,9 @@ variable "auth_password" {
   type        = string
   sensitive   = true
 }
+
+variable "streamlit_theme_base" {
+  description = "Streamlit theme base (light or dark)"
+  type        = string
+  default     = "light"
+}

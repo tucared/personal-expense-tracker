@@ -154,6 +154,7 @@ _run-local:
 			export AUTH_USERNAME=$$AUTH_USERNAME && \
 			export AUTH_PASSWORD=$$AUTH_PASSWORD && \
 			export COOKIE_KEY=$$(openssl rand -base64 32) && \
+			export STREAMLIT_THEME_BASE="light" && \
 			echo "Using service account: $$SERVICE_ACCOUNT" && \
 			echo "Using bucket: $$GCS_BUCKET_NAME" && \
 			SRC_DIR="../../opentofu/modules/data_explorer/src/" && \
