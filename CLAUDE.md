@@ -115,3 +115,5 @@ When working with local dev data, use the MCP DuckDB dev tool to query CSV files
 - Local development uses service account impersonation
 - API keys and secrets managed through Google Secret Manager
 - DuckDB commands automatically configure GCS access using HMAC credentials from infrastructure
+
+- Everything runs with 'uv', sometimes wrapped in @Makefile. So for instance for type checker you must use 'uv run mypy'
