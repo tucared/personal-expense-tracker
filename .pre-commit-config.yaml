@@ -56,3 +56,21 @@ repos:
         language: system
         files: 'terragrunt/(dev|prod)/(env_vars\.example\.yaml|terragrunt\.hcl)$'
         pass_filenames: false
+      - id: lint-notion-ty
+        name: Type check notion pipeline
+        entry: uv run --directory=opentofu/modules/notion_pipeline/src ty check .
+        language: system
+        files: '^opentofu/modules/notion_pipeline/src/'
+        pass_filenames: false
+      - id: lint-gsheets-ty
+        name: Type check gsheets pipeline
+        entry: uv run --directory=opentofu/modules/gsheets_pipeline/src ty check .
+        language: system
+        files: '^opentofu/modules/gsheets_pipeline/src/'
+        pass_filenames: false
+      - id: lint-data-explorer-ty
+        name: Type check data explorer
+        entry: uv run --directory=opentofu/modules/data_explorer/src ty check .
+        language: system
+        files: '^opentofu/modules/data_explorer/src/'
+        pass_filenames: false
