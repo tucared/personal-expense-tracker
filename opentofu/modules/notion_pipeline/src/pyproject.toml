@@ -13,6 +13,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "functions-framework>=3.8.2",
-    "mypy>=1.14.1",
     "ruff>=0.8.6",
+    "ty>=0.0.1a17",
 ]

@@ -202,7 +202,7 @@ lint:
 	@for dir in $(PYTHON_MODULES); do \
 		echo "Linting $$dir..."; \
 		uv run --directory=$$dir ruff check . || exit 1; \
-		uv run --directory=$$dir mypy . || exit 1; \
+		uv run --directory=$$dir ty check . || exit 1; \
 	done
 
 format:
@@ -221,17 +221,17 @@ install:
 lint-notion:
 	@echo "Linting notion pipeline..."
 	@uv run --directory=opentofu/modules/notion_pipeline/src ruff check .
-	@uv run --directory=opentofu/modules/notion_pipeline/src mypy .
+	@uv run --directory=opentofu/modules/notion_pipeline/src ty check .
 
 lint-gsheets:
 	@echo "Linting gsheets pipeline..."
 	@uv run --directory=opentofu/modules/gsheets_pipeline/src ruff check .
-	@uv run --directory=opentofu/modules/gsheets_pipeline/src mypy .
+	@uv run --directory=opentofu/modules/gsheets_pipeline/src ty check .
 
 lint-data-explorer:
 	@echo "Linting data explorer..."
 	@uv run --directory=opentofu/modules/data_explorer/src ruff check .
-	@uv run --directory=opentofu/modules/data_explorer/src mypy .
+	@uv run --directory=opentofu/modules/data_explorer/src ty check .
 
 # Per-module formatting
 format-notion:
