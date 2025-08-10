@@ -9,7 +9,7 @@ from database import get_duckdb_memory
 # ============================================================================
 
 st.set_page_config(initial_sidebar_state="collapsed")
-st.title("💰 Expense Tracker")
+st.title("💰 Tracker")
 
 # ============================================================================
 # DATABASE CONNECTION
