@@ -14,7 +14,7 @@ help:
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
-	@echo "  output-<outputd>-prod     - Get terragrunt output in prod environment"
+	@echo "  output-<output>-prod      - Get terragrunt output in prod environment"
 	@echo ""
 	@echo "Available services: notion, gsheets, data-explorer"
 	@echo ""
