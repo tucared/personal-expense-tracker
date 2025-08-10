@@ -229,6 +229,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Tucared - <1v8ufskf@duck.com>
+Tucared (Max P.) - <1v8ufskf@duck.com>
 
 Project Link: [https://github.com/tucared/personal-expense-tracker](https://github.com/tucared/personal-expense-tracker)
