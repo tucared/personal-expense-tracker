@@ -11,6 +11,12 @@ help:
 	@echo "  init-duckdb-prod          - Initialize DuckDB database for prod environment"
 	@echo "  generate-schema-dev       - Generate database schema CSV from dev.duckdb"
 	@echo "  generate-schema-prod      - Generate database schema CSV from prod.duckdb"
+	@echo "  lint                      - Run linting across all Python modules"
+	@echo "  format                    - Run formatting across all Python modules"
+	@echo "  install                   - Install dependencies for all Python modules"
+	@echo "  lint-<service>            - Run linting for specific service module"
+	@echo "  format-<service>          - Run formatting for specific service module"
+	@echo "  clean                     - Clean temporary files and databases"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
@@ -28,6 +34,9 @@ help:
 	@echo "  make plan-dev"
 	@echo "  make apply-prod"
 	@echo "  make output-data_explorer_build_trigger_region-dev"
+	@echo "  make lint"
+	@echo "  make format"
+	@echo "  make lint-notion"
 
 # Pattern rule for running local services (must come before general pattern)
 run-%-dev:
@@ -184,5 +193,65 @@ generate-schema-prod: prod.duckdb
 	@duckdb prod.duckdb -csv -c "SHOW ALL TABLES" > docs/database_schema.csv
 	@echo "Schema generated: docs/database_schema.csv"
 
+# Python development commands
+PYTHON_MODULES := opentofu/modules/notion_pipeline/src \
+                  opentofu/modules/gsheets_pipeline/src \
+                  opentofu/modules/data_explorer/src
+
+lint:
+	@for dir in $(PYTHON_MODULES); do \
+		echo "Linting $$dir..."; \
+		uv run --directory=$$dir ruff check . || exit 1; \
+		uv run --directory=$$dir mypy . || exit 1; \
+	done
+
+format:
+	@for dir in $(PYTHON_MODULES); do \
+		echo "Formatting $$dir..."; \
+		uv run --directory=$$dir ruff format .; \
+	done
+
+install:
+	@for dir in $(PYTHON_MODULES); do \
+		echo "Installing dependencies for $$dir..."; \
+		uv sync --directory=$$dir; \
+	done
+
+# Per-module linting
+lint-notion:
+	@echo "Linting notion pipeline..."
+	@uv run --directory=opentofu/modules/notion_pipeline/src ruff check .
+	@uv run --directory=opentofu/modules/notion_pipeline/src mypy .
+
+lint-gsheets:
+	@echo "Linting gsheets pipeline..."
+	@uv run --directory=opentofu/modules/gsheets_pipeline/src ruff check .
+	@uv run --directory=opentofu/modules/gsheets_pipeline/src mypy .
+
+lint-data-explorer:
+	@echo "Linting data explorer..."
+	@uv run --directory=opentofu/modules/data_explorer/src ruff check .
+	@uv run --directory=opentofu/modules/data_explorer/src mypy .
+
+# Per-module formatting
+format-notion:
+	@echo "Formatting notion pipeline..."
+	@uv run --directory=opentofu/modules/notion_pipeline/src ruff format .
+
+format-gsheets:
+	@echo "Formatting gsheets pipeline..."
+	@uv run --directory=opentofu/modules/gsheets_pipeline/src ruff format .
+
+format-data-explorer:
+	@echo "Formatting data explorer..."
+	@uv run --directory=opentofu/modules/data_explorer/src ruff format .
+
+# Clean temporary files
+clean:
+	@echo "Cleaning temporary files..."
+	@rm -f *.duckdb /tmp/duckdb_init_*.sql
+	@find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "*.pyc" -delete 2>/dev/null || true
+
 # Make all -dev and -prod targets phony
-.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod
+.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint format install clean lint-notion lint-gsheets lint-data-explorer format-notion format-gsheets format-data-explorer

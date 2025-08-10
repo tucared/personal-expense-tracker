@@ -70,6 +70,19 @@ make apply-prod    # Deploy production
 make destroy-prod  # Destroy production
 ```
 
+**Code Quality Commands:**
+
+```bash
+make lint          # Run linting across all Python modules
+make format        # Format code across all Python modules
+make install       # Install dependencies for all modules
+make clean         # Clean temporary files and databases
+
+# Per-module commands
+make lint-notion           # Lint specific module
+make format-data-explorer  # Format specific module
+```
+
 **Direct Terragrunt (More Flexibility):**
 
 ```bash
