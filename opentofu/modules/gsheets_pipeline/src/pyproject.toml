@@ -14,6 +14,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "functions-framework>=3.8.2",
+    "google-api-python-client-stubs>=1.30.0",
     "mypy>=1.14.1",
     "ruff>=0.8.6",
 ]

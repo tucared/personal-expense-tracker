@@ -26,7 +26,7 @@ def print_refresh_token(credentials: GcpOAuthCredentials = dlt.secrets.value) ->
     Will get client_id, client_secret and project_id from secrets.toml and then will print the refresh token.
     """
     # remove exiting refresh token
-    credentials.refresh_token = None
+    credentials.refresh_token = ""
     # full flow again
     credentials.auth("https://www.googleapis.com/auth/spreadsheets.readonly")
     print("Add to secrets.toml")

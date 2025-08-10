@@ -1,6 +1,6 @@
 """Contains helper functions to extract data from spreadsheet API"""
 
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 
 from dlt.common.exceptions import MissingDependencyException
 from dlt.common.typing import DictStrAny
@@ -11,7 +11,7 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 from .data_processing import ParsedRange, trim_range_top_left
 
 try:
-    from apiclient.discovery import Resource, build
+    from apiclient.discovery import build
 except ImportError:
     raise MissingDependencyException("Google API Client", ["google-api-python-client"])
 
@@ -42,7 +42,7 @@ retry_deco = retry(
 )
 
 
-def api_auth(credentials: GcpCredentials, max_api_retries: int) -> Resource:
+def api_auth(credentials: GcpCredentials, max_api_retries: int) -> Any:
     """
     Uses GCP credentials to authenticate with Google Sheets API.
 
@@ -51,7 +51,7 @@ def api_auth(credentials: GcpCredentials, max_api_retries: int) -> Resource:
         max_api_retries (int): Max number of retires to google sheets API. Actual behavior is internal to google client.
 
     Returns:
-        Resource: Object needed to make API calls to Google Sheets API.
+        Any: Object needed to make API calls to Google Sheets API.
     """
     if isinstance(credentials, GcpOAuthCredentials):
         credentials.auth("https://www.googleapis.com/auth/spreadsheets.readonly")
@@ -67,7 +67,7 @@ def api_auth(credentials: GcpCredentials, max_api_retries: int) -> Resource:
 
 @retry_deco
 def get_meta_for_ranges(
-    service: Resource, spreadsheet_id: str, range_names: List[str]
+    service: Any, spreadsheet_id: str, range_names: List[str]
 ) -> Any:
     """Retrieves `spreadsheet_id` cell metadata for `range_names`"""
     return (
@@ -83,14 +83,14 @@ def get_meta_for_ranges(
 
 @retry_deco
 def get_known_range_names(
-    spreadsheet_id: str, service: Resource
+    spreadsheet_id: str, service: Any
 ) -> Tuple[List[str], List[str], str]:
     """
     Retrieves spreadsheet metadata and extracts a list of sheet names and named ranges
 
     Args:
         spreadsheet_id (str): The ID of the spreadsheet.
-        service (Resource): Resource object used to make API calls to Google Sheets API.
+        service (Any): Resource object used to make API calls to Google Sheets API.
 
     Returns:
         Tuple[List[str], List[str], str] sheet names, named ranges, spreadheet title
@@ -104,13 +104,13 @@ def get_known_range_names(
 
 @retry_deco
 def get_data_for_ranges(
-    service: Resource, spreadsheet_id: str, range_names: List[str]
-) -> List[Tuple[str, ParsedRange, ParsedRange, List[List[Any]]]]:
+    service: Any, spreadsheet_id: str, range_names: List[str]
+) -> List[Tuple[str, ParsedRange, ParsedRange, Optional[List[List[Any]]]]]:
     """
     Calls Google Sheets API to get data in a batch. This is the most efficient way to get data for multiple ranges inside a spreadsheet.
 
     Args:
-        service (Resource): Object to make API calls to Google Sheets.
+        service (Any): Object to make API calls to Google Sheets.
         spreadsheet_id (str): The ID of the spreadsheet.
         range_names (List[str]): List of range names.
 
@@ -136,7 +136,7 @@ def get_data_for_ranges(
     rv = []
     for name, range_ in zip(range_names, range_batch):
         parsed_range = ParsedRange.parse_range(range_["range"])
-        values: List[List[Any]] = range_.get("values", None)
+        values: Optional[List[List[Any]]] = range_.get("values")
         if values:
             parsed_range, values = trim_range_top_left(parsed_range, values)
         # create a new range to get first two rows
