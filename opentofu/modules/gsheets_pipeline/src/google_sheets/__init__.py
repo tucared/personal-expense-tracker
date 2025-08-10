@@ -2,8 +2,9 @@
 
 from typing import Iterable, Sequence
 
+import logging
+
 import dlt
-from dlt.common import logger
 from dlt.sources import DltResource
 from dlt.sources.credentials import GcpServiceAccountCredentials
 
@@ -15,6 +16,8 @@ from .helpers.data_processing import (
     get_spreadsheet_id,
     process_range,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dlt.source

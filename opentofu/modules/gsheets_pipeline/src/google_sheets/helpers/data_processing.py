@@ -1,12 +1,15 @@
 """This is a helper module that contains function which validate and process data"""
 
+import logging
 import re
 from typing import Any, Iterator, List, Tuple, Union, NamedTuple, Optional
 
 import dlt
-from dlt.common import logger, pendulum
+from dlt.common import pendulum
 from dlt.common.typing import DictStrAny
 from dlt.common.data_types import TDataType
+
+logger = logging.getLogger(__name__)
 
 # this string comes before the id
 URL_ID_IDENTIFIER = "d"

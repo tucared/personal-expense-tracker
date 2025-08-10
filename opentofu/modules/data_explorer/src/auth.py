@@ -34,7 +34,7 @@ def setup_authentication():
         "usernames": {
             username: {
                 "email": f"{username}@example.com",
-                "first_name": username.capitalize(),
+                "first_name": username.capitalize() if username else "User",
                 "last_name": "User",
                 "password": password,
             }
