@@ -4,116 +4,120 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Personal Expense Tracker that creates a data lakehouse for tracking expenses logged in Notion against budgets managed in Google Sheets. The system uses a modular cloud-native architecture on GCP with three main components:
+Personal Expense Tracker: A data lakehouse for tracking expenses logged in Notion against budgets managed in Google Sheets. Cloud-native GCP architecture with automated data pipelines and Streamlit analytics dashboard.
 
-1. **Data Pipelines**: Automated ingestion from Notion and Google Sheets using Cloud Functions
-2. **Data Storage**: Parquet files stored in Cloud Storage forming a data lake
-3. **Analytics Dashboard**: Streamlit app deployed on Cloud Run for expense visualization
+**Initial Setup**: See README.md for one-time environment configuration and deployment.
 
-## Architecture
+## Daily Development Workflows
 
-The system follows a modular pipeline pattern:
+### Pipeline Development
 
-- **Base Pipeline Module** (`opentofu/modules/base_pipeline/`): Reusable infrastructure for any data pipeline including Cloud Functions, schedulers, and secret management
-- **Pipeline Implementations**: Specific modules for Notion (`notion_pipeline`) and Google Sheets (`gsheets_pipeline`) that extend the base pipeline
-- **Data Explorer** (`data_explorer`): Streamlit dashboard with authentication and DuckDB analytics
+Iterate on data pipeline code locally while connecting to cloud infrastructure:
 
-All pipelines extract data from sources, transform using the DLT framework, and load into the shared data bucket as Parquet files.
+```bash
+# Local development servers (connects to cloud secrets/storage)
+make run-notion-dev    # Starts local server to curl/test Notion pipeline
+make run-gsheets-dev   # Starts local server to curl/test Google Sheets pipeline
 
-## Development Commands
+# Test changes
+make trigger-notion-dev   # Trigger pipeline in cloud
+make trigger-gsheets-dev  # Trigger pipeline in cloud
+```
 
-Use `make help` to see all available commands. Key workflows:
+### Data Explorer Development
 
-- **Local development**: `make run-<service>-<env>` (connects to cloud infrastructure)
-- **Infrastructure**: `make apply-<env>`, `make plan-<env>`, `make destroy-<env>`
-- **Data access**: `make init-duckdb-<env>` then `duckdb <env>.duckdb` (interactive SQL queries)
-- **Pipeline triggers**: `make trigger-<service>-<env>`
-- **Dashboard**: `make open-dashboard-<env>`
+Develop the Streamlit dashboard locally:
 
-Available services: `notion`, `gsheets`, `data-explorer`
-Available environments: `dev`, `prod`
+```bash
+make run-data-explorer-dev    # Starts local Streamlit GUI server
+make open-dashboard-dev       # Access deployed dashboard
+```
 
-### DuckDB Data Analysis
+### Data Analysis
 
-The `make init-duckdb-<env>` commands automatically configure GCS access and create views for your parquet data (`raw.expenses`, `raw.monthly_category_amounts`, `raw.rate`). Example queries:
+Use MCP DuckDB tool for all data queries and analysis:
+
+**Cloud Data (duckdb-gcs-prod/duckdb-gcs-dev):**
 
 ```sql
--- View all tables
-SHOW ALL TABLES;
-
--- View recent expenses
+-- Production/dev data from GCS
 SELECT * FROM raw.expenses ORDER BY created_time DESC LIMIT 10;
-
--- Analyze spending by category
 SELECT properties__category__select__name, SUM(properties__amount__number) as total
 FROM raw.expenses GROUP BY properties__category__select__name;
 ```
 
-## Configuration
+**Development Seed Data (duckdb-gcs-dev):**
 
-### Environment Setup
+```sql
+-- CSV files seeded to dev GCS deployment
+SELECT * FROM read_csv('docs/dev_data/expenses.csv');
+SELECT * FROM read_csv('docs/dev_data/monthly_category_amounts.csv');
+SELECT * FROM read_csv('docs/dev_data/rate.csv');
+```
 
-1. Copy environment template: `cp terragrunt/{env}/env_vars.example.yaml terragrunt/{env}/env_vars.yaml`
-2. Configure required variables in `env_vars.yaml`:
-   - `project_id`: Unique GCP project identifier
-   - `notion_pipeline.notion_api_key`: Notion integration secret
-   - `notion_pipeline.notion_database_id`: Notion expense database ID
-   - `gsheets_pipeline.spreadsheet_url_or_id`: Google Sheets budget template ID
-   - `data_explorer.auth_username/auth_password`: Dashboard credentials
+Reference `opentofu/modules/data_explorer/src/reports/expense_tracker.py` for data transformation patterns.
 
-### Project Structure
+## Infrastructure Management
 
-- `opentofu/`: Infrastructure as code using OpenTofu/Terraform
-- `terragrunt/`: Environment-specific configurations (dev/prod)
-- `docs/`: Documentation and database schema definitions
-- Pipeline source code is in `opentofu/modules/{pipeline_name}/src/`
+**Make Commands (Recommended):**
 
-## Development Notes
+```bash
+make apply-dev     # Deploy dev environment
+make plan-dev      # Preview dev changes
+make destroy-dev   # Destroy dev environment
 
-### Local Development Pattern
+make apply-prod    # Deploy production
+make destroy-prod  # Destroy production
+```
 
-The Makefile handles service account impersonation for local development. Local services connect to cloud infrastructure (buckets, secrets) while running code locally for faster iteration.
+**Direct Terragrunt (More Flexibility):**
 
-### Pipeline Development
+```bash
+cd terragrunt/dev && terragrunt apply
+cd terragrunt/prod && terragrunt plan
+```
 
-- All pipelines use Python with `uv` for dependency management
-- Base pipeline provides common Cloud Function deployment, scheduling, and secret management
-- Pipeline-specific implementations only need to define their source configuration and secrets
-- DLT framework handles data extraction, transformation, and loading to Parquet format
+## Architecture
 
-### Data Analysis Workflow
+**Modular Pipeline Pattern:**
 
-For ad-hoc data analysis and debugging:
+- **Base Pipeline Module** (`opentofu/modules/base_pipeline/`): Reusable Cloud Functions, schedulers, secrets
+- **Pipeline Implementations**: `notion_pipeline`, `gsheets_pipeline` extend base module
+- **Data Explorer**: Streamlit dashboard with authentication and DuckDB analytics
 
-1. Initialize database: `make init-duckdb-dev` or `make init-duckdb-prod`
-2. Access data lake: Use DuckDB MCP tool for SQL queries (preferred) or `duckdb dev.duckdb`/`duckdb prod.duckdb` CLI
-3. Query parquet files using standard SQL without needing to run the dashboard
-4. Ideal for data exploration, debugging pipeline outputs, and creating new analytics queries
-5. When using CLI, exit DuckDB with `.exit` or Ctrl+D
+**Data Flow:**
 
-#### MCP Data Analysis
+1. Cloud Scheduler triggers Cloud Functions hourly
+2. DLT framework extracts from Notion/Google Sheets
+3. Parquet files stored in Cloud Storage data lake
+4. Streamlit dashboard queries via DuckDB
 
-When working with local dev data, use the MCP DuckDB dev tool to query CSV files directly using `read_csv()`:
+## Development Patterns
 
-- `SELECT * FROM read_csv('docs/dev_data/expenses.csv')` - expense transactions with currency conversion
-- `SELECT * FROM read_csv('docs/dev_data/monthly_category_amounts.csv')` - budget allocations by category  
-- `SELECT * FROM read_csv('docs/dev_data/rate.csv')` - exchange rate data
-- Take inspiration from `opentofu/modules/data_explorer/src/reports/expense_tracker.py` for data transformation patterns
+**Local Development:**
 
-### Data Flow
+- Makefile handles service account impersonation
+- Local code connects to cloud infrastructure (secrets, storage)
+- Use `uv` for all Python commands: `uv run mypy`, `uv run ruff format`
+- **Never edit pyproject.toml dependencies directly**: Use `uv add <package>` or `uv add --dev <package>` instead
 
-1. Cloud Scheduler triggers Cloud Functions hourly (configurable)
-2. Functions extract data from Notion/Google Sheets using DLT
-3. Data is stored as Parquet files in Cloud Storage
-4. Streamlit dashboard queries data using DuckDB for analytics
-5. Direct data access available via DuckDB CLI for analysis and debugging
+**Pipeline Development:**
 
-### Authentication & Security
+- All pipelines use Python with `uv` dependency management
+- Base pipeline handles common deployment, scheduling, secrets
+- Pipeline-specific modules only define source configuration
 
-- Dashboard uses streamlit-authenticator with credentials stored in Secret Manager
-- Service account authentication for all GCP services
-- Local development uses service account impersonation
-- API keys and secrets managed through Google Secret Manager
-- DuckDB commands automatically configure GCS access using HMAC credentials from infrastructure
+**Project Structure:**
 
-- Everything runs with 'uv', sometimes wrapped in @Makefile. So for instance for type checker you must use 'uv run mypy'
+```text
+opentofu/                    # Infrastructure as code
+├── modules/base_pipeline/   # Reusable pipeline infrastructure
+├── modules/notion_pipeline/ # Notion-specific implementation
+├── modules/gsheets_pipeline/# Google Sheets implementation
+└── modules/data_explorer/   # Streamlit dashboard
+terragrunt/{env}/           # Environment configurations
+docs/                       # Database schemas and dev data
+```
+
+**Available Services:** `notion`, `gsheets`, `data-explorer`
+**Available Environments:** `dev`, `prod`
