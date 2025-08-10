@@ -14,12 +14,12 @@ def main():
     # Check authentication status
     if st.session_state["authentication_status"]:
         # Define the pages
-        expense_analysis_page = st.Page(
-            "reports/expense_analysis.py", title="Expense Analysis", icon="📊"
+        expense_tracker_page = st.Page(
+            "reports/expense_tracker.py", title="Expense Analysis", icon="📊"
         )
 
         # Set up navigation
-        pg = st.navigation([expense_analysis_page])
+        pg = st.navigation([expense_tracker_page])
 
         # Run the selected page
         pg.run()

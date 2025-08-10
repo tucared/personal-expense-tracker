@@ -98,7 +98,7 @@ When working with local dev data, use the MCP DuckDB dev tool to query CSV files
 - `SELECT * FROM read_csv('docs/dev_data/expenses.csv')` - expense transactions with currency conversion
 - `SELECT * FROM read_csv('docs/dev_data/monthly_category_amounts.csv')` - budget allocations by category  
 - `SELECT * FROM read_csv('docs/dev_data/rate.csv')` - exchange rate data
-- Take inspiration from `opentofu/modules/data_explorer/src/reports/expense_analysis.py` for data transformation patterns
+- Take inspiration from `opentofu/modules/data_explorer/src/reports/expense_tracker.py` for data transformation patterns
 
 ### Data Flow
 
