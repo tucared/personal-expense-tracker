@@ -41,6 +41,15 @@
             "command": "jq -r '.tool_input.file_path' | { read file_path; if echo \"$file_path\" | grep -q '\\.py$'; then uvx ruff check --fix \"$file_path\"; fi; }"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | { read cmd; if echo \"$cmd\" | grep -q '^uv \\(add\\|remove\\)'; then make generate-requirements; fi; }"
+          }
+        ]
       }
     ]
   }
