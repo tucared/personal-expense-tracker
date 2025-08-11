@@ -1,0 +1,53 @@
+version = 1
+requires-python = ">=3.10"
+
+[[package]]
+name = "fastmcp"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/xx/xx/xx/fastmcp-0.9.0.tar.gz", hash = "sha256:placeholder", size = 1000 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/xx/xx/xx/fastmcp-0.9.0-py3-none-any.whl", hash = "sha256:placeholder", size = 2000 },
+]
+
+[[package]]
+name = "httpx"
+version = "0.25.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/xx/xx/xx/httpx-0.25.0.tar.gz", hash = "sha256:placeholder", size = 3000 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/xx/xx/xx/httpx-0.25.0-py3-none-any.whl", hash = "sha256:placeholder", size = 4000 },
+]
+
+[[package]]
+name = "mypy"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/xx/xx/xx/mypy-1.0.0.tar.gz", hash = "sha256:placeholder", size = 5000 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/xx/xx/xx/mypy-1.0.0-py3-none-any.whl", hash = "sha256:placeholder", size = 6000 },
+]
+
+[[package]]
+name = "pipeline-runner-mcp"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastmcp" },
+    { name = "httpx" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "ruff" },
+]
+
+[[package]]
+name = "ruff"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/xx/xx/xx/ruff-0.1.0.tar.gz", hash = "sha256:placeholder", size = 7000 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/xx/xx/xx/ruff-0.1.0-py3-none-any.whl", hash = "sha256:placeholder", size = 8000 },
+]

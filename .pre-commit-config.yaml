@@ -46,6 +46,10 @@ repos:
         name: uv-export (notion_pipeline)
         files: opentofu/modules/notion_pipeline/src/pyproject.toml
         args: [--project, opentofu/modules/notion_pipeline/src/, "--frozen", "--output-file=opentofu/modules/notion_pipeline/src/requirements.txt"]
+      - id: uv-lock
+        name: uv-lock (pipeline_runner)
+        files: mcp-servers/pipeline-runner/pyproject.toml
+        args: [--project, mcp-servers/pipeline-runner/]
   - repo: local
     hooks:
       - id: check-dev-prod-files-sync
@@ -72,4 +76,10 @@ repos:
         entry: uv run --directory=opentofu/modules/data_explorer/src ty check .
         language: system
         files: '^opentofu/modules/data_explorer/src/'
+        pass_filenames: false
+      - id: lint-pipeline-runner-ty
+        name: Type check pipeline runner
+        entry: uv run --directory=mcp-servers/pipeline-runner mypy .
+        language: system
+        files: '^mcp-servers/pipeline-runner/'
         pass_filenames: false

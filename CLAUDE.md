@@ -24,6 +24,19 @@ make trigger-notion-dev   # Trigger pipeline in cloud
 make trigger-gsheets-dev  # Trigger pipeline in cloud
 ```
 
+### Pipeline Testing Workflow
+
+For testing pipeline changes during development:
+
+**Quick test cycle**: `run_pipeline("notion")` - starts, triggers, stops automatically
+**Manual control**: `start_pipeline("notion")` → `trigger_pipeline()` → `stop_pipeline()`
+
+**Services**: notion, gsheets  
+**Default**: dev environment  
+**Constraint**: Only one pipeline runs at a time (port 8080)
+
+After running pipeline, use DuckDB MCP to validate data was loaded correctly.
+
 ### Data Explorer Development
 
 Develop the Streamlit dashboard locally:
@@ -129,9 +142,11 @@ opentofu/                    # Infrastructure as code
 ├── modules/notion_pipeline/ # Notion-specific implementation
 ├── modules/gsheets_pipeline/# Google Sheets implementation
 └── modules/data_explorer/   # Streamlit dashboard
+mcp-servers/                 # MCP tools for development
+└── pipeline-runner/         # Pipeline testing MCP server
 terragrunt/{env}/           # Environment configurations
 docs/                       # Database schemas and dev data
 ```
 
-**Available Services:** `notion`, `gsheets`, `data-explorer`
+**Available Services:** `notion`, `gsheets`, `data-explorer`, `pipeline-runner`
 **Available Environments:** `dev`, `prod`
