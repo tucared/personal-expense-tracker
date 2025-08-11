@@ -111,6 +111,7 @@ cd terragrunt/prod && terragrunt plan
 
 - Makefile handles service account impersonation
 - Local code connects to cloud infrastructure (secrets, storage)
+- **Application code is located in `src/` directories** within each module (e.g., `opentofu/modules/notion_pipeline/src/`)
 - Use `uv` for all Python commands: `uv run mypy`, `uv run ruff format`
 - **Never edit pyproject.toml dependencies directly**: Use `uv add <package>` or `uv add --dev <package>` instead
 
