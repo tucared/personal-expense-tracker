@@ -192,6 +192,7 @@ This solution uses GCP's [free tier](https://cloud.google.com/free) resources:
 | Cloud Run | 2M requests, 360K GB-seconds | Well below with periodic usage |
 | Cloud Scheduler | 3 jobs | 2 jobs used (Notion + Google Sheets) |
 | BigQuery | 1TB queries/month | Minimal usage with external tables |
+| Artifact Registry | 500MB storage | ~440MB with 2 container versions |
 
 ## Architecture
 
