@@ -238,7 +238,7 @@ lint-data-explorer:
 lint-pipeline-runner:
 	@echo "Linting pipeline runner..."
 	@uv run --directory=mcp-servers/pipeline-runner ruff check .
-	@uv run --directory=mcp-servers/pipeline-runner mypy .
+	@uv run --directory=mcp-servers/pipeline-runner ty check .
 
 # Per-module formatting
 format-notion:
