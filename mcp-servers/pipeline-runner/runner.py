@@ -22,7 +22,7 @@ current_process: Optional[subprocess.Popen[str]] = None
 
 # Configuration
 VALID_SERVICES = ["notion", "gsheets"]
-VALID_ENVS = ["dev", "prod"] 
+VALID_ENVS = ["dev", "prod"]
 PIPELINE_PORT = 8080
 STARTUP_TIMEOUT = 10
 
@@ -30,7 +30,7 @@ STARTUP_TIMEOUT = 10
 def cleanup_process() -> None:
     """Clean up any running process."""
     global current_pipeline, current_process
-    
+
     if current_process and current_process.poll() is None:
         try:
             current_process.terminate()
@@ -40,7 +40,7 @@ def cleanup_process() -> None:
             current_process.wait()
         except Exception:
             pass  # Process already dead
-    
+
     current_pipeline = None
     current_process = None
 
@@ -80,7 +80,7 @@ def check_makefile() -> Optional[str]:
 def wait_for_startup(process: subprocess.Popen[str], service: str, env: str) -> str:
     """Wait for process to start and listen on port."""
     start_time = time.time()
-    
+
     while time.time() - start_time < STARTUP_TIMEOUT:
         # Check if process exited early
         if process.poll() is not None:
@@ -91,7 +91,7 @@ def wait_for_startup(process: subprocess.Popen[str], service: str, env: str) -> 
                 except Exception:
                     pass
             return f"❌ {service}-{env} process exited early. Output: {stdout_content[:200]}"
-        
+
         # Check for startup message in stdout
         if process.stdout:
             try:
@@ -102,9 +102,9 @@ def wait_for_startup(process: subprocess.Popen[str], service: str, env: str) -> 
                         return f"✅ {service}-{env} started successfully on port {PIPELINE_PORT}"
             except Exception:
                 pass  # Continue waiting
-        
+
         time.sleep(0.1)
-    
+
     # Timeout - kill the process
     process.terminate()
     return f"❌ {service}-{env} failed to start within {STARTUP_TIMEOUT} seconds"
@@ -117,16 +117,16 @@ mcp = FastMCP("Pipeline Runner")
 @mcp.tool()
 def start_pipeline(service: str, env: str = "dev") -> str:
     """Start a pipeline service.
-    
+
     Args:
         service: Service name (notion, gsheets)
         env: Environment (dev, prod)
-    
+
     Returns:
         Status message
     """
     global current_pipeline, current_process
-    
+
     # Validate inputs
     if error := validate_service(service):
         return error
@@ -134,16 +134,16 @@ def start_pipeline(service: str, env: str = "dev") -> str:
         return error
     if error := check_makefile():
         return error
-    
+
     # Check if pipeline already running
     if current_pipeline:
         return f"❌ {current_pipeline} is running. Stop it first with stop_pipeline()."
-    
+
     # Start the pipeline process
     make_target = f"run-{service}-{env}"
     env_vars = os.environ.copy()
     env_vars["PORT"] = str(PIPELINE_PORT)
-    
+
     try:
         process = subprocess.Popen(
             ["make", make_target],
@@ -152,12 +152,12 @@ def start_pipeline(service: str, env: str = "dev") -> str:
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
-            universal_newlines=True
+            universal_newlines=True,
         )
-        
+
         # Wait for startup
         result = wait_for_startup(process, service, env)
-        
+
         if result.startswith("✅"):
             current_pipeline = f"{service}-{env}"
             current_process = process
@@ -167,7 +167,7 @@ def start_pipeline(service: str, env: str = "dev") -> str:
             if process.poll() is None:
                 process.terminate()
             return result
-            
+
     except Exception as e:
         return f"❌ Failed to start {service}-{env}: {str(e)}"
 
@@ -175,17 +175,17 @@ def start_pipeline(service: str, env: str = "dev") -> str:
 @mcp.tool()
 def trigger_pipeline() -> str:
     """Trigger the currently running pipeline.
-    
+
     Returns:
         Status message with response
     """
     if not current_pipeline:
         return "❌ No pipeline running. Start one first with start_pipeline()."
-    
+
     try:
         with httpx.Client(timeout=30.0) as client:
             response = client.post(f"http://localhost:{PIPELINE_PORT}")
-            
+
         if response.status_code == 200:
             # Truncate response for readability
             response_text = response.text[:200]
@@ -194,7 +194,7 @@ def trigger_pipeline() -> str:
             return f"✅ Pipeline triggered successfully: {response_text}"
         else:
             return f"❌ Pipeline trigger failed: HTTP {response.status_code} - {response.text[:100]}"
-            
+
     except httpx.RequestError as e:
         return f"❌ Failed to connect to pipeline: {str(e)}"
     except Exception as e:
@@ -204,15 +204,15 @@ def trigger_pipeline() -> str:
 @mcp.tool()
 def stop_pipeline() -> str:
     """Stop the currently running pipeline.
-    
+
     Returns:
         Status message
     """
     global current_pipeline, current_process
-    
+
     if not current_pipeline:
         return "❌ No pipeline running."
-    
+
     pipeline_name = current_pipeline
     cleanup_process()
     return f"✅ Stopped {pipeline_name}"
@@ -221,41 +221,41 @@ def stop_pipeline() -> str:
 @mcp.tool()
 def run_pipeline(service: str, env: str = "dev") -> str:
     """Run a complete pipeline cycle: start → trigger → stop.
-    
+
     Args:
-        service: Service name (notion, gsheets)  
+        service: Service name (notion, gsheets)
         env: Environment (dev, prod)
-    
+
     Returns:
         Status message with all operation results
     """
     results = []
-    
+
     # Start pipeline
     start_result = start_pipeline(service, env)
     results.append(f"Start: {start_result}")
-    
+
     if not start_result.startswith("✅"):
         return "\n".join(results)
-    
+
     # Small delay to ensure pipeline is ready
     time.sleep(0.5)
-    
+
     # Trigger pipeline
     trigger_result = trigger_pipeline()
     results.append(f"Trigger: {trigger_result}")
-    
+
     # Stop pipeline
     stop_result = stop_pipeline()
     results.append(f"Stop: {stop_result}")
-    
+
     return "\n".join(results)
 
 
 @mcp.tool()
 def get_status() -> str:
     """Get current pipeline runner status.
-    
+
     Returns:
         Current status information
     """
@@ -275,7 +275,7 @@ def main() -> None:
     """Main entry point for the MCP server."""
     # Clean up any existing processes on startup
     cleanup_process()
-    
+
     # Run the MCP server
     mcp.run()
 

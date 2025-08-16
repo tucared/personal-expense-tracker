@@ -31,8 +31,8 @@ For testing pipeline changes during development:
 **Quick test cycle**: `run_pipeline("notion")` - starts, triggers, stops automatically
 **Manual control**: `start_pipeline("notion")` → `trigger_pipeline()` → `stop_pipeline()`
 
-**Services**: notion, gsheets  
-**Default**: dev environment  
+**Services**: notion, gsheets
+**Default**: dev environment
 **Constraint**: Only one pipeline runs at a time (port 8080)
 
 After running pipeline, use DuckDB MCP to validate data was loaded correctly.

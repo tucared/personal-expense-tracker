@@ -61,10 +61,10 @@ get_status()                    # Current state
 
 Starts a pipeline service using existing Makefile targets.
 
-- **service**: `"notion"` or `"gsheets"`  
+- **service**: `"notion"` or `"gsheets"`
 - **env**: `"dev"` or `"prod"`
 - **Returns**: Status message
-- **Behavior**: 
+- **Behavior**:
   - Runs `make run-{service}-{env}` with `PORT=8080`
   - Waits for "Running on http://" message (up to 10 seconds)
   - Fails if another pipeline is already running
@@ -74,7 +74,7 @@ Starts a pipeline service using existing Makefile targets.
 Sends HTTP POST to the running pipeline.
 
 - **Returns**: HTTP response status and content (truncated)
-- **Behavior**: 
+- **Behavior**:
   - POST to `http://localhost:8080`
   - 30-second timeout
   - Requires active pipeline
@@ -84,7 +84,7 @@ Sends HTTP POST to the running pipeline.
 Stops the currently running pipeline.
 
 - **Returns**: Confirmation message
-- **Behavior**: 
+- **Behavior**:
   - Graceful termination with SIGTERM
   - Force kill if needed
   - Cleans up process state
@@ -109,7 +109,7 @@ Returns current pipeline state.
 ### Common Errors
 
 - `❌ notion-gsheets is running. Stop it first.` - Only one pipeline allowed
-- `❌ Invalid service. Use: notion, gsheets` - Check service name  
+- `❌ Invalid service. Use: notion, gsheets` - Check service name
 - `❌ Makefile not found. Run from project root.` - Wrong directory
 - `❌ notion-dev failed to start within 10 seconds` - Startup timeout
 - `❌ No pipeline running. Start one first.` - Trigger without start
@@ -130,7 +130,7 @@ uv run ruff check .
 uv run mypy .
 ```
 
-### Run Formatting  
+### Run Formatting
 
 ```bash
 uv run ruff format .
@@ -152,7 +152,7 @@ uv run runner &
 ## Integration with Development Workflow
 
 1. **Modify Pipeline Code**: Edit files in `opentofu/modules/{service}_pipeline/src/`
-2. **Test Changes**: Use `run_pipeline("{service}")` 
+2. **Test Changes**: Use `run_pipeline("{service}")`
 3. **Validate Data**: Check results with DuckDB MCP
 4. **Iterate**: Repeat until satisfied
 
@@ -161,7 +161,7 @@ uv run runner &
 ### Pipeline Won't Start
 
 - Verify you're in project root directory (Makefile must exist)
-- Check that `make run-{service}-{env}` works manually  
+- Check that `make run-{service}-{env}` works manually
 - Ensure port 8080 is available
 - Review startup logs in terminal
 
@@ -174,7 +174,7 @@ uv run runner &
 ### Process Management Issues
 
 - Use `stop_pipeline()` to clean up
-- Restart Claude Desktop if state gets corrupted  
+- Restart Claude Desktop if state gets corrupted
 - Check for conflicting processes on port 8080
 
 ## Architecture
@@ -182,7 +182,7 @@ uv run runner &
 ### State Management
 
 ```python
-current_pipeline = None  # "notion-dev", "gsheets-prod", or None  
+current_pipeline = None  # "notion-dev", "gsheets-prod", or None
 current_process = None   # subprocess.Popen object
 ```
 
