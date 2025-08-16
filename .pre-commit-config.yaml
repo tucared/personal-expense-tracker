@@ -9,6 +9,9 @@ repos:
       - id: detect-private-key
         exclude: ^cloud-function/secret-sample/sa-key\.json$
       - id: check-added-large-files
+      - id: check-json
+        name: check-mcp-json
+        files: ^\.mcp\.json$
   - repo: https://github.com/tofuutils/pre-commit-opentofu
     rev: v2.2.1
     hooks:
