@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "duckdb-gcs-prod": {
+    "duckdb-prod": {
       "type": "stdio",
       "command": "uvx",
       "args": [
@@ -8,10 +8,9 @@
         "--db-path",
         "prod.duckdb",
         "--read-only"
-      ],
-      "env": {}
+      ]
     },
-    "duckdb-gcs-dev": {
+    "duckdb-dev": {
       "type": "stdio",
       "command": "uvx",
       "args": [
@@ -19,16 +18,16 @@
         "--db-path",
         "dev.duckdb",
         "--read-only"
-      ],
-      "env": {}
-    }
-  },
-    "duckdb-local-dev": {
+      ]
+    },
+    "duckdb-local": {
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "mcp-server-motherduck"
-      ],
-      "env": {}
+        "mcp-server-motherduck",
+        "--db-path",
+        ":memory:"
+      ]
     }
+  }
 }
