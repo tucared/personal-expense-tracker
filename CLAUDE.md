@@ -48,24 +48,41 @@ make open-dashboard-dev       # Access deployed dashboard
 
 ### Data Analysis
 
-Use MCP DuckDB tool for all data queries and analysis:
+Use MCP DuckDB tools for all data queries and analysis. Three MCP servers are available:
 
-**Cloud Data (duckdb-gcs-prod/duckdb-gcs-dev):**
+**duckdb-prod:**
+
+- Production expense data from cloud deployment
+- Read-only access to prevent accidental data modification
+- Use for analyzing live production data
+
+**duckdb-dev:**
+
+- Development/testing data from cloud deployment
+- Read-only access with development seed data
+- Use for testing queries against known datasets
+
+**duckdb-local:**
+
+- In-memory database for CSV exploration and experimentation
+- Full read/write access for temporary analysis
+- Perfect for testing queries and data transformations
 
 ```sql
--- Production/dev data from GCS
+-- Production data (use duckdb-prod)
 SELECT * FROM raw.expenses ORDER BY created_time DESC LIMIT 10;
 SELECT properties__category__select__name, SUM(properties__amount__number) as total
 FROM raw.expenses GROUP BY properties__category__select__name;
-```
 
-**Development Seed Data (duckdb-gcs-dev):**
-
-```sql
--- CSV files seeded to dev GCS deployment
+-- Development seed data (use duckdb-dev)
 SELECT * FROM read_csv('docs/dev_data/expenses.csv');
 SELECT * FROM read_csv('docs/dev_data/monthly_category_amounts.csv');
 SELECT * FROM read_csv('docs/dev_data/rate.csv');
+
+-- Local analysis (use duckdb-local)
+CREATE TABLE expenses AS SELECT * FROM read_csv('path/to/expenses.csv');
+SELECT category, AVG(amount) FROM expenses GROUP BY category;
+INSERT INTO expenses VALUES ('Food', 25.50, '2024-01-15');
 ```
 
 Reference `opentofu/modules/data_explorer/src/reports/expense_tracker.py` for data transformation patterns.
