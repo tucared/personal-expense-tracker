@@ -28,6 +28,14 @@
         "--db-path",
         ":memory:"
       ]
+    },
+    "pipeline-runner": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "mcp-servers/pipeline-runner",
+        "run",
+        "runner.py"]
     }
   }
 }
