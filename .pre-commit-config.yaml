@@ -79,7 +79,7 @@ repos:
         pass_filenames: false
       - id: lint-pipeline-runner-ty
         name: Type check pipeline runner
-        entry: uv run --directory=mcp-servers/pipeline-runner mypy .
+        entry: uv run --directory=mcp-servers/pipeline-runner ty check .
         language: system
         files: '^mcp-servers/pipeline-runner/'
         pass_filenames: false
