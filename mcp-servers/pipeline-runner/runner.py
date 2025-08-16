@@ -24,7 +24,7 @@ current_process: Optional[subprocess.Popen[str]] = None
 VALID_SERVICES = ["notion", "gsheets"]
 VALID_ENVS = ["dev", "prod"]
 PIPELINE_PORT = 8080
-STARTUP_TIMEOUT = 10
+STARTUP_TIMEOUT = 120
 
 
 def cleanup_process() -> None:
