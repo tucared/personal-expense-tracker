@@ -71,10 +71,16 @@ def validate_env(env: str) -> Optional[str]:
 
 
 def check_makefile() -> Optional[str]:
-    """Check if Makefile exists in current directory."""
-    if not os.path.exists("Makefile"):
-        return "❌ Makefile not found. Run from project root directory."
-    return None
+    """Check if Makefile exists in project root directory."""
+    # Find project root by looking for Makefile up the directory tree
+    current_dir = os.getcwd()
+    while current_dir != os.path.dirname(current_dir):  # Stop at filesystem root
+        makefile_path = os.path.join(current_dir, "Makefile")
+        if os.path.exists(makefile_path):
+            return None
+        current_dir = os.path.dirname(current_dir)
+
+    return "❌ Makefile not found in project tree."
 
 
 def wait_for_startup(process: subprocess.Popen[str], service: str, env: str) -> str:
@@ -130,7 +136,18 @@ def _start_pipeline_impl(service: str, env: str = "dev") -> str:
     if current_pipeline:
         return f"❌ {current_pipeline} is running. Stop it first with stop_pipeline()."
 
-    # Start the pipeline process
+    # Find project root and start the pipeline process
+    project_root = None
+    current_dir = os.getcwd()
+    while current_dir != os.path.dirname(current_dir):
+        if os.path.exists(os.path.join(current_dir, "Makefile")):
+            project_root = current_dir
+            break
+        current_dir = os.path.dirname(current_dir)
+
+    if not project_root:
+        return "❌ Could not find project root with Makefile"
+
     make_target = f"run-{service}-{env}"
     env_vars = os.environ.copy()
     env_vars["PORT"] = str(PIPELINE_PORT)
@@ -138,6 +155,7 @@ def _start_pipeline_impl(service: str, env: str = "dev") -> str:
     try:
         process = subprocess.Popen(
             ["make", make_target],
+            cwd=project_root,
             env=env_vars,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
