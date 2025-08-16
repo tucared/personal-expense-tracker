@@ -94,6 +94,10 @@ make clean         # Clean temporary files and databases
 # Per-module commands
 make lint-notion           # Lint specific module
 make format-data-explorer  # Format specific module
+
+# Pre-commit hooks (use uvx prefix)
+uvx pre-commit run --all-files                    # Run all hooks
+uvx pre-commit run lint-pipeline-runner-ty        # Run specific hook
 ```
 
 **Direct Terragrunt (More Flexibility):**
