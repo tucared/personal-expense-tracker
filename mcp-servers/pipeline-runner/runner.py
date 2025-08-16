@@ -114,17 +114,8 @@ def wait_for_startup(process: subprocess.Popen[str], service: str, env: str) -> 
 mcp = FastMCP("Pipeline Runner")
 
 
-@mcp.tool()
-def start_pipeline(service: str, env: str = "dev") -> str:
-    """Start a pipeline service.
-
-    Args:
-        service: Service name (notion, gsheets)
-        env: Environment (dev, prod)
-
-    Returns:
-        Status message
-    """
+def _start_pipeline_impl(service: str, env: str = "dev") -> str:
+    """Core implementation for starting a pipeline service."""
     global current_pipeline, current_process
 
     # Validate inputs
@@ -173,12 +164,21 @@ def start_pipeline(service: str, env: str = "dev") -> str:
 
 
 @mcp.tool()
-def trigger_pipeline() -> str:
-    """Trigger the currently running pipeline.
+def start_pipeline(service: str, env: str = "dev") -> str:
+    """Start a pipeline service.
+
+    Args:
+        service: Service name (notion, gsheets)
+        env: Environment (dev, prod)
 
     Returns:
-        Status message with response
+        Status message
     """
+    return _start_pipeline_impl(service, env)
+
+
+def _trigger_pipeline_impl() -> str:
+    """Core implementation for triggering the currently running pipeline."""
     if not current_pipeline:
         return "❌ No pipeline running. Start one first with start_pipeline()."
 
@@ -202,12 +202,17 @@ def trigger_pipeline() -> str:
 
 
 @mcp.tool()
-def stop_pipeline() -> str:
-    """Stop the currently running pipeline.
+def trigger_pipeline() -> str:
+    """Trigger the currently running pipeline.
 
     Returns:
-        Status message
+        Status message with response
     """
+    return _trigger_pipeline_impl()
+
+
+def _stop_pipeline_impl() -> str:
+    """Core implementation for stopping the currently running pipeline."""
     global current_pipeline, current_process
 
     if not current_pipeline:
@@ -216,6 +221,16 @@ def stop_pipeline() -> str:
     pipeline_name = current_pipeline
     cleanup_process()
     return f"✅ Stopped {pipeline_name}"
+
+
+@mcp.tool()
+def stop_pipeline() -> str:
+    """Stop the currently running pipeline.
+
+    Returns:
+        Status message
+    """
+    return _stop_pipeline_impl()
 
 
 @mcp.tool()
@@ -232,7 +247,7 @@ def run_pipeline(service: str, env: str = "dev") -> str:
     results = []
 
     # Start pipeline
-    start_result = start_pipeline(service, env)
+    start_result = _start_pipeline_impl(service, env)
     results.append(f"Start: {start_result}")
 
     if not start_result.startswith("✅"):
@@ -242,11 +257,11 @@ def run_pipeline(service: str, env: str = "dev") -> str:
     time.sleep(0.5)
 
     # Trigger pipeline
-    trigger_result = trigger_pipeline()
+    trigger_result = _trigger_pipeline_impl()
     results.append(f"Trigger: {trigger_result}")
 
     # Stop pipeline
-    stop_result = stop_pipeline()
+    stop_result = _stop_pipeline_impl()
     results.append(f"Stop: {stop_result}")
 
     return "\n".join(results)
