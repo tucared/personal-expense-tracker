@@ -25,9 +25,13 @@ Add to your Claude Desktop config:
 ```json
 {
   "mcpServers": {
-    "pipeline-runner": {
+    "pipeline-runner": {{
       "command": "uv",
-      "args": ["--directory", "mcp-servers/pipeline-runner", "run", "runner"]
+      "args": [
+        "--directory",
+        "mcp-servers/pipeline-runner",
+        "run",
+        "runner.py"]
     }
   }
 }

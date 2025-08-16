@@ -8,9 +8,6 @@ dependencies = [
     "httpx>=0.25.0",
 ]
 
-[project.scripts]
-runner = "runner:main"
-
 [tool.uv]
 dev-dependencies = [
     "ruff>=0.8.6",
