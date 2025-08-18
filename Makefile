@@ -22,7 +22,7 @@ help:
 	@echo "  output-<output>-dev       - Get terragrunt output in dev environment"
 	@echo "  output-<output>-prod      - Get terragrunt output in prod environment"
 	@echo ""
-	@echo "Available services: notion, gsheets, data-explorer"
+	@echo "Available services: notion, gsheets, data-explorer, pipeline-runner"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make run-notion-dev"
@@ -37,6 +37,7 @@ help:
 	@echo "  make lint"
 	@echo "  make format"
 	@echo "  make lint-notion"
+	@echo "  make lint-pipeline-runner"
 
 # Pattern rule for running local services (must come before general pattern)
 run-%-dev:
@@ -196,7 +197,8 @@ generate-schema-prod: prod.duckdb
 # Python development commands
 PYTHON_MODULES := opentofu/modules/notion_pipeline/src \
                   opentofu/modules/gsheets_pipeline/src \
-                  opentofu/modules/data_explorer/src
+                  opentofu/modules/data_explorer/src \
+                  mcp-servers/pipeline-runner
 
 lint:
 	@for dir in $(PYTHON_MODULES); do \
@@ -233,6 +235,11 @@ lint-data-explorer:
 	@uv run --directory=opentofu/modules/data_explorer/src ruff check .
 	@uv run --directory=opentofu/modules/data_explorer/src ty check .
 
+lint-pipeline-runner:
+	@echo "Linting pipeline runner..."
+	@uv run --directory=mcp-servers/pipeline-runner ruff check .
+	@uv run --directory=mcp-servers/pipeline-runner ty check .
+
 # Per-module formatting
 format-notion:
 	@echo "Formatting notion pipeline..."
@@ -246,6 +253,10 @@ format-data-explorer:
 	@echo "Formatting data explorer..."
 	@uv run --directory=opentofu/modules/data_explorer/src ruff format .
 
+format-pipeline-runner:
+	@echo "Formatting pipeline runner..."
+	@uv run --directory=mcp-servers/pipeline-runner ruff format .
+
 # Clean temporary files
 clean:
 	@echo "Cleaning temporary files..."
@@ -254,4 +265,4 @@ clean:
 	@find . -name "*.pyc" -delete 2>/dev/null || true
 
 # Make all -dev and -prod targets phony
-.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint format install clean lint-notion lint-gsheets lint-data-explorer format-notion format-gsheets format-data-explorer
+.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint format install clean lint-notion lint-gsheets lint-data-explorer lint-pipeline-runner format-notion format-gsheets format-data-explorer format-pipeline-runner
