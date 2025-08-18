@@ -22,3 +22,6 @@ env_vars.yaml
 # DuckDB database files
 *.duckdb
 *.duckdb.wal
+
+# MacOS
+.DS_Store
