@@ -201,7 +201,7 @@ def _trigger_pipeline_impl() -> str:
         return "❌ No pipeline running. Start one first with start_pipeline()."
 
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=180.0) as client:
             response = client.post(f"http://localhost:{PIPELINE_PORT}")
 
         if response.status_code == 200:
