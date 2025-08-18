@@ -8,7 +8,7 @@ LOAD httpfs;
 
 -- Create GCS secret using environment variable placeholders
 -- $SECRET_TYPE will be substituted with either "SECRET" or "PERSISTENT SECRET"
-CREATE $SECRET_TYPE (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET');
+CREATE $SECRET_TYPE (TYPE GCS, KEY_ID '$HMAC_ACCESS_ID', SECRET '$HMAC_SECRET', SCOPE 'gcs://$GCS_BUCKET_NAME');
 
 -- Create raw schema
 CREATE SCHEMA IF NOT EXISTS raw;
