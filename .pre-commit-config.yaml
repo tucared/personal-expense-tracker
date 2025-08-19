@@ -12,6 +12,11 @@ repos:
       - id: check-json
         name: check-mcp-json
         files: ^\.mcp\.json$
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.18.1
+    hooks:
+      - id: markdownlint-cli2
+        args: ["**/*.md"]
   - repo: https://github.com/tofuutils/pre-commit-opentofu
     rev: v2.2.1
     hooks:
