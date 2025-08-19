@@ -13,11 +13,12 @@ help:
 	@echo "  generate-schema-prod      - Generate database schema CSV from prod.duckdb"
 	@echo "  lint                      - Run linting across all Python modules"
 	@echo "  lint-fix                  - Auto-fix ruff linting issues (no type checking)"
-	@echo "  format                    - Run formatting across all Python modules"
+	@echo "  format                    - Run formatting across all Python modules and markdown files"
 	@echo "  install                   - Install dependencies for all Python modules"
 	@echo "  lint-<service>            - Run linting for specific service module"
 	@echo "  lint-fix-<service>        - Auto-fix ruff issues for specific service module"
 	@echo "  format-<service>          - Run formatting for specific service module"
+	@echo "  format-markdown           - Run formatting on markdown files"
 	@echo "  clean                     - Clean temporary files and databases"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
 	@echo "  <command>-prod            - Run terragrunt command in prod environment"
@@ -220,6 +221,7 @@ format:
 		echo "Formatting $$dir..."; \
 		uv run --directory=$$dir ruff format .; \
 	done
+	@$(MAKE) format-markdown
 
 install:
 	@for dir in $(PYTHON_MODULES); do \
@@ -265,6 +267,10 @@ lint-fix-pipeline-runner:
 	@echo "Auto-fixing ruff issues in pipeline runner..."
 	@uv run --directory=mcp-servers/pipeline-runner ruff check --fix .
 
+format-markdown:
+	@echo "Formatting markdown files..."
+	@markdownlint-cli2 --fix "**/*.md"
+
 # Per-module formatting
 format-notion:
 	@echo "Formatting notion pipeline..."
@@ -290,4 +296,4 @@ clean:
 	@find . -name "*.pyc" -delete 2>/dev/null || true
 
 # Make all -dev and -prod targets phony
-.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint lint-fix format install clean lint-notion lint-gsheets lint-data-explorer lint-pipeline-runner lint-fix-notion lint-fix-gsheets lint-fix-data-explorer lint-fix-pipeline-runner format-notion format-gsheets format-data-explorer format-pipeline-runner
+.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint lint-fix format install clean lint-notion lint-gsheets lint-data-explorer lint-pipeline-runner lint-fix-notion lint-fix-gsheets lint-fix-data-explorer lint-fix-pipeline-runner format-notion format-gsheets format-data-explorer format-pipeline-runner format-markdown lint-markdown
