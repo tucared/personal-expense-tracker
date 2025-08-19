@@ -11,19 +11,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        
+
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
         with:
           version: "latest"
           enable-cache: true
-          
+
       - name: Install dependencies
         run: make install
-        
+
       - name: Run linting and type checks
         run: make lint
-        
+
       - name: Validate formatting
         run: |
           make format
