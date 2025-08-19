@@ -19,16 +19,20 @@ A ready-to-deploy expense tracking system that:
 - **BigQuery integration**: SQL access to expense data for advanced analytics and reporting
 - **Runs on GCP free tier**: Cloud-native infrastructure with minimal costs
 
-This system combines the ease of logging expenses in Notion with the flexibility of budget management in Google Sheets, all visualized in an intuitive dashboard.
+This system combines the ease of logging expenses in Notion with the flexibility of budget management in Google Sheets,
+all visualized in an intuitive dashboard.
 
 ## Getting Started
 
 ### Prerequisites
 
 - **Accounts & Templates**:
-  - [Notion account](https://www.notion.so/signup) with [expense template](https://www.notion.so/1e81ed43cd7081609485d8f73c0d5e36?v=1e81ed43cd7081f88063000c38133b27) (**duplicate this template to your workspace**)
-  - [Google Sheets budget template](https://docs.google.com/spreadsheets/d/1mf3u9zqNAhXSNc7v2GYphqUjYIN6PHYEgjTAHuvD50M/edit?gid=0#gid=0) (**make a copy** to your Drive)
-  - [Google Cloud billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account) (most resources stay within free tier)
+  - [Notion account](https://www.notion.so/signup) with [expense template](https://www.notion.so/1e81ed43cd7081609485d8f73c0d5e36)
+  (**duplicate this template to your workspace**)
+  - [Google Sheets budget template](https://docs.google.com/spreadsheets/d/1mf3u9zqNAhXSNc7v2GYphqUjYIN6PHYEgjTAHuvD50M/)
+  (**make a copy** to your Drive)
+  - [Google Cloud billing account](https://cloud.google.com/billing/docs/how-to/create-billing-account)
+  (most resources stay within free tier)
   - Optional: [BigQuery](https://cloud.google.com/bigquery) for SQL-based data analysis
 
 - **CLI Tools**:
@@ -156,7 +160,8 @@ The Streamlit dashboard provides:
 3. **Category Breakdown**: Filter expenses by category
 4. **Trend Analysis**: View spending patterns over time
 
-> **Authentication**: The dashboard uses secure username/password authentication with credentials configured via Terragrunt variables. Passwords are stored securely in Google Secret Manager and never committed to the repository.
+> **Authentication**: The dashboard uses secure username/password authentication with credentials configured via
+Terragrunt variables. Passwords are stored securely in Google Secret Manager and never committed to the repository.
 
 ### Data Flow Process
 
@@ -171,7 +176,8 @@ flowchart LR
     H -->|SQL Analytics| G[End Users]
 ```
 
-> **Note**: Both Notion and Google Sheets data are synced hourly by default. You can customize the sync frequency for each pipeline in the `env_vars.yaml` file before deployment.
+> **Note**: Both Notion and Google Sheets data are synced hourly by default.
+You can customize the sync frequency for each pipeline in the `env_vars.yaml` file before deployment.
 
 ### Managing Data Refresh
 
@@ -219,10 +225,13 @@ gcloud projects delete $PROJECT_ID
 
 ## Customization
 
-- **Adding expense categories**: Add new categories in both Notion and Google Sheets. **Important**: Ensure category names match exactly between Notion and Google Sheets for proper mapping in the dashboard.
-- **Budget periods**: If you want to modify the budget period structure in Google Sheets (columns or periods), you will need to update the Streamlit app code as well to ensure proper data handling and visualization.
+- **Adding expense categories**: Add new categories in both Notion and Google Sheets. **Important**:
+Ensure category names match exactly between Notion and Google Sheets for proper mapping in the dashboard.
+- **Budget periods**: If you want to modify the budget period structure in Google Sheets (columns or periods),
+you will need to update the Streamlit app code as well to ensure proper data handling and visualization.
 - **Custom visualizations**: Modify the Streamlit app in `opentofu/modules/data_explorer/src/`
-- **Adding new pipelines**: Create a new module that uses the base_pipeline module and add its specific configuration to `env_vars.yaml`
+- **Adding new pipelines**: Create a new module that uses the base_pipeline module and add its
+specific configuration to `env_vars.yaml`
 
 ## License
 

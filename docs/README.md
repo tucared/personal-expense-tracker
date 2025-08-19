@@ -6,7 +6,10 @@ This directory contains documentation and schema definitions for the Personal Ex
 
 ### `database_schema.csv`
 
-This file contains the schema definitions for all database tables available when running the Personal Expense Tracker. The schema is automatically generated using the Makefile targets `make generate-schema-dev` or `make generate-schema-prod`. It includes:
+This file contains the schema definitions for all database tables available when running the Personal Expense Tracker.
+The schema is automatically generated using the Makefile targets `make generate-schema-dev` or `make generate-schema-prod`.
+
+It includes:
 
 - **Database**: The database name (e.g., `memory`)
 - **Schema**: The schema name (e.g., `raw`)

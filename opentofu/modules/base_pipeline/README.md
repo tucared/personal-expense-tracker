@@ -1,6 +1,8 @@
 # Base Pipeline Module
 
-This module serves as a foundation for creating data pipelines in the Personal Expense Tracker project. It implements common infrastructure patterns for deploying cloud functions that extract data from various sources and store it in a Google Cloud Storage bucket.
+This module serves as a foundation for creating data pipelines in the Personal Expense Tracker project.
+It implements common infrastructure patterns for deploying cloud functions that extract data from various sources and
+store it in a Google Cloud Storage bucket.
 
 ## Features
 
@@ -12,7 +14,8 @@ This module serves as a foundation for creating data pipelines in the Personal E
 
 ## Module Usage
 
-This module is designed to be used as a base for specific data source pipelines. It's not intended to be used directly, but rather imported by specific pipeline modules like `notion_pipeline` or `gsheets_pipeline`.
+This module is designed to be used as a base for specific data source pipelines.
+It's not intended to be used directly, but rather imported by specific pipeline modules like `notion_pipeline` or `gsheets_pipeline`.
 
 **Important Notes:**
 
@@ -67,7 +70,8 @@ module "base_pipeline" {
 
 ### Secret Management
 
-The module creates Secret Manager secrets for each item in the `secrets` list. These are then made available to the Cloud Function as environment variables with the specified names.
+The module creates Secret Manager secrets for each item in the `secrets` list. These are then made available to the
+Cloud Function as environment variables with the specified names.
 
 For example, if you specify:
 
@@ -123,4 +127,5 @@ make run-gsheets-prod      # Run Google Sheets pipeline locally (prod)
 make run-data-explorer-dev # Run data explorer locally (dev)
 ```
 
-**Note:** When adding a new pipeline, update the Makefile's case statement to include your pipeline's specific environment variables.
+**Note:** When adding a new pipeline, update the Makefile's case statement to include your pipeline's
+specific environment variables.

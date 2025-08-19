@@ -1,6 +1,7 @@
 # Pipeline Runner MCP Server
 
-Simple MCP server for testing expense tracker pipelines during development. Provides single-pipeline testing with automated process management.
+Simple MCP server for testing expense tracker pipelines during development.
+Provides single-pipeline testing with automated process management.
 
 ## Features
 

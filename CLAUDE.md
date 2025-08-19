@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal Expense Tracker: A data lakehouse for tracking expenses logged in Notion against budgets managed in Google Sheets. Cloud-native GCP architecture with automated data pipelines and Streamlit analytics dashboard.
+Personal Expense Tracker: A data lakehouse for tracking expenses logged in Notion against budgets managed in
+Google Sheets. Cloud-native GCP architecture with automated data pipelines and Streamlit analytics dashboard.
 
 **Initial Setup**: See README.md for one-time environment configuration and deployment.
 

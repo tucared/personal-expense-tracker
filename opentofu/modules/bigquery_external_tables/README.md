@@ -1,10 +1,12 @@
 # BigQuery External Tables Module
 
-Creates BigQuery external tables that provide SQL access to parquet files stored in Google Cloud Storage, enabling direct querying of expense data without data duplication.
+Creates BigQuery external tables that provide SQL access to parquet files stored in Google Cloud Storage, enabling
+direct querying of expense data without data duplication.
 
 ## Overview
 
 This module creates:
+
 - BigQuery dataset (`raw`) for external tables
 - External tables pointing to parquet files in GCS:
   - `expenses` - Notion expense data

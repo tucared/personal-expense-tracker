@@ -1,6 +1,8 @@
 # Data Explorer Service
 
-This service provides a Streamlit web dashboard for visualizing and analyzing data stored in Google Cloud Storage. The dashboard connects to processed data from the Personal Expense Tracker pipelines and provides interactive charts and analysis tools.
+This service provides a Streamlit web dashboard for visualizing and analyzing data stored in Google Cloud Storage.
+The dashboard connects to processed data from the Personal Expense Tracker pipelines and provides interactive charts
+and analysis tools.
 
 ## Prerequisites
 

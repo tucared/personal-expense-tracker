@@ -1,6 +1,7 @@
 # Notion Data Pipeline
 
-This service extracts data from Notion and loads it into Google Cloud Storage using the Data Load Tool (DLT) framework. The pipeline runs as a Cloud Function triggered by a Cloud Scheduler.
+This service extracts data from Notion and loads it into Google Cloud Storage using the Data Load Tool (DLT) framework.
+The pipeline runs as a Cloud Function triggered by a Cloud Scheduler.
 
 ## Prerequisites
 
