@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          enable-cache: true
+          
+      - name: Install dependencies
+        run: make install
+        
+      - name: Auto-fix linting issues
+        run: make lint-fix
+        
+      - name: Run linting and type checks
+        run: make lint
+        
+      - name: Validate formatting
+        run: |
+          make format
+          git diff --exit-code || (echo "Code formatting issues found. Run 'make format' locally." && exit 1)
