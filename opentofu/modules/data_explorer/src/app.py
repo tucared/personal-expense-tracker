@@ -5,8 +5,6 @@ from auth import setup_authentication
 st.set_page_config(page_title="Personal Expense Tracker", page_icon="📊")
 
 
-
-
 # --- MAIN APP FUNCTION ---
 def main():
     """Main application entry point."""
