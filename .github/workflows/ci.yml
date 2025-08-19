@@ -21,9 +21,6 @@ jobs:
       - name: Install dependencies
         run: make install
         
-      - name: Auto-fix linting issues
-        run: make lint-fix
-        
       - name: Run linting and type checks
         run: make lint
         
