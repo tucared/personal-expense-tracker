@@ -12,9 +12,11 @@ help:
 	@echo "  generate-schema-dev       - Generate database schema CSV from dev.duckdb"
 	@echo "  generate-schema-prod      - Generate database schema CSV from prod.duckdb"
 	@echo "  lint                      - Run linting across all Python modules"
+	@echo "  lint-fix                  - Auto-fix ruff linting issues (no type checking)"
 	@echo "  format                    - Run formatting across all Python modules"
 	@echo "  install                   - Install dependencies for all Python modules"
 	@echo "  lint-<service>            - Run linting for specific service module"
+	@echo "  lint-fix-<service>        - Auto-fix ruff issues for specific service module"
 	@echo "  format-<service>          - Run formatting for specific service module"
 	@echo "  clean                     - Clean temporary files and databases"
 	@echo "  <command>-dev             - Run terragrunt command in dev environment"
@@ -207,6 +209,12 @@ lint:
 		uv run --directory=$$dir ty check . || exit 1; \
 	done
 
+lint-fix:
+	@for dir in $(PYTHON_MODULES); do \
+		echo "Auto-fixing ruff issues in $$dir..."; \
+		uv run --directory=$$dir ruff check --fix .; \
+	done
+
 format:
 	@for dir in $(PYTHON_MODULES); do \
 		echo "Formatting $$dir..."; \
@@ -240,6 +248,23 @@ lint-pipeline-runner:
 	@uv run --directory=mcp-servers/pipeline-runner ruff check .
 	@uv run --directory=mcp-servers/pipeline-runner ty check .
 
+# Per-module lint-fix
+lint-fix-notion:
+	@echo "Auto-fixing ruff issues in notion pipeline..."
+	@uv run --directory=opentofu/modules/notion_pipeline/src ruff check --fix .
+
+lint-fix-gsheets:
+	@echo "Auto-fixing ruff issues in gsheets pipeline..."
+	@uv run --directory=opentofu/modules/gsheets_pipeline/src ruff check --fix .
+
+lint-fix-data-explorer:
+	@echo "Auto-fixing ruff issues in data explorer..."
+	@uv run --directory=opentofu/modules/data_explorer/src ruff check --fix .
+
+lint-fix-pipeline-runner:
+	@echo "Auto-fixing ruff issues in pipeline runner..."
+	@uv run --directory=mcp-servers/pipeline-runner ruff check --fix .
+
 # Per-module formatting
 format-notion:
 	@echo "Formatting notion pipeline..."
@@ -265,4 +290,4 @@ clean:
 	@find . -name "*.pyc" -delete 2>/dev/null || true
 
 # Make all -dev and -prod targets phony
-.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint format install clean lint-notion lint-gsheets lint-data-explorer lint-pipeline-runner format-notion format-gsheets format-data-explorer format-pipeline-runner
+.PHONY: %-dev %-prod run-%-dev run-%-prod _run-local init-duckdb-dev init-duckdb-prod lint lint-fix format install clean lint-notion lint-gsheets lint-data-explorer lint-pipeline-runner lint-fix-notion lint-fix-gsheets lint-fix-data-explorer lint-fix-pipeline-runner format-notion format-gsheets format-data-explorer format-pipeline-runner
