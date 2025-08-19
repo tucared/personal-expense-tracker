@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-
+  
 jobs:
   quality-checks:
     runs-on: ubuntu-latest
@@ -18,13 +18,7 @@ jobs:
           version: "latest"
           enable-cache: true
 
-      - name: Install dependencies
-        run: make install
-
-      - name: Run linting and type checks
-        run: make lint
-
-      - name: Validate formatting
-        run: |
-          make format
-          git diff --exit-code || (echo "Code formatting issues found. Run 'make format' locally." && exit 1)
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --show-diff-on-failure
