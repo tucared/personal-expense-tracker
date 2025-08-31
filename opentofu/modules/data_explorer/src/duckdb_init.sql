@@ -22,3 +22,6 @@ SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/monthly_category_amounts/
 
 CREATE OR REPLACE VIEW raw.rate AS
 SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/rate/data.parquet');
+
+CREATE OR REPLACE VIEW raw.expenses__properties__name__title AS
+SELECT * FROM read_parquet('gcs://$GCS_BUCKET_NAME/raw/expenses__properties__name__title/data.parquet');

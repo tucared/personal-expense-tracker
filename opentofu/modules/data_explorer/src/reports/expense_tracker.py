@@ -34,14 +34,18 @@ def prepare_base_expenses():
         SELECT
             date:properties__date__date__start,
             category:properties__category__select__name,
+            name:text__content,
             date_month:strftime(properties__date__date__start, '%Y-%m'),
             amount: ROUND(
                 IF(properties__credit__checkbox, -1, 1) *
                 COALESCE(properties__amount__number, properties__amount_brl__number / eur_brl),
                 2
             )
-        FROM raw.expenses
-        ASOF JOIN raw.rate ON properties__date__date__start >= raw.rate.date
+        FROM raw.expenses expenses
+        LEFT JOIN raw.expenses__properties__name__title title
+            ON title._dlt_parent_id = expenses._dlt_id
+        ASOF JOIN raw.rate
+            ON properties__date__date__start >= raw.rate.date
     """)
 
 
@@ -353,5 +357,28 @@ if selected_month:
             "remaining_budget": st.column_config.NumberColumn("Left", format="€ %.2f"),
         },
         use_container_width=True,
+        hide_index=True,
+    )
+
+    # ============================================================================
+    # EXPENSES LIST
+    # ============================================================================
+
+    # Get expenses data for display
+    expenses_list = (
+        expenses.filter(f"date_month = '{selected_month}'")
+        .select("date, category, name, amount")
+        .order("date DESC")
+        .df()
+    )
+
+    st.dataframe(
+        expenses_list,
+        column_config={
+            "date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
+            "category": st.column_config.TextColumn("Category"),
+            "name": st.column_config.TextColumn("Name"),
+            "amount": st.column_config.NumberColumn("Amount", format="€ %.2f"),
+        },
         hide_index=True,
     )
